@@ -26,7 +26,7 @@
         <form hx-post="/member/iuran/pay/{{ dues.id }}" 
               hx-target="#main-content"
               hx-encoding="multipart/form-data"
-              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
               class="space-y-4 text-xs">
             
             <div>
@@ -83,7 +83,7 @@
 
         <form hx-post="/admin/dues/create" 
               hx-target="#main-content"
-              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
               class="space-y-4 text-xs">
             
             <div>
@@ -151,7 +151,7 @@
         <form hx-post="/admin/documents/create" 
               hx-target="#main-content"
               hx-encoding="multipart/form-data"
-              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
               class="space-y-4 text-xs">
             
             <div>
@@ -217,7 +217,8 @@
 
         <form hx-post="/admin/activity/create" 
               hx-target="#main-content"
-              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              hx-encoding="multipart/form-data"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
               class="space-y-4 text-xs">
             
             <div>
@@ -305,7 +306,7 @@
         <form hx-post="/admin/gallery/create" 
               hx-target="#main-content"
               hx-encoding="multipart/form-data"
-              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
               class="space-y-4 text-xs">
             
             <div>
@@ -423,7 +424,7 @@
         <form hx-post="/admin/gallery/edit/{{ item.id }}" 
               hx-target="#main-content"
               hx-encoding="multipart/form-data"
-              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
               class="space-y-4 text-xs">
             
             <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-200">
@@ -511,4 +512,396 @@
     </div>
 </div>
 {% endif %}
+
+
+<!-- 7. MODAL EDIT AGENDA EKSPEDISI (ADMIN) -->
+{% if modal_type == 'edit_activity' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-edit-act">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="flex items-center gap-2 text-orange-600 mb-1">
+            <i class="fas fa-edit"></i>
+            <span class="text-xs font-bold uppercase tracking-wider">Perbarui Ekspedisi</span>
+        </div>
+        <h2 class="text-lg font-bold text-slate-900 font-heading mb-4">Edit Agenda Kegiatan & Ekspedisi</h2>
+
+        <form hx-post="/admin/activity/edit/{{ activity.id }}" 
+              hx-target="#main-content"
+              hx-encoding="multipart/form-data"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-4 text-xs">
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Nama Kegiatan / Ekspedisi</label>
+                <input type="text" name="title" value="{{ activity.title or '' }}" required
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Lokasi</label>
+                    <input type="text" name="location" value="{{ activity.location or '' }}" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Tanggal Kegiatan</label>
+                    <input type="text" name="activity_date" value="{{ activity.activity_date or '' }}" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Tingkat Kesulitan</label>
+                    <select name="difficulty" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="Santai" {% if activity.difficulty == 'Santai' %}selected{% endif %}>Santai (Family Camp / Baksos)</option>
+                        <option value="Menengah" {% if activity.difficulty == 'Menengah' %}selected{% endif %}>Menengah (Pendakian Jalur Resmi)</option>
+                        <option value="Ekstrem" {% if activity.difficulty == 'Ekstrem' %}selected{% endif %}>Ekstrem (Tebing / Rintisan Jalur / Survival)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Kuota Peserta</label>
+                    <input type="number" name="quota" value="{{ activity.quota or 20 }}" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Status Pendaftaran Buka / Tutup -->
+            <div class="p-3 bg-orange-50/60 rounded-xl border border-orange-200 flex items-center justify-between">
+                <div>
+                    <span class="font-bold text-orange-950 block">Status Pendaftaran Ekspedisi</span>
+                    <span class="text-[11px] text-orange-800/80">Jika dicentang, anggota dapat mendaftar ikut trip</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="is_open" value="1" {% if activity.is_open %}checked{% endif %} class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                </label>
+            </div>
+
+            <!-- Ganti Gambar Sampul -->
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <div class="flex items-center gap-3">
+                    <img src="{{ activity.image_url or '/static/pics/cartoon/hero.jpg' }}" alt="Sampul" class="w-14 h-14 rounded-xl object-cover border border-slate-300">
+                    <div>
+                        <label class="font-bold text-slate-800 block">Ganti Gambar Sampul (Opsional)</label>
+                        <p class="text-[10px] text-slate-500">Unggah foto baru atau masukkan tautan URL</p>
+                    </div>
+                </div>
+                <input type="file" name="image_file" accept="image/*"
+                       class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-800 hover:file:bg-slate-300 cursor-pointer">
+                <input type="url" name="image_url" value="{{ activity.image_url or '' }}" placeholder="Atau tautan URL foto..."
+                       class="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono text-[11px] bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Deskripsi & Syarat Perlengkapan</label>
+                <textarea name="description" rows="3" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ activity.description or '' }}</textarea>
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                    <i class="fas fa-save"></i> Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- 8. MODAL PUSAT AKUN ANGGOTA GOOGLE-STYLE (PROFILE HUB) -->
+{% if modal_type == 'profile_hub' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in"
+     id="modal-profile-hub"
+     x-data="{ activeTab: '{{ initial_tab or 'biodata' }}' }">
+    <div class="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden relative flex flex-col max-h-[90vh]">
+        
+        <!-- Top Google-Style Header Card -->
+        <div class="p-6 bg-gradient-to-r from-stone-900 via-stone-850 to-stone-900 text-white relative border-b border-stone-800">
+            <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                    class="absolute top-4 right-4 text-stone-400 hover:text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                <!-- Avatar with Badge -->
+                <div class="relative">
+                    <img src="{{ user.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}" 
+                         alt="{{ user.name }}" 
+                         class="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-lg">
+                    <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-stone-900 flex items-center justify-center text-[9px] text-white">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+
+                <div class="text-center sm:text-left space-y-1 flex-1">
+                    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <h2 class="text-lg font-black font-heading text-white">{{ user.name }}</h2>
+                        {% if user.is_admin %}
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-600 text-white uppercase tracking-wider">
+                                <i class="fas fa-shield-alt text-[9px] mr-0.5"></i> Admin
+                            </span>
+                        {% elif user.status == 'active' %}
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white font-mono tracking-wider">
+                                {{ user.nra or 'Anggota Aktif' }}
+                            </span>
+                        {% else %}
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-amber-950 font-medium">
+                                <i class="fas fa-clock text-[9px] mr-0.5"></i> Calon Anggota (Pending)
+                            </span>
+                        {% endif %}
+                    </div>
+                    <p class="text-xs text-stone-300 font-mono flex items-center justify-center sm:justify-start gap-1.5">
+                        <i class="far fa-envelope text-[11px] text-stone-400"></i> {{ user.email }}
+                    </p>
+                    <p class="text-[11px] text-stone-400">
+                        KPAB GIMBAL Provinsi Gorontalo &bull; Generasi Indonesia Menyatu Bersama Alam
+                    </p>
+                </div>
+            </div>
+
+            <!-- Google-Style Material Tabs -->
+            <div class="flex items-center gap-1 mt-6 border-t border-stone-800 pt-3 overflow-x-auto text-xs font-semibold scrollbar-none">
+                <button type="button" @click="activeTab = 'biodata'"
+                        :class="activeTab === 'biodata' ? 'bg-white/15 text-white font-bold border-b-2 border-orange-500' : 'text-stone-400 hover:text-white hover:bg-white/5'"
+                        class="px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-user-circle text-xs"></i>
+                    <span>Biodata & Pribadi</span>
+                </button>
+                <button type="button" @click="activeTab = 'medis'"
+                        :class="activeTab === 'medis' ? 'bg-white/15 text-white font-bold border-b-2 border-orange-500' : 'text-stone-400 hover:text-white hover:bg-white/5'"
+                        class="px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-heartbeat text-xs text-rose-400"></i>
+                    <span>Riwayat Medis & Darurat</span>
+                </button>
+                <button type="button" @click="activeTab = 'keamanan'"
+                        :class="activeTab === 'keamanan' ? 'bg-white/15 text-white font-bold border-b-2 border-orange-500' : 'text-stone-400 hover:text-white hover:bg-white/5'"
+                        class="px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-lock text-xs text-amber-400"></i>
+                    <span>Keamanan & Sandi</span>
+                </button>
+                <button type="button" @click="activeTab = 'preferensi'"
+                        :class="activeTab === 'preferensi' ? 'bg-white/15 text-white font-bold border-b-2 border-orange-500' : 'text-stone-400 hover:text-white hover:bg-white/5'"
+                        class="px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-sliders-h text-xs"></i>
+                    <span>Tampilan & Preferensi</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Form Body with HTMX submission -->
+        <form hx-post="/member/profile-modal/update" 
+              hx-target="#modal-container"
+              hx-swap="innerHTML"
+              class="flex-1 overflow-y-auto p-6 space-y-5 text-xs">
+            
+            <input type="hidden" name="active_tab" :value="activeTab">
+
+            <!-- Success Alert -->
+            {% if saved_success %}
+            <div class="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center gap-2 font-bold animate-fade-in">
+                <i class="fas fa-check-circle text-emerald-600 text-sm"></i>
+                <span>Data profil berhasil diperbarui dan tersimpan di database!</span>
+            </div>
+            {% endif %}
+
+            <!-- Error Alert -->
+            {% if error_msg %}
+            <div class="p-3.5 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl flex items-center gap-2 font-bold animate-fade-in">
+                <i class="fas fa-exclamation-triangle text-rose-600 text-sm"></i>
+                <span>{{ error_msg }}</span>
+            </div>
+            {% endif %}
+
+            <!-- TAB 1: BIODATA & PRIBADI -->
+            <div x-show="activeTab === 'biodata'" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Nama Lengkap</label>
+                        <input type="text" name="name" value="{{ user.name }}" required
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Alamat Email (Google SSO)</label>
+                        <input type="email" value="{{ user.email }}" readonly
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-100 font-mono text-slate-500 focus:outline-none cursor-not-allowed">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Nomor WhatsApp / HP Aktif</label>
+                        <input type="tel" name="phone" value="{{ user.phone or '' }}" placeholder="08xxxxxxxxxx" required
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Tempat & Tanggal Lahir</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" name="birth_place" value="{{ user.birth_place or 'Gorontalo' }}" placeholder="Kota Lahir"
+                                   class="w-full px-3 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                            <input type="date" name="birth_date" value="{{ user.birth_date or '' }}"
+                                   class="w-full px-3 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Alamat Domisili Lengkap</label>
+                    <textarea name="address" rows="2" placeholder="Nama Jalan, Kelurahan, Kecamatan, Kota/Kabupaten Gorontalo"
+                              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ user.address or 'Provinsi Gorontalo' }}</textarea>
+                </div>
+            </div>
+
+            <!-- TAB 2: RIWAYAT MEDIS & KONTAK DARURAT (SAFETY CRUCIAL) -->
+            <div x-show="activeTab === 'medis'" class="space-y-4">
+                <div class="p-3.5 bg-rose-50/70 border border-rose-200 rounded-2xl text-rose-950 flex items-start gap-3">
+                    <i class="fas fa-heartbeat text-rose-500 text-base mt-0.5"></i>
+                    <div>
+                        <p class="font-bold text-rose-900">Standar Keselamatan Rimba & Ekspedisi</p>
+                        <p class="text-[11px] text-rose-800/80 leading-relaxed">
+                            Data kesehatan dan nomor kontak darurat keluarga ini sangat vital untuk tim medis GIMBAL dan tim evakuasi saat melakukan pendakian gunung dan kegiatan alam terbuka.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Golongan Darah</label>
+                        <select name="blood_type" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                            <option value="O" {% if user.blood_type == 'O' %}selected{% endif %}>O (Universal)</option>
+                            <option value="A" {% if user.blood_type == 'A' %}selected{% endif %}>A</option>
+                            <option value="B" {% if user.blood_type == 'B' %}selected{% endif %}>B</option>
+                            <option value="AB" {% if user.blood_type == 'AB' %}selected{% endif %}>AB</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block font-semibold text-slate-700 mb-1">Riwayat Alergi / Asma / Penyakit / Cedera Tulang</label>
+                        <input type="text" name="medical_history" value="{{ user.medical_history or '' }}" placeholder="Contoh: Asma ringan, alergi dingin, pernah cedera lutut"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Emergency Contact Block -->
+                <div class="pt-3 border-t border-slate-100 space-y-3">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fas fa-phone-alt text-orange-600"></i> Kontak Darurat (Keluarga Terdekat)
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nama Kontak</label>
+                            <input type="text" name="emergency_name" value="{{ user.emergency_name or '' }}" placeholder="Nama Ayah/Ibu/Pasangan" required
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Hubungan</label>
+                            <input type="text" name="emergency_relation" value="{{ user.emergency_relation or '' }}" placeholder="Orang Tua / Pasangan / Kakak" required
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Nomor Telepon Darurat (24 Jam)</label>
+                            <input type="tel" name="emergency_phone" value="{{ user.emergency_phone or '' }}" placeholder="08xxxxxxxxxx" required
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: KEAMANAN & SANDI -->
+            <div x-show="activeTab === 'keamanan'" class="space-y-4">
+                <div class="p-3.5 bg-stone-50 border border-stone-200 rounded-2xl flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-white shadow-sm border border-stone-200 flex items-center justify-center">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.1-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/></svg>
+                        </div>
+                        <div>
+                            <p class="font-bold text-stone-900">Google Single Sign-On (SSO)</p>
+                            <p class="text-[11px] text-stone-500">Terhubung secara aman dengan akun Google resmi</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">Aktif</span>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 space-y-3">
+                    <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fas fa-key text-amber-500"></i> Pengaturan Kata Sandi & PIN Akun
+                    </h3>
+                    <p class="text-[11px] text-slate-500">
+                        Anda dapat mengatur kata sandi untuk login manual dengan email tanpa harus selalu melewati Google OAuth.
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Kata Sandi Baru</label>
+                            <input type="password" name="new_password" placeholder="Kosongkan jika tidak diubah"
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Konfirmasi Kata Sandi Baru</label>
+                            <input type="password" name="confirm_password" placeholder="Ulangi kata sandi baru"
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: TAMPILAN & PREFERENSI -->
+            <div x-show="activeTab === 'preferensi'" class="space-y-4">
+                <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <div>
+                        <p class="font-bold text-slate-800">Mode Tampilan Aplikasi (Terang / Gelap)</p>
+                        <p class="text-[11px] text-slate-500">Ganti tema kontras tinggi sesuai kenyamanan mata di lapangan</p>
+                    </div>
+                    <button type="button" onclick="window.toggleGimbalColorMode()" 
+                            class="gimbal-theme-toggle px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-800 font-bold transition flex items-center gap-1.5 text-xs shadow-sm">
+                        <i class="theme-toggle-icon fas fa-moon text-amber-500"></i>
+                        <span class="theme-toggle-text">Gelap</span>
+                    </button>
+                </div>
+
+                <div class="p-4 rounded-2xl border border-slate-200 bg-white space-y-2">
+                    <p class="font-bold text-slate-800">Afiliasi Basecamp Organisasi</p>
+                    <p class="text-xs text-slate-600">
+                        <i class="fas fa-map-marker-alt text-orange-600 mr-1.5"></i>
+                        Sekretariat KPAB GIMBAL, Kota Gorontalo, Provinsi Gorontalo
+                    </p>
+                    <p class="text-[11px] text-slate-400">
+                        Keluarga Petualang Alam Bebas & Pelestari Lingkungan Hidup
+                    </p>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100">
+                    <a href="/auth/logout" 
+                       class="w-full py-2.5 px-4 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl border border-rose-200 transition text-center block text-xs">
+                        <i class="fas fa-sign-out-alt mr-1.5"></i> Keluar dari Sesi Akun (Logout)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer Action Buttons -->
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Tutup
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                    <i class="fas fa-save"></i>
+                    <span>Simpan Perubahan</span>
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endif %}
+
 

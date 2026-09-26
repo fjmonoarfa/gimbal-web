@@ -229,6 +229,94 @@ def switch_role():
         return redirect('/member/dashboard')
     return redirect('/')
 
+@app.route('/login')
+def login_page():
+    """Halaman login & pendaftaran resmi KPAB GIMBAL Provinsi Gorontalo"""
+    user = get_current_user()
+    if user:
+        return redirect('/admin/dashboard' if user.is_admin else '/member/dashboard')
+    return render_template('login.html')
+
+@app.route('/auth/login', methods=['POST'])
+def auth_login():
+    """Login manual email & password (mendukung mode pendaftaran & dev)"""
+    email = request.form.get('email', '').strip().lower()
+    password = request.form.get('password', '').strip()
+    
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        if '@' in email:
+            name = email.split('@')[0].replace('.', ' ').title()
+            user = User(
+                email=email,
+                name=name,
+                role='member',
+                status='pending',
+                password_hash=password or 'gimbal123',
+                avatar='/static/pics/cartoon/avatar_sekjen.jpg',
+                address='Provinsi Gorontalo'
+            )
+            db.session.add(user)
+            db.session.commit()
+        else:
+            return redirect('/login?error=Email tidak valid')
+            
+    session['user_id'] = user.id
+    if user.is_admin:
+        return redirect('/admin/dashboard')
+    return redirect('/member/dashboard')
+
+@app.route('/member/profile-modal')
+@login_required
+def member_profile_modal():
+    """Pusat Akun Anggota (Google Account Style Hub)"""
+    user = get_current_user()
+    initial_tab = request.args.get('tab', 'biodata')
+    return render_template('components/modals.html', modal_type='profile_hub', user=user, initial_tab=initial_tab)
+
+@app.route('/member/profile-modal/update', methods=['POST'])
+@login_required
+def member_profile_modal_update():
+    """Simpan perubahan profil anggota dari Google Account Hub Modal"""
+    user = get_current_user()
+    active_tab = request.form.get('active_tab', 'biodata')
+    
+    # 1. Biodata Pribadi
+    if 'name' in request.form:
+        user.name = request.form.get('name', user.name).strip()
+    if 'phone' in request.form:
+        user.phone = request.form.get('phone', user.phone).strip()
+    if 'birth_place' in request.form:
+        user.birth_place = request.form.get('birth_place', user.birth_place).strip()
+    if 'birth_date' in request.form:
+        user.birth_date = request.form.get('birth_date', user.birth_date).strip()
+    if 'address' in request.form:
+        user.address = request.form.get('address', user.address).strip()
+        
+    # 2. Riwayat Medis & Kontak Darurat (Keselamatan Alam Bebas)
+    if 'blood_type' in request.form:
+        user.blood_type = request.form.get('blood_type', user.blood_type).strip()
+    if 'medical_history' in request.form:
+        user.medical_history = request.form.get('medical_history', user.medical_history).strip()
+    if 'emergency_name' in request.form:
+        user.emergency_name = request.form.get('emergency_name', user.emergency_name).strip()
+    if 'emergency_relation' in request.form:
+        user.emergency_relation = request.form.get('emergency_relation', user.emergency_relation).strip()
+    if 'emergency_phone' in request.form:
+        user.emergency_phone = request.form.get('emergency_phone', user.emergency_phone).strip()
+        
+    # 3. Keamanan Akun & Sandi
+    new_password = request.form.get('new_password', '').strip()
+    confirm_password = request.form.get('confirm_password', '').strip()
+    if new_password:
+        if new_password == confirm_password:
+            user.password_hash = new_password
+        else:
+            return render_template('components/modals.html', modal_type='profile_hub', user=user, initial_tab=active_tab, error_msg='Konfirmasi kata sandi baru tidak cocok!')
+
+    db.session.commit()
+    return render_template('components/modals.html', modal_type='profile_hub', user=user, initial_tab=active_tab, saved_success=True)
+
 @app.route('/auth/logout')
 def logout():
     session.clear()
@@ -628,18 +716,31 @@ def admin_create_activity_modal():
 @login_required
 @admin_required
 def admin_create_activity():
-    title = request.form.get('title')
-    location = request.form.get('location')
-    activity_date = request.form.get('activity_date')
+    title = request.form.get('title', '').strip()
+    location = request.form.get('location', '').strip()
+    activity_date = request.form.get('activity_date', '').strip()
     difficulty = request.form.get('difficulty', 'Menengah')
-    quota = int(request.form.get('quota', 20))
-    image_url = request.form.get('image_url')
-    description = request.form.get('description', '')
+    try:
+        quota = int(request.form.get('quota', 20))
+    except (ValueError, TypeError):
+        quota = 20
+    description = request.form.get('description', '').strip()
+
+    image_file = request.files.get('image_file')
+    image_url_input = request.form.get('image_url', '').strip()
+    image_url = '/static/pics/cartoon/hero.jpg'
+    if image_file and image_file.filename:
+        safe_name = f"act_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'gallery', safe_name)
+        image_file.save(save_path)
+        image_url = f"/uploads/gallery/{safe_name}"
+    elif image_url_input:
+        image_url = image_url_input
 
     new_act = Activity(
-        title=title,
-        location=location,
-        activity_date=activity_date,
+        title=title or 'Ekspedisi Rimba GIMBAL',
+        location=location or 'Nusantara',
+        activity_date=activity_date or 'Jadwal Menyusul',
         difficulty=difficulty,
         quota=quota,
         image_url=image_url,
@@ -647,6 +748,67 @@ def admin_create_activity():
         is_open=True
     )
     db.session.add(new_act)
+    db.session.commit()
+    return admin_activities()
+
+@app.route('/admin/activity/edit-modal/<int:act_id>')
+@login_required
+@admin_required
+def admin_edit_activity_modal(act_id):
+    act = Activity.query.get_or_404(act_id)
+    return render_template('components/modals.html', modal_type='edit_activity', activity=act)
+
+@app.route('/admin/activity/edit/<int:act_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_edit_activity(act_id):
+    act = Activity.query.get_or_404(act_id)
+    title = request.form.get('title', '').strip()
+    if title:
+        act.title = title
+    act.location = request.form.get('location', act.location).strip()
+    act.activity_date = request.form.get('activity_date', act.activity_date).strip()
+    act.difficulty = request.form.get('difficulty', act.difficulty)
+    try:
+        act.quota = int(request.form.get('quota', act.quota))
+    except (ValueError, TypeError):
+        pass
+    act.description = request.form.get('description', act.description).strip()
+    act.is_open = bool(request.form.get('is_open'))
+    
+    image_file = request.files.get('image_file')
+    image_url_input = request.form.get('image_url', '').strip()
+    if image_file and image_file.filename:
+        safe_name = f"act_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'gallery', safe_name)
+        image_file.save(save_path)
+        act.image_url = f"/uploads/gallery/{safe_name}"
+    elif image_url_input:
+        act.image_url = image_url_input
+        
+    db.session.commit()
+    return admin_activities()
+
+@app.route('/admin/activity/delete/<int:act_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_activity(act_id):
+    act = Activity.query.get_or_404(act_id)
+    # Hapus partisipan terkait
+    ActivityParticipant.query.filter_by(activity_id=act.id).delete()
+    # Unlink foto galeri terkait
+    for g in GalleryItem.query.filter_by(activity_id=act.id).all():
+        g.activity_id = None
+    db.session.delete(act)
+    db.session.commit()
+    return admin_activities()
+
+@app.route('/admin/activity/toggle-status/<int:act_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_toggle_activity_status(act_id):
+    act = Activity.query.get_or_404(act_id)
+    act.is_open = not act.is_open
     db.session.commit()
     return admin_activities()
 
@@ -762,12 +924,21 @@ def admin_edit_gallery_modal(item_id):
 def admin_edit_gallery(item_id):
     """Simpan perubahan data foto galeri"""
     item = GalleryItem.query.get_or_404(item_id)
-    item.title = request.form.get('title', item.title).strip()
-    item.caption = request.form.get('caption', item.caption).strip()
-    item.category = request.form.get('category', item.category)
-    item.location = request.form.get('location', item.location).strip()
-    activity_id = request.form.get('activity_id', type=int)
-    item.activity_id = activity_id if activity_id and activity_id > 0 else None
+    title = request.form.get('title', '').strip()
+    if title:
+        item.title = title
+    item.caption = request.form.get('caption', '').strip()
+    category = request.form.get('category')
+    if category:
+        item.category = category
+    item.location = request.form.get('location', '').strip()
+    
+    activity_id_val = request.form.get('activity_id')
+    try:
+        item.activity_id = int(activity_id_val) if activity_id_val and int(activity_id_val) > 0 else None
+    except (ValueError, TypeError):
+        item.activity_id = None
+        
     item.is_pinned = bool(request.form.get('is_pinned'))
     
     image_file = request.files.get('image_file')
@@ -800,5 +971,6 @@ def admin_delete_gallery(item_id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    print(">>> GIMBAL WebApps running on http://127.0.0.1:8083")
-    app.run(host='0.0.0.0', port=8083, debug=True)
+    print(">>> GIMBAL WebApps running")
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)

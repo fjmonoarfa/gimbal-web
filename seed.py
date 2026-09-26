@@ -27,14 +27,15 @@ def seed_database():
                 nra_year=26,
                 nra_sequence=1,
                 phone='081234567890',
-                birth_place='Bandung',
+                birth_place='Gorontalo',
                 birth_date='1995-05-12',
-                address='Sekretariat KPAB GIMBAL, Jawa Barat',
+                address='Sekretariat KPAB GIMBAL, Kota Gorontalo, Provinsi Gorontalo',
                 blood_type='O',
                 medical_history='Tidak ada riwayat alergi',
                 emergency_name='Siti Rahmawati',
                 emergency_relation='Keluarga',
                 emergency_phone='081298765432',
+                password_hash='gimbal123',
                 avatar='https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
                 approved_at=datetime.utcnow()
             )
@@ -50,14 +51,15 @@ def seed_database():
                 nra_year=26,
                 nra_sequence=2,
                 phone='081345678901',
-                birth_place='Jakarta',
+                birth_place='Gorontalo',
                 birth_date='1998-08-17',
-                address='Jl. Rimba No. 12, Bogor',
+                address='Jl. Nani Wartabone No. 12, Kota Gorontalo',
                 blood_type='A',
                 medical_history='Alergi dingin ringan',
                 emergency_name='Dewi Lestari',
                 emergency_relation='Ibu',
                 emergency_phone='081398761234',
+                password_hash='gimbal123',
                 avatar='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
                 approved_at=datetime.utcnow()
             )
@@ -71,14 +73,15 @@ def seed_database():
                 status='pending',
                 nra=None,
                 phone='081567890123',
-                birth_place='Semarang',
+                birth_place='Limboto',
                 birth_date='2001-11-20',
-                address='Jl. Lereng Merbabu No. 45, Salatiga',
+                address='Jl. Trans Sulawesi, Limboto, Kabupaten Gorontalo',
                 blood_type='B',
                 medical_history='Pernah cedera engkel kanan (sudah pulih)',
                 emergency_name='Bambang Supriyanto',
                 emergency_relation='Ayah',
                 emergency_phone='081512345678',
+                password_hash='gimbal123',
                 avatar='https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80'
             )
             db.session.add(pending_user)

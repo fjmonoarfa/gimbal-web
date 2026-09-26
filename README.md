@@ -49,7 +49,7 @@ Aplikasi web modern untuk organisasi petualang alam bebas **KPAB GIMBAL**, diban
 ### 8. Konfigurasi Terpusat Lebar Konten & Warna Monotone Tahunan
 * **File Konfigurasi Utama**: [static/js/theme-config.js](file:///g:/My%20Drive/priv_web_apps/gimbal-web/static/js/theme-config.js) & [static/css/theme.css](file:///g:/My%20Drive/priv_web_apps/gimbal-web/static/css/theme.css)
 * **Pengaturan 1 Variabel untuk Lebar Konten**:
-  * Cukup ubah `GIMBAL_SITE_WIDTH = '85%';` untuk mengatur lebar seluruh halaman website (Landing, Portal Anggota, Admin, Header, Footer).
+  * Cukup ubah `GIMBAL_SITE_WIDTH = '70%';` untuk mengatur lebar seluruh halaman website (Landing, Portal Anggota, Admin, Header, Footer).
 * **Pengaturan 1 Variabel untuk Warna Monotone Tahunan**:
   * Cukup ubah `GIMBAL_THEME_COLOR = 'orange';` dengan preset tahunan:
     * `'orange'` (Oranye Resmi GIMBAL)
@@ -59,9 +59,12 @@ Aplikasi web modern untuk organisasi petualang alam bebas **KPAB GIMBAL**, diban
     * `'rose'` (Merah Terracotta Tebing)
     * `'teal'` (Toska Danau Gunung)
   * Seluruh komponen tombol, kartu KTA, badge, gradasi hero, dan aksen navigasi akan otomatis berubah seragam.
+* **Pengaturan 1 Variabel untuk Mode Tampilan (Bright & Dark Mode)**:
+  * Cukup ubah `GIMBAL_COLOR_MODE = 'bright';` (`'bright'` atau `'dark'`) sebagai default mode utama seluruh web.
+  * Dilengkapi tombol toggle interaktif (ikon Matahari / Bulan) di navigasi desktop & mobile pada semua bagian website.
 * **Section Hero Sinematik**:
   * Lebar gambar latar belakang membentang penuh 100% (*edge-to-edge*).
-  * Konten teks, judul, tombol, dan metrik di dalamnya otomatis mengikuti lebar kontainer 85% (`.site-container`).
+  * Konten teks, judul, tombol, dan metrik di dalamnya otomatis mengikuti lebar kontainer (`.site-container`).
 
 ### 9. Modul CRUD Galeri Ekspedisi (Pin-Down System)
 * **Pusat Kurasi Foto**: Mengumpulkan dokumentasi dari seluruh agenda ekspedisi dan perjalanan petualang.

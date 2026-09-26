@@ -146,13 +146,28 @@ class GimbalWebTestCase(unittest.TestCase):
         self.assertTrue(item.is_pinned)
         self.assertEqual(item.location, 'Lombok, NTB')
 
-        # 4. Toggle Pin
+        # 4. Edit Gallery Item and verify persistence in DB
+        resp_edit = self.client.post(f'/admin/gallery/edit/{item.id}', data={
+            'title': 'Puncak Gn. Rinjani 3726 MDPL (Updated)',
+            'caption': 'Caption baru yang telah diperbarui dan tersimpan.',
+            'category': 'Pendakian',
+            'location': 'Sembalun, Lombok Timur',
+            'is_pinned': '1'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_edit.status_code, 200)
+        db.session.refresh(item)
+        self.assertEqual(item.title, 'Puncak Gn. Rinjani 3726 MDPL (Updated)')
+        self.assertEqual(item.location, 'Sembalun, Lombok Timur')
+        self.assertEqual(item.caption, 'Caption baru yang telah diperbarui dan tersimpan.')
+        print(">>> Test 07b: Gallery Edit Form properly persists to DB OK")
+
+        # 5. Toggle Pin
         resp = self.client.post(f'/admin/gallery/toggle-pin/{item.id}', headers={'HX-Request': 'true'})
         self.assertEqual(resp.status_code, 200)
         db.session.refresh(item)
         self.assertFalse(item.is_pinned)
 
-        # 5. Delete Item
+        # 6. Delete Item
         resp = self.client.post(f'/admin/gallery/delete/{item.id}', headers={'HX-Request': 'true'})
         self.assertEqual(resp.status_code, 200)
         deleted = GalleryItem.query.get(item.id)
@@ -160,6 +175,129 @@ class GimbalWebTestCase(unittest.TestCase):
 
         print(">>> Test 07: Gallery CRUD & Expedition Pin-down 100% OK")
 
+    def test_08_activity_crud_and_edit(self):
+        with self.client.session_transaction() as sess:
+            admin = User.query.filter_by(email='admin@gimbal.org').first()
+            sess['user_id'] = admin.id
+
+        # 1. Create new Activity
+        from models import Activity
+        resp = self.client.post('/admin/activity/create', data={
+            'title': 'Ekspedisi Karst Maros',
+            'location': 'Maros, Sulawesi Selatan',
+            'activity_date': '10 - 15 Agustus 2026',
+            'difficulty': 'Menengah',
+            'quota': '15',
+            'description': 'Eksplorasi gua dan tebing karst purba Maros Pangkep.'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp.status_code, 200)
+
+        act = Activity.query.filter_by(title='Ekspedisi Karst Maros').first()
+        self.assertIsNotNone(act)
+        self.assertEqual(act.location, 'Maros, Sulawesi Selatan')
+        self.assertEqual(act.quota, 15)
+        self.assertTrue(act.is_open)
+
+        # 2. Open Edit Modal
+        resp_modal = self.client.get(f'/admin/activity/edit-modal/{act.id}')
+        self.assertEqual(resp_modal.status_code, 200)
+        self.assertIn(b'Edit Agenda Kegiatan & Ekspedisi', resp_modal.data)
+
+        # 3. Edit Activity and verify DB persistence
+        resp_save = self.client.post(f'/admin/activity/edit/{act.id}', data={
+            'title': 'Ekspedisi Speleologi Karst Maros 2026',
+            'location': 'Kawasan Karst Maros-Pangkep',
+            'activity_date': '12 - 18 Agustus 2026',
+            'difficulty': 'Ekstrem',
+            'quota': '12',
+            'description': 'Eksplorasi sistem hidrologi bawah tanah gua karst.',
+            'is_open': '1'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_save.status_code, 200)
+        db.session.refresh(act)
+        self.assertEqual(act.title, 'Ekspedisi Speleologi Karst Maros 2026')
+        self.assertEqual(act.location, 'Kawasan Karst Maros-Pangkep')
+        self.assertEqual(act.difficulty, 'Ekstrem')
+        self.assertEqual(act.quota, 12)
+
+        # 4. Toggle Status (Tutup / Buka trip)
+        resp_toggle = self.client.post(f'/admin/activity/toggle-status/{act.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_toggle.status_code, 200)
+        db.session.refresh(act)
+        self.assertFalse(act.is_open)
+
+        # 5. Delete Activity
+        resp_del = self.client.post(f'/admin/activity/delete/{act.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_del.status_code, 200)
+        self.assertIsNone(db.session.get(Activity, act.id))
+        print(">>> Test 08: Expedition Activity CRUD & Edit 100% OK")
+
+    def test_09_login_page_and_stylish_auth(self):
+        # 1. Halaman Login Penuh
+        resp = self.client.get('/login')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Akses Portal GIMBAL', resp.data)
+        self.assertIn(b'Gorontalo', resp.data)
+        self.assertIn(b'1-Klik Cepat', resp.data)
+        self.assertIn(b'Akun Google', resp.data)
+        self.assertIn(b'admin@gimbal.org', resp.data)
+
+        # 2. Login manual email & password
+        resp_login = self.client.post('/auth/login', data={
+            'email': 'budi.pendaki@gmail.com',
+            'password': 'gimbal123'
+        }, follow_redirects=False)
+        self.assertEqual(resp_login.status_code, 302)
+        self.assertIn('/member/dashboard', resp_login.headers['Location'])
+        print(">>> Test 09: Stylish Simple Monotone Login Page & Auth OK")
+
+    def test_10_google_profile_hub_modal(self):
+        with self.client.session_transaction() as sess:
+            budi = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+            sess['user_id'] = budi.id
+
+        # 1. Buka Modal Hub Akun Google
+        resp = self.client.get('/member/profile-modal')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'modal-profile-hub', resp.data)
+        self.assertIn(b'Biodata & Pribadi', resp.data)
+        self.assertIn(b'Riwayat Medis & Darurat', resp.data)
+        self.assertIn(b'Keamanan & Sandi', resp.data)
+        self.assertIn(b'Tampilan & Preferensi', resp.data)
+
+        # 2. Update Data Profil (Biodata, Medis, Kontak Darurat, Password) via Modal HTMX
+        resp_update = self.client.post('/member/profile-modal/update', data={
+            'active_tab': 'medis',
+            'name': 'Budi Santoso Petualang',
+            'phone': '081399887766',
+            'birth_place': 'Kota Gorontalo',
+            'birth_date': '1998-08-17',
+            'address': 'Jl. Nani Wartabone No. 45, Kota Gorontalo',
+            'blood_type': 'O',
+            'medical_history': 'Alergi dingin ringan, stamina prima',
+            'emergency_name': 'Dewi Lestari',
+            'emergency_relation': 'Ibu Kandung',
+            'emergency_phone': '081311223344',
+            'new_password': 'budi_baru_pass',
+            'confirm_password': 'budi_baru_pass'
+        })
+        self.assertEqual(resp_update.status_code, 200)
+        self.assertIn(b'Data profil berhasil diperbarui', resp_update.data)
+
+        # Verifikasi langsung perubahan di Database
+        db.session.refresh(budi)
+        self.assertEqual(budi.name, 'Budi Santoso Petualang')
+        self.assertEqual(budi.phone, '081399887766')
+        self.assertEqual(budi.blood_type, 'O')
+        self.assertEqual(budi.medical_history, 'Alergi dingin ringan, stamina prima')
+        self.assertEqual(budi.emergency_name, 'Dewi Lestari')
+        self.assertEqual(budi.emergency_relation, 'Ibu Kandung')
+        self.assertEqual(budi.emergency_phone, '081311223344')
+        self.assertEqual(budi.password_hash, 'budi_baru_pass')
+        self.assertEqual(budi.address, 'Jl. Nani Wartabone No. 45, Kota Gorontalo')
+        print(">>> Test 10: Google-Style Profile Hub Modal & Medical/Emergency persistence 100% OK")
+
 if __name__ == '__main__':
     unittest.main()
+
 

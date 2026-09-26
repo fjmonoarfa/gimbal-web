@@ -7,8 +7,8 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
     
     <!-- Central Theme & Site Width Configuration -->
-    <link rel="stylesheet" href="/static/css/theme.css">
-    <script src="/static/js/theme-config.js"></script>
+    <link rel="stylesheet" href="/static/css/theme.css?v=20260926_3">
+    <script src="/static/js/theme-config.js?v=20260926_3"></script>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
@@ -24,11 +24,22 @@
     <style>
         body { font-family: 'Poppins', sans-serif; }
         .kta-orange-gradient {
-            background: linear-gradient(135deg, #ea580c 0%, #c2410c 50%, #9a3412 100%);
+            background: linear-gradient(135deg, var(--brand-600, #ea580c) 0%, var(--brand-700, #c2410c) 50%, var(--brand-800, #9a3412) 100%);
         }
     </style>
 </head>
-<body class="bg-orange-50/40 min-h-screen flex items-center justify-center p-4 antialiased text-stone-800">
+<body class="bg-orange-50/40 min-h-screen flex items-center justify-center p-4 antialiased text-stone-800 relative">
+
+    <!-- Tombol Mode Terang/Gelap Floating -->
+    <div class="fixed top-4 right-4 z-50">
+        <button type="button" 
+                onclick="window.toggleGimbalColorMode()" 
+                class="gimbal-theme-toggle px-3 py-1.5 rounded-xl bg-white/90 dark:bg-stone-800/90 backdrop-blur border border-orange-200 shadow-md text-stone-700 hover:text-orange-600 flex items-center gap-2 text-xs font-bold"
+                title="Beralih Mode Tampilan (Terang / Gelap)">
+            <i class="theme-toggle-icon fas fa-moon text-stone-600"></i>
+            <span class="theme-toggle-text text-[11px]">Gelap</span>
+        </button>
+    </div>
 
     <div class="max-w-lg w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-orange-200">
         

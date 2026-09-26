@@ -32,6 +32,7 @@ class User(db.Model):
     emergency_name = db.Column(db.String(100), nullable=True)
     emergency_relation = db.Column(db.String(50), nullable=True)  # Orang Tua, Pasangan, Saudara
     emergency_phone = db.Column(db.String(30), nullable=True)
+    password_hash = db.Column(db.String(256), nullable=True)
     
     # Status approval
     rejection_reason = db.Column(db.Text, nullable=True)

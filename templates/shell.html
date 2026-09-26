@@ -48,59 +48,11 @@
                 <!-- Desktop Navigation Menu -->
                 <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
                     {% if current_user.is_admin %}
-                        <!-- ADMIN NAV -->
-                        <a href="/admin/dashboard" 
-                           class="nav-link px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'admin_dashboard' %}bg-orange-600 text-white font-semibold shadow-inner{% else %}text-orange-100 hover:bg-orange-800/60 hover:text-white{% endif %}"
-                           hx-get="/admin/dashboard" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                            <i class="fas fa-chart-line text-xs"></i>
-                            <span>Dashboard</span>
-                        </a>
-
-                        <a href="/admin/approvals" 
-                           class="nav-link relative px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'admin_approvals' %}bg-orange-600 text-white font-semibold shadow-inner{% else %}text-orange-100 hover:bg-orange-800/60 hover:text-white{% endif %}"
-                           hx-get="/admin/approvals" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                            <i class="fas fa-user-check text-xs"></i>
-                            <span>Verifikasi Anggota</span>
-                            {% if pending_count and pending_count > 0 %}
-                                <span class="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full animate-bounce">{{ pending_count }}</span>
-                            {% endif %}
-                        </a>
-
-                        <a href="/admin/members" 
-                           class="nav-link px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'admin_members' %}bg-orange-600 text-white font-semibold shadow-inner{% else %}text-orange-100 hover:bg-orange-800/60 hover:text-white{% endif %}"
-                           hx-get="/admin/members" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                            <i class="fas fa-users text-xs"></i>
-                            <span>Data Anggota</span>
-                        </a>
-
-                        <a href="/admin/dues" 
-                           class="nav-link px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'admin_dues' %}bg-orange-600 text-white font-semibold shadow-inner{% else %}text-orange-100 hover:bg-orange-800/60 hover:text-white{% endif %}"
-                           hx-get="/admin/dues" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                            <i class="fas fa-wallet text-xs"></i>
-                            <span>Iuran & Kas</span>
-                        </a>
-
-                        <a href="/admin/documents" 
-                           class="nav-link px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'admin_documents' %}bg-orange-600 text-white font-semibold shadow-inner{% else %}text-orange-100 hover:bg-orange-800/60 hover:text-white{% endif %}"
-                           hx-get="/admin/documents" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                            <i class="fas fa-file-contract text-xs"></i>
-                            <span>Dokumen Organisasi</span>
-                        </a>
-
-                        <a href="/admin/activities" 
-                           class="nav-link px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'admin_activities' %}bg-orange-600 text-white font-semibold shadow-inner{% else %}text-orange-100 hover:bg-orange-800/60 hover:text-white{% endif %}"
-                           hx-get="/admin/activities" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                            <i class="fas fa-mountain text-xs"></i>
-                            <span>Ekspedisi</span>
-                        </a>
-
-                        <a href="/admin/gallery" 
-                           class="nav-link px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'admin_gallery' %}bg-orange-600 text-white font-semibold shadow-inner{% else %}text-orange-100 hover:bg-orange-800/60 hover:text-white{% endif %}"
-                           hx-get="/admin/gallery" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                            <i class="fas fa-camera-retro text-xs"></i>
-                            <span>Galeri Ekspedisi</span>
-                        </a>
-
+                        <!-- ADMIN NAV: Sudah dipindahkan ke Pane Kiri (Sidebar) -->
+                        <div class="hidden lg:flex items-center gap-2 px-3 py-1 bg-brand-900/40 border border-brand-700/40 rounded-xl text-xs text-brand-100">
+                            <i class="fas fa-layer-group text-brand-400"></i>
+                            <span class="font-medium">Panel Kendali Admin & Operasional</span>
+                        </div>
                     {% else %}
                         <!-- MEMBER NAV -->
                         <a href="/member/dashboard" 
@@ -132,29 +84,33 @@
                             <i class="fas fa-book-open text-xs"></i>
                             <span>Arsip Dokumen</span>
                         </a>
-
-                        <a href="/member/profile" 
-                           class="nav-link px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'member_profile' %}bg-orange-600 text-white font-semibold shadow-inner{% else %}text-orange-100 hover:bg-orange-800/60 hover:text-white{% endif %}"
-                           hx-get="/member/profile" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                            <i class="fas fa-user-shield text-xs"></i>
-                            <span>Profil & Medis</span>
-                        </a>
                     {% endif %}
                 </nav>
 
                 <!-- Right Action Bar: User Info & Actions -->
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Tombol Ganti Tema Terang/Gelap -->
+                    <button type="button" 
+                            onclick="window.toggleGimbalColorMode()" 
+                            class="gimbal-theme-toggle px-2.5 py-1.5 rounded-lg border border-orange-700/60 bg-orange-900/50 hover:bg-orange-800 text-orange-100 hover:text-white transition flex items-center gap-1.5 text-xs shadow-sm"
+                            title="Beralih Mode Tampilan (Terang / Gelap)">
+                        <i class="theme-toggle-icon fas fa-moon text-amber-300"></i>
+                        <span class="theme-toggle-text text-[11px] font-semibold hidden sm:inline">Gelap</span>
+                    </button>
+
                     <!-- Website Utama Link -->
                     <a href="/" class="hidden lg:flex items-center gap-1 text-xs text-orange-200 hover:text-white bg-orange-900/60 px-2.5 py-1.5 rounded-lg border border-orange-700/50 transition">
                         <i class="fas fa-external-link-alt text-[10px]"></i>
                         <span>Web Publik</span>
                     </a>
 
-                    <!-- User Profile Dropdown Button -->
+                    <!-- User Profile Avatar & Google-Style Dropdown Menu -->
                     <div class="relative">
-                        <button @click="userDropdown = !userDropdown" class="flex items-center gap-2 p-1.5 rounded-xl hover:bg-orange-800/50 transition border border-transparent hover:border-orange-700">
-                            <img src="{{ current_user.avatar or 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80' }}" 
-                                 alt="Avatar" class="w-8 h-8 rounded-full object-cover border-2 border-orange-500">
+                        <button @click="userDropdown = !userDropdown" 
+                                class="flex items-center gap-2 p-1 rounded-2xl hover:bg-orange-800/50 transition border border-transparent hover:border-orange-700 focus:outline-none"
+                                title="Akun & Profil Petualang (Google Style)">
+                            <img src="{{ current_user.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}" 
+                                 alt="Avatar" class="w-8 h-8 rounded-full object-cover border-2 border-orange-500 shadow-sm">
                             <div class="text-left hidden sm:block">
                                 <p class="text-xs font-bold leading-tight truncate max-w-[120px]">{{ current_user.name }}</p>
                                 <p class="text-[10px] text-orange-200">{{ current_user.nra or current_user.email }}</p>
@@ -162,7 +118,7 @@
                             <i class="fas fa-chevron-down text-[10px] text-orange-300"></i>
                         </button>
 
-                        <!-- Dropdown Menu -->
+                        <!-- Google-Style Dropdown Menu -->
                         <div x-show="userDropdown" @click.away="userDropdown = false" x-cloak
                              x-transition:enter="transition ease-out duration-150"
                              x-transition:enter-start="opacity-0 scale-95"
@@ -170,18 +126,66 @@
                              x-transition:leave="transition ease-in duration-100"
                              x-transition:leave-start="opacity-100 scale-100"
                              x-transition:leave-end="opacity-0 scale-95"
-                             class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl py-2 text-stone-800 border border-orange-200 z-50">
+                             class="absolute right-0 mt-2 w-72 bg-white rounded-3xl shadow-2xl p-3 text-stone-800 border border-slate-200 z-50 space-y-2">
                             
-                            <div class="px-4 py-2 border-b border-orange-100">
-                                <p class="text-xs font-semibold text-stone-400">Masuk sebagai:</p>
-                                <p class="text-sm font-bold text-stone-900 truncate">{{ current_user.name }}</p>
-                                <p class="text-xs text-orange-600 font-mono font-bold">{{ current_user.nra or 'Calon Anggota' }}</p>
+                            <!-- Google Account Card Header -->
+                            <div class="p-3 bg-stone-50 rounded-2xl border border-stone-100 flex items-center gap-3">
+                                <img src="{{ current_user.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}" 
+                                     alt="Avatar" class="w-11 h-11 rounded-full object-cover border-2 border-orange-500 shadow-sm">
+                                <div class="overflow-hidden">
+                                    <p class="text-xs font-black text-stone-900 truncate">{{ current_user.name }}</p>
+                                    <p class="text-[11px] text-stone-500 font-mono truncate">{{ current_user.email }}</p>
+                                    <span class="inline-block px-2 py-0.5 mt-0.5 rounded-full text-[9px] font-bold font-mono bg-orange-100 text-orange-800">
+                                        {{ current_user.nra or 'Calon Anggota' }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Primary Action: Google "Kelola Akun / Profil Petualang" Button -->
+                            <button type="button" 
+                                    hx-get="/member/profile-modal" 
+                                    hx-target="#modal-container"
+                                    @click="userDropdown = false"
+                                    class="w-full py-2.5 px-3 bg-white hover:bg-orange-50 border border-stone-200 hover:border-orange-300 text-stone-800 font-bold text-xs rounded-2xl shadow-sm transition flex items-center justify-between">
+                                <span class="flex items-center gap-2">
+                                    <i class="fas fa-user-circle text-orange-600 text-sm"></i>
+                                    <span>Kelola Profil & Akun</span>
+                                </span>
+                                <i class="fas fa-chevron-right text-[10px] text-stone-400"></i>
+                            </button>
+
+                            <!-- Quick Tabs Shortcut List -->
+                            <div class="py-1 space-y-0.5 text-xs font-medium text-stone-700">
+                                <button type="button" 
+                                        hx-get="/member/profile-modal?tab=biodata" 
+                                        hx-target="#modal-container" 
+                                        @click="userDropdown = false"
+                                        class="w-full text-left px-3 py-2 rounded-xl hover:bg-stone-50 transition flex items-center gap-2.5">
+                                    <i class="fas fa-id-badge text-stone-500 w-4 text-center"></i>
+                                    <span>Biodata Pribadi</span>
+                                </button>
+                                <button type="button" 
+                                        hx-get="/member/profile-modal?tab=medis" 
+                                        hx-target="#modal-container" 
+                                        @click="userDropdown = false"
+                                        class="w-full text-left px-3 py-2 rounded-xl hover:bg-stone-50 transition flex items-center gap-2.5">
+                                    <i class="fas fa-heartbeat text-rose-500 w-4 text-center"></i>
+                                    <span>Riwayat Medis & Darurat</span>
+                                </button>
+                                <button type="button" 
+                                        hx-get="/member/profile-modal?tab=keamanan" 
+                                        hx-target="#modal-container" 
+                                        @click="userDropdown = false"
+                                        class="w-full text-left px-3 py-2 rounded-xl hover:bg-stone-50 transition flex items-center gap-2.5">
+                                    <i class="fas fa-shield-alt text-amber-500 w-4 text-center"></i>
+                                    <span>Keamanan & Password</span>
+                                </button>
                             </div>
 
                             <!-- Developer Quick Role Switch (For fast testing) -->
-                            <div class="px-4 py-2 bg-orange-50/70 border-b border-orange-100">
+                            <div class="p-2.5 bg-orange-50/70 rounded-2xl border border-orange-100">
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-orange-900 mb-1">Simulasi Peran (Dev Mode):</p>
-                                <div class="flex flex-col gap-1 text-xs">
+                                <div class="flex flex-col gap-1 text-[11px]">
                                     <a href="/auth/switch-role?email=admin@gimbal.org" class="text-orange-950 hover:underline flex items-center justify-between">
                                         <span>Pengurus Admin</span>
                                         {% if current_user.role == 'admin' %}<i class="fas fa-check text-orange-600"></i>{% endif %}
@@ -197,13 +201,16 @@
                                 </div>
                             </div>
 
-                            <a href="/member/profile" 
-                               class="block px-4 py-2 text-xs font-medium text-stone-700 hover:bg-orange-50 hover:text-orange-800"
-                               hx-get="/member/profile" hx-target="#main-content" hx-push-url="true" @click="userDropdown = false">
-                                <i class="fas fa-id-badge mr-2 text-orange-600"></i> Profil Lengkap
-                            </a>
+                            <button type="button" onclick="window.toggleGimbalColorMode()" 
+                                    class="gimbal-theme-toggle w-full text-left px-3 py-2 text-xs font-medium text-stone-700 hover:bg-stone-50 rounded-xl flex items-center justify-between transition">
+                                <span class="flex items-center gap-2">
+                                    <i class="theme-toggle-icon fas fa-moon text-orange-600 w-4 text-center"></i>
+                                    <span>Mode Tampilan</span>
+                                </span>
+                                <span class="theme-toggle-text text-[11px] font-bold text-orange-700">Gelap</span>
+                            </button>
 
-                            <a href="/auth/logout" class="block px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 border-t border-orange-100">
+                            <a href="/auth/logout" class="block w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl border-t border-stone-100 transition">
                                 <i class="fas fa-sign-out-alt mr-2"></i> Keluar (Logout)
                             </a>
                         </div>
@@ -266,11 +273,23 @@
                        hx-get="/member/documents" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
                         <i class="fas fa-book-open mr-2"></i> Dokumen Organisasi
                     </a>
-                    <a href="/member/profile" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
-                       hx-get="/member/profile" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
-                        <i class="fas fa-user-shield mr-2"></i> Profil & Medis
-                    </a>
+                    <button type="button" 
+                            hx-get="/member/profile-modal" 
+                            hx-target="#modal-container" 
+                            @click="mobileMenu = false"
+                            class="w-full text-left px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800 flex items-center">
+                        <i class="fas fa-user-circle mr-2 text-orange-400"></i> Akun & Profil Petualang
+                    </button>
                 {% endif %}
+                <div class="px-3 py-2 flex items-center justify-between border-t border-orange-800/60">
+                    <span class="text-xs text-orange-200 font-medium">Mode Tampilan:</span>
+                    <button type="button" 
+                            onclick="window.toggleGimbalColorMode()" 
+                            class="gimbal-theme-toggle px-3 py-1 rounded-lg border border-orange-700 bg-orange-900/80 text-orange-100 text-xs font-semibold flex items-center gap-2">
+                        <i class="theme-toggle-icon fas fa-moon text-amber-300"></i>
+                        <span class="theme-toggle-text">Gelap</span>
+                    </button>
+                </div>
                 <a href="/" class="block px-3 py-2 rounded-lg text-sm text-orange-300 hover:bg-orange-800">
                     <i class="fas fa-home mr-2"></i> Ke Halaman Publik
                 </a>
@@ -292,9 +311,173 @@
     </div>
 
     <!-- MAIN APP CONTENT (Targeted by hx-target="#main-content") -->
+    {% if current_user and current_user.is_admin %}
+    <!-- DUAL PANE LAYOUT: PANE KIRI (SIDEBAR MENU ADMIN) + PANE KANAN (#main-content) -->
+    <div class="site-container py-6 flex-1 flex flex-col md:flex-row gap-6 items-start">
+        
+        <!-- PANE KIRI: SIDEBAR MENU ADMIN RESMI GIMBAL -->
+        <aside class="w-full md:w-64 lg:w-72 flex-shrink-0 bg-white dark:bg-stone-900 border border-brand-200/80 dark:border-white/10 rounded-3xl p-4 shadow-sm space-y-4 md:sticky md:top-24">
+            
+            <!-- Header Pane Kiri -->
+            <div class="px-2 pb-3 border-b border-brand-100 dark:border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-2xl bg-brand-600 text-white flex items-center justify-center text-sm shadow-md">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xs font-black font-heading text-stone-900 dark:text-white uppercase tracking-wider">Menu Admin</h2>
+                        <p class="text-[10px] text-brand-600 dark:text-brand-400 font-bold">Pusat Kendali GIMBAL</p>
+                    </div>
+                </div>
+                {% if pending_count and pending_count > 0 %}
+                    <span class="px-2 py-0.5 bg-rose-500 text-white text-[10px] font-black rounded-full shadow-sm animate-pulse" title="{{ pending_count }} calon anggota menunggu verifikasi">
+                        {{ pending_count }} Baru
+                    </span>
+                {% endif %}
+            </div>
+
+            <!-- Daftar Menu Navigasi Pane Kiri -->
+            <nav class="space-y-1 text-xs font-semibold" id="admin-sidebar-nav">
+                
+                <!-- 1. Dashboard -->
+                <a href="/admin/dashboard" 
+                   data-page="admin_dashboard"
+                   class="admin-nav-item w-full px-3.5 py-2.5 rounded-2xl transition flex items-center justify-between {% if active_page == 'admin_dashboard' %}bg-brand-600 text-white font-bold shadow-md shadow-brand-600/20 active{% else %}text-stone-700 dark:text-stone-200 hover:bg-brand-50 dark:hover:bg-stone-800 hover:text-brand-600{% endif %}"
+                   hx-get="/admin/dashboard" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-chart-line text-sm w-4 text-center"></i>
+                        <span>Dashboard Utama</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-[9px] opacity-60"></i>
+                </a>
+
+                <!-- 2. Verifikasi Anggota (with Badge) -->
+                <a href="/admin/approvals" 
+                   data-page="admin_approvals"
+                   class="admin-nav-item w-full px-3.5 py-2.5 rounded-2xl transition flex items-center justify-between {% if active_page == 'admin_approvals' %}bg-brand-600 text-white font-bold shadow-md shadow-brand-600/20 active{% else %}text-stone-700 dark:text-stone-200 hover:bg-brand-50 dark:hover:bg-stone-800 hover:text-brand-600{% endif %}"
+                   hx-get="/admin/approvals" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-user-check text-sm w-4 text-center"></i>
+                        <span>Verifikasi Anggota</span>
+                    </div>
+                    {% if pending_count and pending_count > 0 %}
+                        <span class="px-2 py-0.5 bg-rose-500 text-white text-[10px] font-bold rounded-full shadow-sm">{{ pending_count }}</span>
+                    {% else %}
+                        <i class="fas fa-chevron-right text-[9px] opacity-60"></i>
+                    {% endif %}
+                </a>
+
+                <!-- 3. Data Anggota -->
+                <a href="/admin/members" 
+                   data-page="admin_members"
+                   class="admin-nav-item w-full px-3.5 py-2.5 rounded-2xl transition flex items-center justify-between {% if active_page == 'admin_members' %}bg-brand-600 text-white font-bold shadow-md shadow-brand-600/20 active{% else %}text-stone-700 dark:text-stone-200 hover:bg-brand-50 dark:hover:bg-stone-800 hover:text-brand-600{% endif %}"
+                   hx-get="/admin/members" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-users text-sm w-4 text-center"></i>
+                        <span>Data Anggota</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-[9px] opacity-60"></i>
+                </a>
+
+                <!-- 4. Iuran & Kas -->
+                <a href="/admin/dues" 
+                   data-page="admin_dues"
+                   class="admin-nav-item w-full px-3.5 py-2.5 rounded-2xl transition flex items-center justify-between {% if active_page == 'admin_dues' %}bg-brand-600 text-white font-bold shadow-md shadow-brand-600/20 active{% else %}text-stone-700 dark:text-stone-200 hover:bg-brand-50 dark:hover:bg-stone-800 hover:text-brand-600{% endif %}"
+                   hx-get="/admin/dues" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-wallet text-sm w-4 text-center"></i>
+                        <span>Iuran & Kas</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-[9px] opacity-60"></i>
+                </a>
+
+                <!-- 5. Dokumen Organisasi -->
+                <a href="/admin/documents" 
+                   data-page="admin_documents"
+                   class="admin-nav-item w-full px-3.5 py-2.5 rounded-2xl transition flex items-center justify-between {% if active_page == 'admin_documents' %}bg-brand-600 text-white font-bold shadow-md shadow-brand-600/20 active{% else %}text-stone-700 dark:text-stone-200 hover:bg-brand-50 dark:hover:bg-stone-800 hover:text-brand-600{% endif %}"
+                   hx-get="/admin/documents" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-file-contract text-sm w-4 text-center"></i>
+                        <span>Dokumen Resmi</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-[9px] opacity-60"></i>
+                </a>
+
+                <!-- 6. Ekspedisi -->
+                <a href="/admin/activities" 
+                   data-page="admin_activities"
+                   class="admin-nav-item w-full px-3.5 py-2.5 rounded-2xl transition flex items-center justify-between {% if active_page == 'admin_activities' %}bg-brand-600 text-white font-bold shadow-md shadow-brand-600/20 active{% else %}text-stone-700 dark:text-stone-200 hover:bg-brand-50 dark:hover:bg-stone-800 hover:text-brand-600{% endif %}"
+                   hx-get="/admin/activities" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-mountain text-sm w-4 text-center"></i>
+                        <span>Agenda Ekspedisi</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-[9px] opacity-60"></i>
+                </a>
+
+                <!-- 7. Galeri Ekspedisi -->
+                <a href="/admin/gallery" 
+                   data-page="admin_gallery"
+                   class="admin-nav-item w-full px-3.5 py-2.5 rounded-2xl transition flex items-center justify-between {% if active_page == 'admin_gallery' %}bg-brand-600 text-white font-bold shadow-md shadow-brand-600/20 active{% else %}text-stone-700 dark:text-stone-200 hover:bg-brand-50 dark:hover:bg-stone-800 hover:text-brand-600{% endif %}"
+                   hx-get="/admin/gallery" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-camera-retro text-sm w-4 text-center"></i>
+                        <span>Galeri Ekspedisi</span>
+                    </div>
+                    <i class="fas fa-chevron-right text-[9px] opacity-60"></i>
+                </a>
+
+            </nav>
+
+            <!-- Bottom Widget & Quick Actions -->
+            <div class="pt-3 border-t border-brand-100 dark:border-white/10 space-y-2">
+                <div class="p-3 bg-brand-50/50 dark:bg-stone-800/50 rounded-2xl border border-brand-100 dark:border-white/5 space-y-1 text-[11px]">
+                    <div class="flex items-center justify-between text-stone-700 dark:text-stone-300 font-bold">
+                        <span class="flex items-center gap-1.5"><i class="fas fa-server text-brand-600"></i> Mode Sistem</span>
+                        <span class="text-[10px] px-1.5 py-0.2 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded font-mono font-bold">Online</span>
+                    </div>
+                    <p class="text-[10px] text-stone-500 dark:text-stone-400">Flask + HTMX Dual-Layer</p>
+                </div>
+                
+                <a href="/" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition">
+                    <span class="flex items-center gap-2"><i class="fas fa-external-link-alt text-[11px] text-brand-600"></i> Beranda Publik</span>
+                    <i class="fas fa-chevron-right text-[9px] text-stone-400"></i>
+                </a>
+            </div>
+
+        </aside>
+
+        <!-- PANE KANAN: KONTEN UTAMA ADMIN (Targeted by hx-target="#main-content") -->
+        <main id="main-content" class="flex-1 min-w-0 w-full">
+            {{ active_macro_content | safe }}
+        </main>
+
+    </div>
+    {% else %}
+    <!-- MEMBER LAYOUT: STANDARD TOP-NAV CONTAINER -->
     <main id="main-content" class="flex-1 site-container py-6">
         {{ active_macro_content | safe }}
     </main>
+    {% endif %}
+
+    <script>
+        document.addEventListener('htmx:afterSwap', function (evt) {
+            if (evt.detail.target && evt.detail.target.id === 'main-content') {
+                const path = window.location.pathname;
+                const activeHeader = (evt.detail.xhr && evt.detail.xhr.getResponseHeader('X-Active-Page')) || '';
+                document.querySelectorAll('#admin-sidebar-nav .admin-nav-item').forEach(function (link) {
+                    const href = link.getAttribute('href');
+                    const page = link.getAttribute('data-page');
+                    const isActive = (href === path) || (activeHeader && page && activeHeader.includes(page));
+                    if (isActive) {
+                        link.className = 'admin-nav-item w-full px-3.5 py-2.5 rounded-2xl transition flex items-center justify-between bg-brand-600 text-white font-bold shadow-md shadow-brand-600/20 active';
+                    } else {
+                        link.className = 'admin-nav-item w-full px-3.5 py-2.5 rounded-2xl transition flex items-center justify-between text-stone-700 dark:text-stone-200 hover:bg-brand-50 dark:hover:bg-stone-800 hover:text-brand-600';
+                    }
+                });
+            }
+        });
+    </script>
 
     <!-- Dynamic Modal Container (Targeted by hx-target="#modal-container") -->
     <div id="modal-container"></div>

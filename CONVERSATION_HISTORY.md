@@ -35,6 +35,14 @@
 | 11 | *“dimana crud atau pengaturan foto2 galery?”* | Menjelaskan struktur file foto fisik (`assets/pics/galeri/`), metadata JSON, tabel model `GalleryItem`, dan mengidentifikasi belum tersedianya modul CRUD di admin. |
 | 12 | *“yaa, galeri adalah kumpulan pin-down dari foto2 dari semua ekspedisi”* | Mengembangkan modul CRUD lengkap Galeri Ekspedisi (`/admin/gallery`): integrasi relasi ke agenda ekspedisi, upload gambar fisik/URL, tombol cepat *Toggle Pin-down*, filter status, dan penyesuaian landing page. |
 | 13 | *“simpan semua referensi percakapan”* | Membuat dokumentasi komprehensif `CONVERSATION_HISTORY.md`, memperbarui `README.md`, dan melakukan push ke repositori GitHub. |
+| 14 | *“kenapa merubah bagian ini: --site-content-width: 70%; di theme.css tidak mempengaruhi lebar konten landing page?”* | Menjelaskan hierarki CSS di mana `theme-config.js` menimpa nilai via inline style DOM `root.style.setProperty`, dan mengarahkan pengaturan ke `GIMBAL_SITE_WIDTH`. |
+| 15 | *“buat supaya ada dark dan bright mode untuk semua bagian, default mode bright dari 1 variabel utama”* | Mengimplementasikan sistem Dark & Bright Mode terintegrasi penuh yang dikontrol dari 1 variabel utama `GIMBAL_COLOR_MODE = 'bright'` di `theme-config.js`, Tailwind `darkMode: 'class'`, token CSS dinamis di `theme.css`, dan tombol toggle sun/moon di semua navigasi & halaman. |
+| 16 | *“tob nav bar hilangkan tombol login masuk, cukup menggunakan tombol login dibagian footer, untuk tombol dark/bright buat ada di paling kanan top nav bar”* | Menghapus tombol login di navbar atas, memindahkan tombol toggle Dark/Bright mode ke posisi paling kanan navbar, serta memperkuat tombol login portal di bagian footer. |
+| 17 | *“bagian section hero terlalu tinggi sehingga banyak ruang kosong, dan text masih ada yang tidak terbaca karena sama dengan latar warnanya”* | Mengompres padding & min-height hero section agar proporsional, serta memperbaiki kontras teks (warna putih-stone tegas, drop-shadow tajam, dan penyempurnaan gradient overlay) sehingga 100% terbaca jelas. |
+| 18 | *“kenapa pergantian warna tema semua text masih tetap warna oranye?”* | Mengidentifikasi bahwa Tailwind CDN Play parser gagal meng-override palette default `orange` karena adanya key `rgb*` non-standar, lalu mengimplementasikan Dynamic CSS Theme Generator di `theme-config.js` yang secara otomatis menyuntikkan override instan untuk seluruh kelas `text-orange-*`, `bg-orange-*`, dan `border-orange-*` sesuai preset tahunan aktif (`rose`, `emerald`, `blue`, dsb). |
+| 19 | *“bagian ini masi fix warna tidak sesuai tema (melampirkan screenshot section CTA & Footer)”* | Memperbaiki latar belakang section CTA (`.cta-theme-section`) dan Footer (`.footer-theme-bg`) yang sebelumnya menggunakan fallback warna oranye/cokelat tetap, mengintegrasikannya dengan injeksi CSS dinamis preset warna aktif di `theme-config.js` (dengan radial glow monotone aktif), mengubah seluruh tombol pendaftaran & login portal menggunakan `.btn-brand-primary` adaptif, menambahkan override otomatis untuk gradient stops Tailwind (`from-orange-*`, `to-orange-*`), serta menambahkan query string cache buster (`?v=20260926_3`) pada tag CSS & JS agar perubahan langsung aktif seketika di browser tanpa tersangkut cache lama. |
+| 20 | *“untuk admin dash buat supaya menu di pane kiri”* | Mengubah arsitektur navigasi admin dari top header horizontal menjadi Left Pane Sidebar (`<aside>`) di sisi kiri halaman, merapikan top header admin agar tidak penuh sesak, mengintegrasikan 7 menu utama admin dengan badge penghitung verifikasi dinamis, menambahkan sinkronisasi status aktif otomatis via listener `htmx:afterSwap`, serta mengoptimalkan lebar responsif mobile via media query di `theme.css`. |
+| 21 | *“perbaiki lagi: edit form galeri belum tersimpan di database, dan bagian agenda expedisi belum bisa diedit”* | (1) Memperbaiki form modal edit galeri yang gagal menyimpan perubahan karena pembersihan prematur elemen form DOM oleh atribut `onsubmit` sebelum serialisasi HTMX selesai, menggantinya dengan listener siklus hidup `hx-on::after-request`, serta memperkuat penanganan form di backend `admin_edit_gallery()`. (2) Mengembangkan fungsionalitas CRUD lengkap untuk Agenda Ekspedisi: endpoint modal edit (`/admin/activity/edit-modal/<id>`), endpoint simpan edit (`/admin/activity/edit/<id>`), endpoint hapus (`/admin/activity/delete/<id>`), endpoint toggle status pendaftaran (`/admin/activity/toggle-status/<id>`), modal antarmuka `edit_activity`, tombol aksi Edit/Status/Hapus pada kartu ekspedisi di `admin_pages.html`, serta pengujian otomatis di `test_app.py`. |
 
 ---
 
@@ -82,6 +90,18 @@ Preset warna yang tersedia:
 - `'amber'` (Kuning Emas Fajar)
 - `'rose'` (Merah Karang / Panjat Tebing)
 - `'teal'` (Toska Danau Vulkanik)
+
+### C. Pengaturan Mode Tampilan Terang & Gelap (Bright & Dark Mode)
+Sistem tampilan terang dan gelap dikendalikan secara sentral melalui 1 variabel utama di [`static/js/theme-config.js`](file:///g:/My%20Drive/priv_web_apps/gimbal-web/static/js/theme-config.js):
+```javascript
+const GIMBAL_COLOR_MODE = 'bright'; // Pilihan: 'bright' (default) atau 'dark'
+```
+- **Hierarki & Sinkronisasi**:
+  - Mengonfigurasi `darkMode: 'class'` pada Tailwind CSS CDN.
+  - Memberikan transisi warna halus (`transition: background-color 0.25s, color 0.25s`).
+  - Menyediakan token warna CSS dinamis (`--color-bg-body`, `--color-bg-card`, `--color-border`) dan override komponen otomatis di [`static/css/theme.css`](file:///g:/My%20Drive/priv_web_apps/gimbal-web/static/css/theme.css) sehingga seluruh halaman (Landing, Portal Anggota, Admin, Modals, KTA Verification) langsung kompatibel tanpa merusak warna kontras.
+  - Tombol toggle Sun/Moon (`.gimbal-theme-toggle`) interaktif tersedia di Header Desktop & Mobile pada Landing Page, Shell Portal Anggota/Admin, serta halaman Validasi KTA Publik.
+  - Pilihan pengguna disimpan di `localStorage` dan tersinkronisasi otomatis saat perpindahan halaman HTMX (`htmx:afterSwap`).
 
 ---
 
@@ -224,3 +244,31 @@ File pengujian: [`test_app.py`](file:///g:/My%20Drive/priv_web_apps/gimbal-web/t
   1. `028dad6`: *“feat: inisialisasi aplikasi web KPAB GIMBAL dengan arsitektur Dual-Layer HTMX, KTA digital R-nn-YY, dan tema terpusat”*
   2. `520c1b2`: *“feat: perbarui visual landing page dengan ilustrasi cartoonized adventure dan pengurus 3D”*
   3. `5531b0a`: *“feat: tambahkan modul CRUD Galeri Ekspedisi dengan fitur pin-down kurasi foto landing page”*
+  4. `bcf7a75`: *“feat: hadirkan Google-style Account Hub pada avatar profil anggota dan redesign total portal login stylish simpel monotone”*
+
+---
+
+## 11. Pembaruan Fitur: Google-Style Profile Hub & Stylish Monotone Login (Provinsi Gorontalo)
+
+### A. Pusat Profil Anggota Google-Style (`modal_type == 'profile_hub'`)
+- **Pembersihan Navigasi Utama**: Menu navigasi atas untuk anggota kini bersih dan berfokus pada layanan organisasi (`Beranda Anggota`, `KTA Digital`, `Iuran Saya`, `Arsip Dokumen`), tanpa tautan standalone *"Profil & Medis"* yang membebani navigasi.
+- **Icon Profil Avatar (Top-Right)**:
+  - Diklik menampilkan Google-style account dropdown dengan foto avatar, nama, email, NRA chip, dan tombol utama **"Kelola Profil & Akun"**.
+  - Menyediakan shortcut langsung ke tab spesifik:
+    1. 👤 **Biodata & Pribadi**: Nama lengkap, WhatsApp, Tempat & Tanggal Lahir, Alamat Domisili Provinsi Gorontalo.
+    2. 🏥 **Riwayat Medis & Kontak Darurat (Safety Crucial)**: Golongan darah (A, B, AB, O), riwayat penyakit / alergi / cedera lapangan, nama keluarga kontak darurat, hubungan, dan nomor telepon 24 jam.
+    3. 🔒 **Keamanan & Sandi**: Indikator status Google SSO, form ubah kata sandi / PIN untuk login manual.
+    4. 🎨 **Tampilan & Preferensi**: Mode kontras Terang / Gelap (Bright / Dark Mode) dan info afiliasi basecamp Gorontalo.
+- **Reaktivitas HTMX**: Form profil di-submit via HTMX ke `/member/profile-modal/update`, menyimpan data langsung ke SQLite tanpa reload halaman dan menampilkan badge konfirmasi sukses.
+
+### B. Redesign Total Halaman & Modal Login: Stylish Simpel Monotone
+- **Halaman Login Penuh (`/login`) & Popup Modal (`#auth-modal`)**:
+  - Tampilan modern, minimalis, dan elegan dengan monotone glassmorphism card.
+  - Tab 1: **1-Klik Cepat (Simulasi Peran)** dengan kartu interaktif untuk *Pengurus Admin*, *Anggota Aktif*, dan *Calon Anggota Pending*.
+  - Tab 2: **Akun Google (OAuth Resmi)** dengan tombol Google SSO.
+  - Tab 3: **Email & Sandi Manual** bagi pendaftar atau anggota yang menggunakan password.
+  - Tombol switcher mode gelap/terang terintegrasi langsung di navbar login.
+
+### C. Penyesuaian Identitas Wilayah Organisasi ke Provinsi Gorontalo
+- Seluruh referensi basecamp pusat, kesekretariatan, domisili anggota, dan lokasi ekspedisi telah diselaraskan ke **Provinsi Gorontalo** (Kota Gorontalo, Kabupaten Gorontalo/Limboto).
+

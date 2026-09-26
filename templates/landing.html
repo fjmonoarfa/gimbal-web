@@ -8,8 +8,8 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
 
     <!-- Central Theme & Site Width Configuration -->
-    <link rel="stylesheet" href="/static/css/theme.css">
-    <script src="/static/js/theme-config.js"></script>
+    <link rel="stylesheet" href="/static/css/theme.css?v=20260926_3">
+    <script src="/static/js/theme-config.js?v=20260926_3"></script>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
@@ -43,11 +43,11 @@
 <body class="bg-brand-50/30 text-stone-800 antialiased selection:bg-brand-600 selection:text-white">
 
     <!-- 1. TOP NAVBAR RESMI GIMBAL (MONOTONE ORANYE) -->
-    <nav class="fixed top-0 left-0 w-full z-40 bg-white/95 backdrop-blur-md border-b border-brand-200/80 shadow-sm transition">
+    <nav class="fixed top-0 left-0 w-full z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-brand-200/80 dark:border-white/10 shadow-sm transition">
         <div class="site-container">
             <div class="flex items-center justify-between h-20">
                 
-                <!-- Logo & Identitas Organisasi -->
+                <!-- Kiri: Logo & Identitas Organisasi -->
                 <a href="/" class="flex items-center gap-3 group">
                     <img src="/assets/logo.png" alt="Logo KPAB GIMBAL" class="h-12 w-12 object-contain drop-shadow group-hover:scale-105 transition">
                     <div>
@@ -61,8 +61,8 @@
                     </div>
                 </a>
 
-                <!-- Navigasi Menu Desktop -->
-                <div class="hidden lg:flex items-center gap-7 text-xs font-bold text-stone-700 uppercase tracking-wider">
+                <!-- Tengah: Navigasi Menu Desktop -->
+                <div class="hidden lg:flex items-center gap-7 text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider">
                     <a href="#tentang" class="hover:text-brand-600 transition">Tentang Kami</a>
                     <a href="#divisi" class="hover:text-brand-600 transition">Divisi Minat</a>
                     <a href="#ekspedisi" class="hover:text-brand-600 transition">Ekspedisi</a>
@@ -72,27 +72,29 @@
                     <a href="#pengurus" class="hover:text-brand-600 transition">Pengurus</a>
                 </div>
 
-                <!-- CTA Masuk / Portal Anggota -->
-                <div class="hidden md:flex items-center gap-3">
-                    {% if current_user %}
-                        <a href="{{ '/admin/dashboard' if current_user.is_admin else '/member/dashboard' }}" 
-                           class="px-5 py-2.5 bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2">
-                            <i class="fas fa-compass text-brand-200"></i>
-                            <span>Portal {{ 'Admin' if current_user.is_admin else 'Anggota' }} ({{ current_user.name.split()[0] }})</span>
-                        </a>
-                    {% else %}
-                        <button onclick="openAuthModal()" 
-                                class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 transform hover:-translate-y-0.5">
-                            <i class="fab fa-google"></i>
-                            <span>Masuk / Daftar Anggota</span>
-                        </button>
-                    {% endif %}
+                <!-- Kanan: Tombol Dark/Bright Mode di Paling Kanan Top Navbar (Desktop) -->
+                <div class="hidden lg:flex items-center">
+                    <button type="button" 
+                            onclick="window.toggleGimbalColorMode()" 
+                            class="gimbal-theme-toggle px-3.5 py-2 rounded-xl border border-stone-200 dark:border-white/15 bg-stone-100/90 dark:bg-stone-800 text-stone-700 dark:text-stone-200 hover:border-brand-500 transition flex items-center gap-2 text-xs font-bold shadow-sm"
+                            title="Beralih Mode Tampilan (Terang / Gelap)">
+                        <i class="theme-toggle-icon fas fa-moon text-stone-600"></i>
+                        <span class="theme-toggle-text text-[11px]">Gelap</span>
+                    </button>
                 </div>
 
-                <!-- Tombol Menu Mobile -->
-                <button onclick="toggleMobileNav()" class="lg:hidden text-brand-900 hover:text-brand-600 p-2 text-xl focus:outline-none">
-                    <i class="fas fa-bars" id="mobile-menu-icon"></i>
-                </button>
+                <!-- Kanan Mobile: Toggle Tema & Hamburger Menu -->
+                <div class="flex items-center gap-2 lg:hidden">
+                    <button type="button" 
+                            onclick="window.toggleGimbalColorMode()" 
+                            class="gimbal-theme-toggle p-2 rounded-lg border border-stone-200 dark:border-white/15 bg-stone-100/90 dark:bg-stone-800 text-stone-700 dark:text-stone-200 flex items-center justify-center text-sm shadow-sm"
+                            title="Beralih Mode Tampilan">
+                        <i class="theme-toggle-icon fas fa-moon text-stone-600"></i>
+                    </button>
+                    <button onclick="toggleMobileNav()" class="text-brand-900 hover:text-brand-600 p-2 text-xl focus:outline-none">
+                        <i class="fas fa-bars" id="mobile-menu-icon"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Menu Dropdown Mobile -->
@@ -104,85 +106,63 @@
                 <a href="#kode-etik" onclick="toggleMobileNav()" class="block py-2 hover:text-brand-600">Kode Etik Pecinta Alam</a>
                 <a href="#alur-anggota" onclick="toggleMobileNav()" class="block py-2 hover:text-brand-600">Alur Keanggotaan R-nn-YY</a>
                 <a href="#pengurus" onclick="toggleMobileNav()" class="block py-2 hover:text-brand-600">Pengurus GIMBAL</a>
-                <div class="pt-3 border-t border-brand-100">
-                    {% if current_user %}
-                        <a href="{{ '/admin/dashboard' if current_user.is_admin else '/member/dashboard' }}" 
-                           class="block w-full py-2.5 text-center bg-brand-700 text-white font-bold rounded-xl text-xs">
-                            Buka Portal {{ 'Admin' if current_user.is_admin else 'Anggota' }}
-                        </a>
-                    {% else %}
-                        <button onclick="openAuthModal(); toggleMobileNav()" 
-                                class="w-full py-2.5 bg-brand-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2">
-                            <i class="fab fa-google"></i>
-                            <span>Masuk / Daftar Akun Google</span>
-                        </button>
-                    {% endif %}
-                </div>
             </div>
         </div>
     </nav>
 
 
-    <!-- 2. HERO SECTION SINEMATIK (LEBAR GAMBAR 100%, TEKS KONTEN 85% DARI LEBAR LAYAR) -->
-    <header class="hero-overlay w-full pt-36 pb-24 sm:pt-44 sm:pb-32 text-white relative min-h-[90vh] flex items-center">
+    <!-- 2. HERO SECTION SINEMATIK (COMPACT & PROPORTIONAL) -->
+    <header class="hero-overlay w-full pt-28 pb-16 sm:pt-32 sm:pb-20 text-white relative flex items-center">
         <div class="site-container relative z-10 w-full">
-            <div class="max-w-3xl space-y-6">
+            <div class="max-w-3xl space-y-4 sm:space-y-5">
                 
-                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-950/80 border border-brand-500/50 text-brand-300 text-xs font-bold tracking-widest uppercase backdrop-blur-md shadow-lg">
-                    <i class="fas fa-mountain text-brand-400"></i> Kelompok Petualang Alam Bebas
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-950/80 border border-orange-500/60 text-orange-300 text-xs font-bold tracking-widest uppercase backdrop-blur-md shadow-lg">
+                    <i class="fas fa-mountain text-orange-400"></i> Kelompok Petualang Alam Bebas
                 </div>
 
-                <h1 class="text-4xl sm:text-6xl font-black font-heading leading-tight tracking-tight text-white drop-shadow-md">
+                <h1 class="text-3xl sm:text-5xl font-black font-heading leading-tight tracking-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
                     Menjelajahi Rimba, <br>
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-amber-300 to-brand-200">
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
                         Menempa Karakter di Alam
                     </span>
                 </h1>
 
-                <p class="text-brand-100/90 text-sm sm:text-base leading-relaxed max-w-2xl font-light">
+                <p class="text-stone-100 text-sm sm:text-base leading-relaxed max-w-2xl font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
                     Wadah pembinaan generasi muda pecinta alam nusantara berlandaskan Kode Etik Pecinta Alam Indonesia. Mengasah ketahanan fisik, navigasi rimba belantara, konservasi lingkungan hidup, dan persaudaraan tanpa batas di puncak-puncak Indonesia.
                 </p>
 
                 <!-- Dual Action Button -->
-                <div class="flex flex-wrap items-center gap-4 pt-3">
-                    {% if current_user %}
-                        <a href="{{ '/admin/dashboard' if current_user.is_admin else '/member/dashboard' }}" 
-                           class="px-8 py-3.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-xl transition transform hover:-translate-y-0.5 flex items-center gap-2">
-                            <i class="fas fa-compass"></i>
-                            <span>Buka Dashboard Saya</span>
-                        </a>
-                    {% else %}
-                        <button onclick="openAuthModal()" 
-                                class="px-8 py-3.5 bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-2xl transition transform hover:-translate-y-0.5 flex items-center gap-2">
-                            <i class="fab fa-google"></i>
-                            <span>Daftar Calon Anggota (Google)</span>
-                        </button>
-                    {% endif %}
-
+                <div class="flex flex-wrap items-center gap-3.5 pt-1">
                     <a href="#ekspedisi" 
-                       class="px-8 py-3.5 bg-brand-950/60 hover:bg-brand-900/60 text-brand-100 font-bold text-xs sm:text-sm rounded-2xl border border-brand-500/40 backdrop-blur-md transition flex items-center gap-2">
-                        <i class="fas fa-hiking text-brand-400"></i>
+                       class="px-7 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xl transition transform hover:-translate-y-0.5 flex items-center gap-2">
+                        <i class="fas fa-hiking"></i>
                         <span>Agenda Ekspedisi</span>
+                    </a>
+
+                    <a href="#tentang" 
+                       class="px-7 py-3 bg-stone-900/70 hover:bg-stone-900/90 text-stone-100 hover:text-white font-bold text-xs sm:text-sm rounded-xl border border-white/30 backdrop-blur-md transition flex items-center gap-2 shadow-lg">
+                        <i class="fas fa-compass text-amber-400"></i>
+                        <span>Tentang GIMBAL</span>
                     </a>
                 </div>
 
                 <!-- 4 Metrik Kepercayaan -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-8 border-t border-brand-800/40">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5 border-t border-white/20">
                     <div>
-                        <p class="text-3xl font-black font-mono text-brand-400">{{ active_members_count }}+</p>
-                        <p class="text-xs text-brand-200/80 font-medium mt-0.5">Anggota Resmi (NRA)</p>
+                        <p class="text-2xl sm:text-3xl font-black font-mono text-orange-400 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">{{ active_members_count }}+</p>
+                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">Anggota Resmi (NRA)</p>
                     </div>
                     <div>
-                        <p class="text-3xl font-black font-mono text-amber-300">{{ activities|length }}+</p>
-                        <p class="text-xs text-brand-200/80 font-medium mt-0.5">Agenda Ekspedisi</p>
+                        <p class="text-2xl sm:text-3xl font-black font-mono text-amber-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">{{ activities|length }}+</p>
+                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">Agenda Ekspedisi</p>
                     </div>
                     <div>
-                        <p class="text-3xl font-black font-mono text-brand-300">100%</p>
-                        <p class="text-xs text-brand-200/80 font-medium mt-0.5">Leave No Trace</p>
+                        <p class="text-2xl sm:text-3xl font-black font-mono text-emerald-400 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">100%</p>
+                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">Leave No Trace</p>
                     </div>
                     <div>
-                        <p class="text-3xl font-black font-mono text-amber-400">QR Valid</p>
-                        <p class="text-xs text-brand-200/80 font-medium mt-0.5">KTA Digital Resmi</p>
+                        <p class="text-2xl sm:text-3xl font-black font-mono text-amber-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">QR Valid</p>
+                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">KTA Digital Resmi</p>
                     </div>
                 </div>
 
@@ -479,8 +459,8 @@
     </section>
 
 
-    <!-- 7. SECTION PIAGAM KODE ETIK PECINTA ALAM INDONESIA (MONOTONE BURNT ORANGE) -->
-    <section id="kode-etik" class="py-24 bg-[#1f0802] text-white relative overflow-hidden">
+    <!-- 7. SECTION PIAGAM KODE ETIK PECINTA ALAM INDONESIA -->
+    <section id="kode-etik" class="py-24 kode-etik-section text-white relative overflow-hidden">
         <div class="site-container relative z-10 text-center space-y-8">
             
             <div class="w-16 h-16 rounded-2xl bg-orange-600/30 border border-orange-500/50 text-orange-400 flex items-center justify-center mx-auto text-2xl shadow-xl">
@@ -626,24 +606,24 @@
     </section>
 
 
-    <!-- 10. SECTION CALL TO ACTION & FOOTER KOMUNITAS (MONOTONE ORANYE) -->
-    <section class="py-20 bg-gradient-to-r from-orange-950 via-[#3d1205] to-[#250a03] text-white relative">
+    <!-- 10. SECTION CALL TO ACTION & FOOTER KOMUNITAS -->
+    <section class="py-20 cta-theme-section text-white relative">
         <div class="site-container text-center space-y-6">
             <h2 class="text-3xl sm:text-5xl font-black font-heading leading-tight">
                 Puncak dan Lembah Menanti Langkah Petualanganmu
             </h2>
-            <p class="text-orange-200/90 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-light">
+            <p class="text-stone-100 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-normal">
                 Bergabunglah bersama keluarga besar KPAB GIMBAL. Tempuh rimba, jalin persaudaraan abadi, dan kibarkan panji kepedulian lingkungan hidup di seluruh pelosok nusantara.
             </p>
             <div class="flex flex-wrap justify-center items-center gap-4 pt-4">
                 {% if current_user %}
                     <a href="{{ '/admin/dashboard' if current_user.is_admin else '/member/dashboard' }}" 
-                       class="px-8 py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-sm rounded-2xl shadow-2xl transition">
+                       class="px-8 py-3.5 btn-brand-primary hover:brightness-110 text-white font-extrabold text-sm rounded-2xl shadow-2xl transition">
                         Buka Portal Saya
                     </a>
                 {% else %}
                     <button onclick="openAuthModal()" 
-                            class="px-8 py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-sm rounded-2xl shadow-2xl transition flex items-center gap-2">
+                            class="px-8 py-3.5 btn-brand-primary hover:brightness-110 text-white font-extrabold text-sm rounded-2xl shadow-2xl transition flex items-center gap-2">
                         <i class="fab fa-google"></i>
                         <span>Daftar Anggota Sekarang</span>
                     </button>
@@ -657,59 +637,69 @@
     </section>
 
     <!-- FOOTER LENGKAP ORGANISASI -->
-    <footer class="bg-[#170501] text-orange-200/70 py-16 text-xs border-t border-orange-900/40">
+    <footer class="footer-theme-bg py-16 text-xs text-stone-300 border-t">
         <div class="site-container">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-orange-900/30">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
                 
                 <div class="space-y-3">
                     <div class="flex items-center gap-3">
                         <img src="/assets/logo.png" alt="Logo" class="w-10 h-10 object-contain">
                         <div>
                             <span class="text-sm font-black text-white font-heading">KPAB - GIMBAL</span>
-                            <p class="text-[9px] text-orange-400 font-bold uppercase">INDONESIA</p>
+                            <p class="text-[9px] text-brand-400 font-bold uppercase tracking-wider">INDONESIA</p>
                         </div>
                     </div>
-                    <p class="text-orange-200/60 text-xs leading-relaxed">
+                    <p class="text-stone-300 text-xs leading-relaxed">
                         Kelompok Petualang Alam Bebas yang berkomitmen mencetak generasi petualang tangguh, berakhlak mulia, dan setia menjaga kelestarian alam nusantara.
                     </p>
                 </div>
 
                 <div>
                     <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-4 font-heading">Sekretariat Basecamp</h3>
-                    <div class="space-y-2 text-orange-200/70">
-                        <p><i class="fas fa-map-marker-alt text-orange-500 mr-2"></i> Sekretariat Pusat KPAB GIMBAL, Jawa Barat</p>
-                        <p><i class="fas fa-envelope text-orange-500 mr-2"></i> kontak@gimbal.org</p>
-                        <p><i class="fas fa-phone-alt text-orange-500 mr-2"></i> +62 812-3456-7890 (Basecamp)</p>
+                    <div class="space-y-2 text-stone-300">
+                        <p><i class="fas fa-map-marker-alt text-brand-400 mr-2"></i> Sekretariat Pusat KPAB GIMBAL, Kota Gorontalo, Provinsi Gorontalo</p>
+                        <p><i class="fas fa-envelope text-brand-400 mr-2"></i> kontak@gimbal.org</p>
+                        <p><i class="fas fa-phone-alt text-brand-400 mr-2"></i> +62 812-3456-7890 (Basecamp Gorontalo)</p>
                     </div>
                 </div>
 
                 <div>
                     <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-4 font-heading">Navigasi Cepat</h3>
-                    <ul class="space-y-2 text-orange-200/70">
-                        <li><a href="#tentang" class="hover:text-orange-400 transition">Profil & Filosofi</a></li>
-                        <li><a href="#divisi" class="hover:text-orange-400 transition">4 Divisi Minat Lapangan</a></li>
-                        <li><a href="#ekspedisi" class="hover:text-orange-400 transition">Agenda Ekspedisi</a></li>
-                        <li><a href="#kode-etik" class="hover:text-orange-400 transition">Piagam Kode Etik Pecinta Alam</a></li>
-                        <li><a href="/verify-kta/R-01-26" target="_blank" class="hover:text-orange-400 transition">Validasi KTA Digital (QR)</a></li>
+                    <ul class="space-y-2 text-stone-300">
+                        <li><a href="#tentang" class="hover:text-brand-400 transition">Profil & Filosofi</a></li>
+                        <li><a href="#divisi" class="hover:text-brand-400 transition">4 Divisi Minat Lapangan</a></li>
+                        <li><a href="#ekspedisi" class="hover:text-brand-400 transition">Agenda Ekspedisi</a></li>
+                        <li><a href="#kode-etik" class="hover:text-brand-400 transition">Piagam Kode Etik Pecinta Alam</a></li>
+                        <li><a href="/verify-kta/R-01-26" target="_blank" class="hover:text-brand-400 transition">Validasi KTA Digital (QR)</a></li>
                     </ul>
                 </div>
 
                 <div>
                     <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-4 font-heading">Portal Anggota</h3>
-                    <p class="text-orange-200/60 text-xs mb-3">
-                        Gunakan akun Google Anda untuk mengakses KTA Digital, status iuran bulanan, dan materi pelatihan.
+                    <p class="text-stone-300 text-xs mb-3 leading-relaxed">
+                        Akses KTA Digital, agenda ekspedisi, dan status iuran bulanan resmi anggota.
                     </p>
-                    <button onclick="openAuthModal()" class="w-full py-2.5 px-4 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-xl transition text-center text-xs">
-                        Masuk / Daftar Portal
-                    </button>
+                    {% if current_user %}
+                        <a href="{{ '/admin/dashboard' if current_user.is_admin else '/member/dashboard' }}" 
+                           class="w-full py-3 px-4 btn-brand-primary hover:brightness-110 text-white font-extrabold rounded-xl transition text-center text-xs flex items-center justify-center gap-2 shadow-lg">
+                            <i class="fas fa-compass"></i>
+                            <span>Buka Portal {{ 'Admin' if current_user.is_admin else 'Anggota' }}</span>
+                        </a>
+                    {% else %}
+                        <button onclick="openAuthModal()" 
+                                class="w-full py-3 px-4 btn-brand-primary hover:brightness-110 text-white font-black rounded-xl transition text-center text-xs flex items-center justify-center gap-2 shadow-lg transform hover:-translate-y-0.5">
+                            <i class="fab fa-google"></i>
+                            <span>Masuk / Daftar Portal</span>
+                        </button>
+                    {% endif %}
                 </div>
 
             </div>
 
-            <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-orange-300/50">
+            <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-stone-400">
                 <p>&copy; 2026 KPAB GIMBAL (Generasi Indonesia Menyatu Bersama Alam). All Rights Reserved.</p>
                 <p class="flex items-center gap-2">
-                    <span class="text-orange-400 font-bold"><i class="fas fa-fire mr-1"></i> Salam Lestari!</span>
+                    <span class="text-brand-400 font-bold"><i class="fas fa-fire mr-1"></i> Salam Lestari!</span>
                     <span>•</span>
                     <span>Flask + Full HTMX Dual-Layer</span>
                 </p>
@@ -718,45 +708,123 @@
     </footer>
 
 
-    <!-- MODAL AUTHENTICATION (LOGIN GOOGLE & SIMULASI DEV) -->
-    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-orange-950/80 backdrop-blur-sm hidden">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-orange-200">
-            <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-stone-400 hover:text-stone-700 text-lg">
+    <!-- MODAL AUTHENTICATION (STYLISH SIMPEL MONOTONE) -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden"
+         x-data="{ authTab: 'dev' }">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative border border-slate-200">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-stone-100 transition">
                 <i class="fas fa-times"></i>
             </button>
 
-            <div class="text-center space-y-2 mb-6">
-                <img src="/assets/logo.png" alt="Logo GIMBAL" class="w-16 h-16 mx-auto object-contain">
-                <h3 class="text-2xl font-black text-orange-950 font-heading">Akses Anggota GIMBAL</h3>
-                <p class="text-xs text-stone-500">Pendaftaran & Login 1-Klik dengan Akun Google Resmi</p>
+            <div class="text-center space-y-1.5 mb-5">
+                <img src="/assets/logo.png" alt="Logo GIMBAL" class="w-12 h-12 mx-auto object-contain">
+                <h3 class="text-xl font-black text-stone-900 font-heading">Akses Anggota GIMBAL</h3>
+                <p class="text-xs text-stone-500">Provinsi Gorontalo • Portal Terpadu Petualang</p>
             </div>
 
-            <!-- Tombol Google Login -->
-            <a href="/auth/google-login" 
-               class="w-full py-3.5 px-4 bg-white hover:bg-orange-50 text-stone-800 font-bold rounded-2xl shadow-md border border-orange-300 transition flex items-center justify-center gap-3 text-sm">
-                <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.1-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/></svg>
-                <span>Lanjutkan dengan Google</span>
-            </a>
+            <!-- Segmented Tab Switcher -->
+            <div class="flex p-1 bg-stone-100 rounded-2xl mb-4 text-xs font-semibold">
+                <button type="button" @click="authTab = 'dev'"
+                        :class="authTab === 'dev' ? 'bg-white text-stone-900 shadow-sm font-bold' : 'text-stone-500 hover:text-stone-800'"
+                        class="flex-1 py-1.5 px-2 rounded-xl transition text-center flex items-center justify-center gap-1.5">
+                    <i class="fas fa-bolt text-[10px]"></i>
+                    <span>1-Klik Cepat</span>
+                </button>
+                <button type="button" @click="authTab = 'google'"
+                        :class="authTab === 'google' ? 'bg-white text-stone-900 shadow-sm font-bold' : 'text-stone-500 hover:text-stone-800'"
+                        class="flex-1 py-1.5 px-2 rounded-xl transition text-center flex items-center justify-center gap-1.5">
+                    <i class="fab fa-google text-[10px]"></i>
+                    <span>Google</span>
+                </button>
+                <button type="button" @click="authTab = 'manual'"
+                        :class="authTab === 'manual' ? 'bg-white text-stone-900 shadow-sm font-bold' : 'text-stone-500 hover:text-stone-800'"
+                        class="flex-1 py-1.5 px-2 rounded-xl transition text-center flex items-center justify-center gap-1.5">
+                    <i class="fas fa-key text-[10px]"></i>
+                    <span>Email</span>
+                </button>
+            </div>
 
-            <!-- Mode Pengujian Cepat Developer -->
-            <div class="mt-8 pt-5 border-t border-orange-100">
-                <p class="text-[11px] font-bold uppercase tracking-wider text-orange-600 text-center mb-3">
-                    Mode Pengujian Cepat (Dev Mode):
+            <!-- Tab 1: 1-Klik Simulasi Peran -->
+            <div x-show="authTab === 'dev'" class="space-y-2.5">
+                <a href="/auth/switch-role?email=admin@gimbal.org" 
+                   class="p-3 rounded-2xl border border-stone-200 hover:border-brand-500 hover:bg-stone-50 transition flex items-center justify-between group">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-stone-900 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs font-bold text-stone-900">Pengurus Admin (R-01-26)</p>
+                            <p class="text-[10px] text-stone-500">Ketua Umum • Akses Penuh Kas & Anggota</p>
+                        </div>
+                    </div>
+                    <span class="text-stone-400 group-hover:text-stone-900 text-xs font-bold">&rarr;</span>
+                </a>
+
+                <a href="/auth/switch-role?email=budi.pendaki@gmail.com" 
+                   class="p-3 rounded-2xl border border-stone-200 hover:border-brand-500 hover:bg-stone-50 transition flex items-center justify-between group">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-stone-200 text-stone-800 flex items-center justify-center font-bold text-xs">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs font-bold text-stone-900">Anggota Aktif Budi (R-02-26)</p>
+                            <p class="text-[10px] text-stone-500">KTA Digital, Iuran & Ekspedisi</p>
+                        </div>
+                    </div>
+                    <span class="text-stone-400 group-hover:text-stone-900 text-xs font-bold">&rarr;</span>
+                </a>
+
+                <a href="/auth/switch-role?email=calon.petualang@gmail.com" 
+                   class="p-3 rounded-2xl border border-stone-200 hover:border-brand-500 hover:bg-stone-50 transition flex items-center justify-between group">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs font-bold text-stone-900">Calon Anggota (Pending)</p>
+                            <p class="text-[10px] text-stone-500">Menunggu Verifikasi & Syarat Medis</p>
+                        </div>
+                    </div>
+                    <span class="text-stone-400 group-hover:text-stone-900 text-xs font-bold">&rarr;</span>
+                </a>
+            </div>
+
+            <!-- Tab 2: Akun Google -->
+            <div x-show="authTab === 'google'" class="space-y-3">
+                <p class="text-xs text-stone-500 text-center">
+                    Masuk otomatis 1-klik menggunakan akun Google resmi Anda.
                 </p>
-                <div class="space-y-2 text-xs">
-                    <a href="/auth/switch-role?email=admin@gimbal.org" 
-                       class="block w-full py-2.5 px-3 bg-orange-100 hover:bg-orange-200 border border-orange-300 text-orange-950 font-bold rounded-xl text-center transition">
-                        Masuk sebagai Pengurus Admin (R-01-26)
-                    </a>
-                    <a href="/auth/switch-role?email=budi.pendaki@gmail.com" 
-                       class="block w-full py-2.5 px-3 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-900 font-bold rounded-xl text-center transition">
-                        Masuk sebagai Anggota Aktif Budi (R-02-26)
-                    </a>
-                    <a href="/auth/switch-role?email=calon.petualang@gmail.com" 
-                       class="block w-full py-2.5 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-bold rounded-xl text-center transition">
-                        Masuk sebagai Calon Anggota (Pending)
-                    </a>
-                </div>
+                <a href="/auth/google-login" 
+                   class="w-full py-3 px-4 bg-white hover:bg-stone-50 text-stone-800 font-bold rounded-2xl shadow-sm border border-stone-300 transition flex items-center justify-center gap-3 text-xs">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.1-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/></svg>
+                    <span>Lanjutkan dengan Google</span>
+                </a>
+            </div>
+
+            <!-- Tab 3: Email & Sandi -->
+            <div x-show="authTab === 'manual'">
+                <form action="/auth/login" method="POST" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block font-semibold text-stone-700 mb-1">Email</label>
+                        <input type="email" name="email" required placeholder="nama@gmail.com"
+                               class="w-full px-3 py-2 rounded-xl border border-stone-200 text-stone-900 focus:ring-2 focus:ring-stone-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-stone-700 mb-1">Kata Sandi / PIN</label>
+                        <input type="password" name="password" required placeholder="••••••••"
+                               class="w-full px-3 py-2 rounded-xl border border-stone-200 text-stone-900 focus:ring-2 focus:ring-stone-400 focus:outline-none">
+                    </div>
+                    <button type="submit"
+                            class="w-full py-2.5 px-4 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-xl shadow-sm transition text-xs flex items-center justify-center gap-1.5">
+                        <i class="fas fa-sign-in-alt"></i> Masuk Akun
+                    </button>
+                </form>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-stone-100 text-center">
+                <a href="/login" class="text-[11px] font-semibold text-stone-500 hover:text-stone-900 transition">
+                    Buka Halaman Login Penuh &rarr;
+                </a>
             </div>
         </div>
     </div>
