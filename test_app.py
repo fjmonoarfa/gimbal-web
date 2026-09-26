@@ -1,7 +1,7 @@
 import os
 import unittest
 from app import app, db
-from models import User, Dues, DuesPayment, Document, generate_next_nra
+from models import User, Dues, DuesPayment, Document, GalleryItem, generate_next_nra
 
 class GimbalWebTestCase(unittest.TestCase):
     def setUp(self):
@@ -113,5 +113,53 @@ class GimbalWebTestCase(unittest.TestCase):
         self.assertIn(b'AD/ART KPAB GIMBAL', resp.data)
         print(">>> Test 06: Document CRUD listing OK")
 
+    def test_07_gallery_crud_and_pindown(self):
+        with self.client.session_transaction() as sess:
+            admin = User.query.filter_by(email='admin@gimbal.org').first()
+            sess['user_id'] = admin.id
+
+        # 1. Admin Gallery Page
+        resp = self.client.get('/admin/gallery', headers={'HX-Request': 'true'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Galeri Pin-down Ekspedisi', resp.data)
+
+        # 2. Open Create Modal
+        resp = self.client.get('/admin/gallery/create-modal')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Pin-down Foto Ekspedisi', resp.data)
+
+        # 3. Create New Gallery Item
+        resp = self.client.post('/admin/gallery/create', data={
+            'title': 'Puncak Gn. Rinjani 3726 MDPL',
+            'caption': 'Tim GIMBAL mengibarkan panji organisasi di batas awan.',
+            'category': 'Pendakian',
+            'location': 'Lombok, NTB',
+            'activity_id': '7',
+            'is_pinned': '1',
+            'image_url': '/static/pics/cartoon/hero.jpg'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp.status_code, 200)
+
+        # Check DB
+        item = GalleryItem.query.filter_by(title='Puncak Gn. Rinjani 3726 MDPL').first()
+        self.assertIsNotNone(item)
+        self.assertTrue(item.is_pinned)
+        self.assertEqual(item.location, 'Lombok, NTB')
+
+        # 4. Toggle Pin
+        resp = self.client.post(f'/admin/gallery/toggle-pin/{item.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp.status_code, 200)
+        db.session.refresh(item)
+        self.assertFalse(item.is_pinned)
+
+        # 5. Delete Item
+        resp = self.client.post(f'/admin/gallery/delete/{item.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp.status_code, 200)
+        deleted = GalleryItem.query.get(item.id)
+        self.assertIsNone(deleted)
+
+        print(">>> Test 07: Gallery CRUD & Expedition Pin-down 100% OK")
+
 if __name__ == '__main__':
     unittest.main()
+

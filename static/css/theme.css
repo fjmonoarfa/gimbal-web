@@ -9,8 +9,8 @@
  */
 
 :root {
-    /* 1. LEBAR KONTEN UTAMA (Sesuai instruksi: 85% dari lebar layar) */
-    --site-content-width: 85%;
+    /* 1. LEBAR KONTEN UTAMA */
+    --site-content-width: 80%;
 
     /* 2. PALET MONOTONE WARNA UTAMA (Tahun ini: Oranye GIMBAL) */
     --brand-50: #fff7ed;
@@ -19,7 +19,8 @@
     --brand-300: #fdba74;
     --brand-400: #fb923c;
     --brand-500: #f97316;
-    --brand-600: #ea580c; /* Warna primer brand logo GIMBAL */
+    --brand-600: #ea580c;
+    /* Warna primer brand logo GIMBAL */
     --brand-700: #c2410c;
     --brand-800: #9a3412;
     --brand-900: #7c2d12;
@@ -60,10 +61,10 @@
 
 /* Hero Overlay Sinematik (Background 100% full-width, bergradasi brand) */
 .hero-overlay {
-    background: linear-gradient(180deg, 
-        rgba(var(--brand-950-rgb), 0.85) 0%, 
-        rgba(var(--brand-900-rgb), 0.88) 55%, 
-        rgba(20, 5, 2, 0.98) 100%),
+    background: linear-gradient(180deg,
+            rgba(var(--brand-950-rgb), 0.85) 0%,
+            rgba(var(--brand-900-rgb), 0.88) 55%,
+            rgba(20, 5, 2, 0.98) 100%),
         url('/static/pics/cartoon/hero.jpg');
     background-size: cover;
     background-position: center;
@@ -87,6 +88,7 @@
     color: #ffffff;
     transition: all 0.2s ease-in-out;
 }
+
 .btn-brand-primary:hover {
     background-color: var(--brand-700);
 }
@@ -94,6 +96,7 @@
 .text-brand-primary {
     color: var(--brand-600);
 }
+
 .bg-brand-primary {
     background-color: var(--brand-600);
 }

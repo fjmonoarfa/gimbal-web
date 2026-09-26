@@ -428,23 +428,49 @@
     </section>
 
 
-    <!-- 6. SECTION GALERI DOKUMENTASI JEJAK PETUALANGAN -->
+    <!-- 6. SECTION GALERI DOKUMENTASI JEJAK PETUALANGAN (PIN-DOWN EKSPEDISI) -->
     <section id="galeri" class="py-24 bg-orange-50/50 border-t border-orange-100">
         <div class="site-container">
             <div class="text-center max-w-2xl mx-auto mb-16 space-y-2">
-                <span class="text-xs font-bold uppercase tracking-widest text-orange-600">Dokumentasi Nyata</span>
+                <span class="text-xs font-bold uppercase tracking-widest text-orange-600 flex items-center justify-center gap-1.5">
+                    <i class="fas fa-thumbtack text-[10px]"></i> Curated Expedition Gallery
+                </span>
                 <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading">Galeri Jejak Petualangan</h2>
-                <p class="text-xs sm:text-sm text-stone-600">Momen ketangguhan, kehangatan api unggun, dan keagungan puncak nusantara</p>
+                <p class="text-xs sm:text-sm text-stone-600">Dokumentasi pin-down pilihan dari berbagai ekspedisi, pendakian puncak, dan bakti konservasi alam</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {% for item in gallery_items[:8] %}
-                <div class="group relative h-64 rounded-3xl overflow-hidden shadow-sm border border-orange-200/80 bg-white">
+                <div class="group relative h-72 rounded-3xl overflow-hidden shadow-sm border border-orange-200/80 bg-white">
                     <img src="{{ item.image_url }}" alt="{{ item.title }}" 
                          class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-t from-orange-950/85 via-orange-950/20 to-transparent opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col justify-end p-5 text-white">
-                        <p class="text-xs font-bold text-orange-300 font-heading">{{ item.title or 'Ekspedisi Rimba' }}</p>
-                        <p class="text-[11px] text-orange-100 line-clamp-2 mt-0.5 leading-snug">{{ item.caption or 'Petualang GIMBAL di alam Nusantara' }}</p>
+                    
+                    <!-- Top Category Badge -->
+                    <div class="absolute top-3 right-3 z-10">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md bg-black/60 backdrop-blur-md text-orange-200 border border-orange-500/30">
+                            {{ item.category }}
+                        </span>
+                    </div>
+
+                    <!-- Overlay Detail on Hover & Subtle Gradient -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-orange-950/90 via-orange-950/40 to-transparent flex flex-col justify-end p-5 text-white">
+                        {% if item.activity %}
+                        <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1 mb-0.5">
+                            <i class="fas fa-mountain text-[9px]"></i> {{ item.activity.title }}
+                        </span>
+                        {% endif %}
+
+                        <p class="text-sm font-bold text-white font-heading">{{ item.title or 'Ekspedisi Rimba' }}</p>
+
+                        {% if item.location %}
+                        <p class="text-[11px] text-orange-200/90 flex items-center gap-1 mt-0.5">
+                            <i class="fas fa-map-marker-alt text-orange-400 text-[10px]"></i> {{ item.location }}
+                        </p>
+                        {% endif %}
+
+                        <p class="text-[11px] text-orange-100/80 line-clamp-2 mt-1 leading-snug">
+                            {{ item.caption or 'Petualang GIMBAL di alam Nusantara' }}
+                        </p>
                     </div>
                 </div>
                 {% endfor %}

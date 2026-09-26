@@ -157,7 +157,7 @@ class ActivityParticipant(db.Model):
 
 
 class GalleryItem(db.Model):
-    """Dokumentasi Foto Petualangan"""
+    """Dokumentasi Foto Petualangan (Pin-down dari Ekspedisi)"""
     __tablename__ = 'gallery_items'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -165,4 +165,10 @@ class GalleryItem(db.Model):
     caption = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(256), nullable=False)
     category = db.Column(db.String(50), default='Pendakian')
+    location = db.Column(db.String(150), nullable=True)
+    is_pinned = db.Column(db.Boolean, default=True)  # Pin-down ke Galeri Utama Landing Page
+    activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    activity = db.relationship('Activity', backref=db.backref('gallery_items', lazy='dynamic'))
+

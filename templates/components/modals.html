@@ -282,3 +282,233 @@
     </div>
 </div>
 {% endif %}
+
+
+<!-- 5. MODAL PIN-DOWN FOTO EKSPEDISI KE GALERI (ADMIN) -->
+{% if modal_type == 'create_gallery' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-create-gal"
+     x-data="{ tabUpload: 'file' }">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="flex items-center gap-2 text-orange-600 mb-1">
+            <i class="fas fa-thumbtack"></i>
+            <span class="text-xs font-bold uppercase tracking-wider">Kurasi Galeri</span>
+        </div>
+        <h2 class="text-lg font-bold text-slate-900 font-heading mb-1">Pin-down Foto Ekspedisi</h2>
+        <p class="text-xs text-slate-500 mb-4">Pilih momen terbaik dari ekspedisi petualang untuk dipajang di galeri landing page utama.</p>
+
+        <form hx-post="/admin/gallery/create" 
+              hx-target="#main-content"
+              hx-encoding="multipart/form-data"
+              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-4 text-xs">
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Hubungkan ke Agenda Ekspedisi (Opsional)</label>
+                <select name="activity_id" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                    <option value="">-- Dokumentasi Bebas / Ekspedisi Mandiri --</option>
+                    {% for act in activities %}
+                    <option value="{{ act.id }}">{{ act.title }} ({{ act.location }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Judul Foto / Momen</label>
+                    <input type="text" name="title" placeholder="Contoh: Menembus Puncak Kabut" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Kategori Divisi</label>
+                    <select name="category" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="Pendakian">Pendakian Gunung</option>
+                        <option value="Panjat Tebing">Panjat Tebing (Rock Climbing)</option>
+                        <option value="Susur Gua">Susur Gua (Speleology)</option>
+                        <option value="Konservasi">Konservasi & Lingkungan</option>
+                        <option value="Arung Jeram">Arung Jeram</option>
+                        <option value="Family Camp">Family Camping & Kaderisasi</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Lokasi / Titik Pengambilan</label>
+                <input type="text" name="location" placeholder="Contoh: Puncak Ile-Ile 2065 MDPL, Gorontalo"
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <!-- Sumber Gambar -->
+            <div class="p-3.5 bg-orange-50/60 rounded-2xl border border-orange-200/80 space-y-3">
+                <div class="flex items-center justify-between">
+                    <label class="font-bold text-orange-950">Sumber Foto</label>
+                    <div class="flex gap-1 bg-white p-1 rounded-xl border border-orange-200 text-[11px]">
+                        <button type="button" @click="tabUpload = 'file'" 
+                                :class="tabUpload === 'file' ? 'bg-orange-600 text-white font-bold' : 'text-slate-600'"
+                                class="px-2.5 py-1 rounded-lg transition">Upload File</button>
+                        <button type="button" @click="tabUpload = 'url'" 
+                                :class="tabUpload === 'url' ? 'bg-orange-600 text-white font-bold' : 'text-slate-600'"
+                                class="px-2.5 py-1 rounded-lg transition">Input URL</button>
+                    </div>
+                </div>
+
+                <div x-show="tabUpload === 'file'">
+                    <input type="file" name="image_file" accept="image/*"
+                           class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-600 file:text-white hover:file:bg-orange-700 cursor-pointer">
+                    <p class="text-[10px] text-slate-500 mt-1">Format JPG, PNG, WEBP (Maks 10MB)</p>
+                </div>
+
+                <div x-show="tabUpload === 'url'" x-cloak>
+                    <input type="url" name="image_url" placeholder="https://images.unsplash.com/..."
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono text-[11px] bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    <p class="text-[10px] text-slate-500 mt-1">Masukkan URL gambar langsung yang valid</p>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Caption / Kisah Singkat Petualangan</label>
+                <textarea name="caption" rows="2" placeholder="Ceritakan momen di balik foto atau pesan kebersamaan tim..."
+                          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"></textarea>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                    <span class="font-bold text-slate-800 block">Pin-down ke Landing Page Utama</span>
+                    <span class="text-[11px] text-slate-500">Foto akan diprioritaskan tampil di etalase galeri depan</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="is_pinned" value="1" checked class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                </label>
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                    <i class="fas fa-thumbtack"></i> Pin Foto Ini
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- 6. MODAL EDIT FOTO GALERI (ADMIN) -->
+{% if modal_type == 'edit_gallery' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-edit-gal"
+     x-data="{ tabUpload: 'keep' }">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="flex items-center gap-2 text-orange-600 mb-1">
+            <i class="fas fa-edit"></i>
+            <span class="text-xs font-bold uppercase tracking-wider">Perbarui Informasi</span>
+        </div>
+        <h2 class="text-lg font-bold text-slate-900 font-heading mb-4">Edit Foto Galeri Ekspedisi</h2>
+
+        <form hx-post="/admin/gallery/edit/{{ item.id }}" 
+              hx-target="#main-content"
+              hx-encoding="multipart/form-data"
+              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-4 text-xs">
+            
+            <div class="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <img src="{{ item.image_url }}" alt="{{ item.title }}" class="w-20 h-20 rounded-xl object-cover border border-slate-300 shadow-sm flex-shrink-0">
+                <div class="space-y-1">
+                    <span class="font-bold text-slate-800 text-xs block">Foto Saat Ini</span>
+                    <span class="text-[10px] text-slate-500 font-mono break-all line-clamp-2">{{ item.image_url }}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold {% if item.is_pinned %}bg-orange-100 text-orange-800{% else %}bg-slate-200 text-slate-700{% endif %}">
+                        {% if item.is_pinned %}Pinned di Depan{% else %}Arsip Saja{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Hubungkan ke Agenda Ekspedisi</label>
+                <select name="activity_id" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                    <option value="" {% if not item.activity_id %}selected{% endif %}>-- Dokumentasi Bebas / Ekspedisi Mandiri --</option>
+                    {% for act in activities %}
+                    <option value="{{ act.id }}" {% if item.activity_id == act.id %}selected{% endif %}>{{ act.title }} ({{ act.location }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Judul Foto / Momen</label>
+                    <input type="text" name="title" value="{{ item.title or '' }}" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Kategori Divisi</label>
+                    <select name="category" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="Pendakian" {% if item.category == 'Pendakian' %}selected{% endif %}>Pendakian Gunung</option>
+                        <option value="Panjat Tebing" {% if item.category == 'Panjat Tebing' %}selected{% endif %}>Panjat Tebing</option>
+                        <option value="Susur Gua" {% if item.category == 'Susur Gua' %}selected{% endif %}>Susur Gua (Speleology)</option>
+                        <option value="Konservasi" {% if item.category == 'Konservasi' %}selected{% endif %}>Konservasi & Lingkungan</option>
+                        <option value="Arung Jeram" {% if item.category == 'Arung Jeram' %}selected{% endif %}>Arung Jeram</option>
+                        <option value="Family Camp" {% if item.category == 'Family Camp' %}selected{% endif %}>Family Camping & Kaderisasi</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Lokasi / Titik Pengambilan</label>
+                <input type="text" name="location" value="{{ item.location or '' }}"
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <!-- Ganti Foto Opsional -->
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+                <label class="font-bold text-slate-800 block">Ganti File Gambar (Opsional)</label>
+                <input type="file" name="image_file" accept="image/*"
+                       class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-800 hover:file:bg-slate-300 cursor-pointer">
+                <input type="url" name="image_url" placeholder="Atau ganti dengan URL gambar baru..."
+                       class="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono text-[11px] bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Caption / Kisah Singkat Petualangan</label>
+                <textarea name="caption" rows="2" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ item.caption or '' }}</textarea>
+            </div>
+
+            <div class="p-3 bg-orange-50/60 rounded-xl border border-orange-200 flex items-center justify-between">
+                <div>
+                    <span class="font-bold text-orange-950 block">Status Pin-down Landing Page</span>
+                    <span class="text-[11px] text-orange-800/80">Aktifkan untuk menampilkan foto ini di landing page</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="is_pinned" value="1" {% if item.is_pinned %}checked{% endif %} class="sr-only peer">
+                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                </label>
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                    <i class="fas fa-save"></i> Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+

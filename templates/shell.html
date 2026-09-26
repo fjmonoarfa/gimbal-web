@@ -94,6 +94,13 @@
                             <span>Ekspedisi</span>
                         </a>
 
+                        <a href="/admin/gallery" 
+                           class="nav-link px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 {% if active_page == 'admin_gallery' %}bg-orange-600 text-white font-semibold shadow-inner{% else %}text-orange-100 hover:bg-orange-800/60 hover:text-white{% endif %}"
+                           hx-get="/admin/gallery" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                            <i class="fas fa-camera-retro text-xs"></i>
+                            <span>Galeri Ekspedisi</span>
+                        </a>
+
                     {% else %}
                         <!-- MEMBER NAV -->
                         <a href="/member/dashboard" 
@@ -231,6 +238,14 @@
                     <a href="/admin/documents" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
                        hx-get="/admin/documents" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
                         <i class="fas fa-file-contract mr-2"></i> Dokumen Organisasi
+                    </a>
+                    <a href="/admin/activities" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
+                       hx-get="/admin/activities" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
+                        <i class="fas fa-mountain mr-2"></i> Ekspedisi
+                    </a>
+                    <a href="/admin/gallery" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
+                       hx-get="/admin/gallery" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
+                        <i class="fas fa-camera-retro mr-2"></i> Galeri Ekspedisi
                     </a>
                 {% else %}
                     <a href="/member/dashboard" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"

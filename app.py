@@ -26,6 +26,7 @@ UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'upload
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'proofs'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'docs'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'gallery'), exist_ok=True)
 
 db.init_app(app)
 
@@ -147,7 +148,10 @@ def landing():
     """Halaman publik utama GIMBAL"""
     user = get_current_user()
     activities = Activity.query.filter_by(is_open=True).order_by(Activity.created_at.desc()).limit(6).all()
-    gallery_items = GalleryItem.query.order_by(GalleryItem.id.desc()).limit(8).all()
+    # Prioritaskan foto pin-down ekspedisi di landing page utama
+    gallery_items = GalleryItem.query.filter_by(is_pinned=True).order_by(GalleryItem.id.desc()).limit(8).all()
+    if not gallery_items:
+        gallery_items = GalleryItem.query.order_by(GalleryItem.id.desc()).limit(8).all()
     active_members_count = User.query.filter_by(status='active').count()
 
     return render_template(
@@ -645,6 +649,151 @@ def admin_create_activity():
     db.session.add(new_act)
     db.session.commit()
     return admin_activities()
+
+
+# ========== ADMIN GALLERY CRUD ROUTES ============================================
+
+@app.route('/admin/gallery')
+@login_required
+@admin_required
+def admin_gallery():
+    """Kelola kurasi foto pin-down ekspedisi"""
+    activity_filter = request.args.get('activity_id', type=int)
+    pinned_filter = request.args.get('pinned', '')
+    
+    query = GalleryItem.query
+    if activity_filter:
+        query = query.filter_by(activity_id=activity_filter)
+    if pinned_filter == '1':
+        query = query.filter_by(is_pinned=True)
+    elif pinned_filter == '0':
+        query = query.filter_by(is_pinned=False)
+        
+    items = query.order_by(GalleryItem.is_pinned.desc(), GalleryItem.id.desc()).all()
+    activities = Activity.query.order_by(Activity.title.asc()).all()
+    
+    total_count = GalleryItem.query.count()
+    pinned_count = GalleryItem.query.filter_by(is_pinned=True).count()
+    
+    data = {
+        'gallery_items': items,
+        'activities': activities,
+        'total_count': total_count,
+        'pinned_count': pinned_count,
+        'selected_activity_id': activity_filter,
+        'selected_pinned': pinned_filter
+    }
+    return render_gimbal_page('admin/admin_pages.html', 'admin_gallery', data, active_page='admin_gallery')
+
+
+@app.route('/admin/gallery/create-modal')
+@login_required
+@admin_required
+def admin_create_gallery_modal():
+    """Modal unggah / pin-down foto ekspedisi baru"""
+    activities = Activity.query.order_by(Activity.title.asc()).all()
+    return render_template('components/modals.html', modal_type='create_gallery', activities=activities)
+
+
+@app.route('/admin/gallery/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_create_gallery():
+    """Simpan foto pin-down ekspedisi baru"""
+    title = request.form.get('title', '').strip()
+    caption = request.form.get('caption', '').strip()
+    category = request.form.get('category', 'Pendakian')
+    location = request.form.get('location', '').strip()
+    activity_id = request.form.get('activity_id', type=int)
+    is_pinned = bool(request.form.get('is_pinned'))
+    
+    image_file = request.files.get('image_file')
+    image_url_input = request.form.get('image_url', '').strip()
+    
+    image_url = ''
+    if image_file and image_file.filename:
+        safe_name = f"gal_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'gallery', safe_name)
+        image_file.save(save_path)
+        image_url = f"/uploads/gallery/{safe_name}"
+    elif image_url_input:
+        image_url = image_url_input
+    else:
+        image_url = '/static/pics/cartoon/divisi_mountaineer.jpg'
+        
+    new_item = GalleryItem(
+        title=title or 'Dokumentasi Ekspedisi',
+        caption=caption,
+        image_url=image_url,
+        category=category,
+        location=location,
+        activity_id=activity_id if activity_id and activity_id > 0 else None,
+        is_pinned=is_pinned
+    )
+    db.session.add(new_item)
+    db.session.commit()
+    return admin_gallery()
+
+
+@app.route('/admin/gallery/toggle-pin/<int:item_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_toggle_pin_gallery(item_id):
+    """Toggle status pin-down foto ke landing page"""
+    item = GalleryItem.query.get_or_404(item_id)
+    item.is_pinned = not item.is_pinned
+    db.session.commit()
+    return admin_gallery()
+
+
+@app.route('/admin/gallery/edit-modal/<int:item_id>')
+@login_required
+@admin_required
+def admin_edit_gallery_modal(item_id):
+    """Modal edit foto galeri"""
+    item = GalleryItem.query.get_or_404(item_id)
+    activities = Activity.query.order_by(Activity.title.asc()).all()
+    return render_template('components/modals.html', modal_type='edit_gallery', item=item, activities=activities)
+
+
+@app.route('/admin/gallery/edit/<int:item_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_edit_gallery(item_id):
+    """Simpan perubahan data foto galeri"""
+    item = GalleryItem.query.get_or_404(item_id)
+    item.title = request.form.get('title', item.title).strip()
+    item.caption = request.form.get('caption', item.caption).strip()
+    item.category = request.form.get('category', item.category)
+    item.location = request.form.get('location', item.location).strip()
+    activity_id = request.form.get('activity_id', type=int)
+    item.activity_id = activity_id if activity_id and activity_id > 0 else None
+    item.is_pinned = bool(request.form.get('is_pinned'))
+    
+    image_file = request.files.get('image_file')
+    image_url_input = request.form.get('image_url', '').strip()
+    if image_file and image_file.filename:
+        safe_name = f"gal_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'gallery', safe_name)
+        image_file.save(save_path)
+        item.image_url = f"/uploads/gallery/{safe_name}"
+    elif image_url_input:
+        item.image_url = image_url_input
+        
+    db.session.commit()
+    return admin_gallery()
+
+
+@app.route('/admin/gallery/delete/<int:item_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_gallery(item_id):
+    """Hapus foto galeri"""
+    item = GalleryItem.query.get_or_404(item_id)
+    db.session.delete(item)
+    db.session.commit()
+    return admin_gallery()
+
 
 
 # =================================================================================
