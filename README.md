@@ -63,6 +63,20 @@ Aplikasi web modern untuk organisasi petualang alam bebas **KPAB GIMBAL**, diban
   * Lebar gambar latar belakang membentang penuh 100% (*edge-to-edge*).
   * Konten teks, judul, tombol, dan metrik di dalamnya otomatis mengikuti lebar kontainer 85% (`.site-container`).
 
+### 9. Modul CRUD Galeri Ekspedisi (Pin-Down System)
+* **Pusat Kurasi Foto**: Mengumpulkan dokumentasi dari seluruh agenda ekspedisi dan perjalanan petualang.
+* **Sistem Pin-down**: Pengurus dapat menentukan foto mana saja yang di-pin ke etalase galeri landing page utama atau disimpan sebagai arsip ekspedisi.
+* **Fitur**: Upload foto lokal ke `uploads/gallery/` atau URL gambar, hubungkan ke agenda ekspedisi, pilih kategori divisi, edit, toggle pin instan via HTMX, dan hapus foto.
+
+### 10. Ilustrasi Visual Cartoonized & 3D Character Avatars
+* Seluruh visual di landing page menggunakan gaya ilustrasi anime adventure / Ghibli landscape dan avatar pengurus 3D Pixar-style yang tersimpan di `static/pics/cartoon/`.
+
+---
+
+## 📜 Rekam Jejak Percakapan & Keputusan Arsitektur
+Seluruh kronologi instruksi, keputusan arsitektural, dan spesifikasi teknis telah didokumentasikan secara lengkap dalam file:
+👉 **[CONVERSATION_HISTORY.md](file:///g:/My%20Drive/priv_web_apps/gimbal-web/CONVERSATION_HISTORY.md)**
+
 ---
 
 ## 🚀 Cara Menjalankan Aplikasi
@@ -92,13 +106,15 @@ gimbal-web/
 ├── app.py                     # Entrypoint & routing Flask (Dual-Layer HTMX Engine)
 ├── models.py                  # Model SQLAlchemy SQLite & generator auto R-nn-YY
 ├── seed.py                    # Seeder data awal admin, anggota, iuran, dokumen
-├── test_app.py                # Unit test suite pengujian otomatis
+├── test_app.py                # 7 Unit test suite pengujian otomatis
 ├── requirements.txt           # Dependensi Python
+├── CONVERSATION_HISTORY.md    # Rekam jejak seluruh percakapan & referensi arsitektur
 ├── instance/
 │   └── gimbal.db              # Database SQLite
 ├── uploads/
 │   ├── proofs/                # File upload bukti transfer iuran
-│   └── docs/                  # File upload dokumen PDF internal
+│   ├── docs/                  # File upload dokumen PDF internal
+│   └── gallery/               # File upload foto kurasi ekspedisi
 ├── templates/
 │   ├── index.html             # LAYER 1: Outer Shell Frame
 │   ├── shell.html             # LAYER 2: Application Shell (Header, Nav, Footer)
@@ -107,11 +123,14 @@ gimbal-web/
 │   ├── member/
 │   │   └── member_pages.html  # Macros Halaman Anggota (Dashboard, KTA, Iuran, Dokumen, Profil)
 │   ├── admin/
-│   │   └── admin_pages.html   # Macros Halaman Admin (Approvals, Members, Dues, CRUD Dokumen)
+│   │   └── admin_pages.html   # Macros Halaman Admin (Approvals, Members, Dues, CRUD Dokumen, Galeri)
 │   └── components/
-│       └── modals.html        # Modals HTMX (Upload bukti bayar, Buat iuran, Dokumen baru)
+│       └── modals.html        # Modals HTMX (Upload bukti bayar, Buat iuran, Dokumen, Pin Galeri)
 └── static/
+    ├── css/theme.css          # Desain sistem & variabel lebar konten / monotone
+    ├── js/theme-config.js     # Variabel konfigurasi terpusat (lebar & preset warna)
     ├── vendor/                # HTMX, Tailwind, Alpine.js lokal
-    ├── pics/                  # Foto aset & gambar bukti transfer
+    ├── pics/cartoon/          # 10 Ilustrasi kartun petualang & avatar 3D pengurus
     └── docs/                  # File sampel PDF resmi
 ```
+
