@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "name": "Andi Wijaya",
+    "since": "Anggota sejak 2018",
+    "quote": "Pengalaman mendaki dengan GIMBAL sangat terorganisir dan aman. Guide profesional dan peralangan lengkap. Sudah 5 gunung saya daki bersama mereka!",
+    "rating": 5
+  },
+  {
+    "id": 2,
+    "name": "Rina Setiawan",
+    "since": "Anggota sejak 2020",
+    "quote": "Sebagai wanita, awalnya ragu ikut petualangan alam. Tapi GIMBAL sangat memperhatikan keselamatan dan kenyamanan semua anggotanya. Sekarang saya ketagihan!",
+    "rating": 5
+  },
+  {
+    "id": 1,
+    "name": "Budi Santoso",
+    "since": "Anggota sejak 2015",
+    "quote": "Tidak hanya petualangan, GIMBAL juga mengajarkan kami untuk mencintai dan melestarikan alam. Komunitas yang sangat positif dan inspiratif.",
+    "rating": 5
+  }
+]

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPAB GIMBAL - Generasi Indonesia Menyatu Bersama Alam</title>
+    <link rel="icon" href="/assets/logo.png" type="image/png">
+
+    <!-- Central Theme & Site Width Configuration -->
+    <link rel="stylesheet" href="/static/css/theme.css">
+    <script src="/static/js/theme-config.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    <!-- HTMX (Local Vendor) -->
+    <script src="/static/vendor/htmx/htmx.min.js"></script>
+
+    <!-- Alpine.js (Local Vendor) -->
+    <script defer src="/static/vendor/alpine/alpine.min.js"></script>
+
+    <!-- FontAwesome 6 Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Google Fonts: Poppins & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom Theme & HTMX Global Styles -->
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Poppins', sans-serif;
+        }
+        [x-cloak] {
+            display: none !important;
+        }
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator,
+        .htmx-request.htmx-indicator {
+            display: inline-block;
+        }
+        /* Custom sleek scrollbar */
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .adventure-gradient {
+            background: linear-gradient(135deg, #c2410c 0%, #9a3412 50%, #7c2d12 100%);
+        }
+        .gimbal-orange {
+            color: #ea580c;
+        }
+        .bg-gimbal-orange {
+            background-color: #ea580c;
+        }
+        .kta-card {
+            background: linear-gradient(145deg, #9a3412 0%, #431407 60%, #1c0903 100%);
+            box-shadow: 0 20px 30px -10px rgba(124, 45, 18, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 font-sans flex flex-col min-h-screen text-slate-800 antialiased selection:bg-orange-600 selection:text-white">
+
+    <!-- Global Top Loading Progress Bar -->
+    <div id="global-indicator" class="htmx-indicator fixed top-0 left-0 w-full h-1.5 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 z-[9999] transition-all duration-300">
+        <div class="h-full bg-white/40 animate-pulse"></div>
+    </div>
+
+    <!-- LAYER 1: Shell Frame Loader (hx-get loads shell.html into app-shell) -->
+    <div id="app-shell" hx-get="{{ shell_url or '/app-shell' }}" hx-trigger="load" hx-swap="innerHTML">
+        <!-- Initial skeleton while Layer 2 shell loads -->
+        <div class="min-h-screen flex items-center justify-center bg-slate-900 text-white">
+            <div class="text-center space-y-4">
+                <div class="inline-block w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                <h2 class="text-xl font-bold tracking-wide font-heading">KPAB GIMBAL</h2>
+                <p class="text-sm text-orange-400 animate-pulse">Generasi Indonesia Menyatu Bersama Alam</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

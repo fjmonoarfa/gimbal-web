@@ -1,0 +1,7 @@
+name,position,photo,phone,address,email,id,parent,work_quality,initiative,cooperative
+Dodi Yunus,Ketua,1,,,,Ketua,,5,5,5
+Wati,Sekretaris,2,,,,Sek,Ketua,5,5,5
+Saleh,Promosi & Kehumasan,1,,,,Div3,Sek,5,5,4
+Uffit,"Organisasi, SDM & Perlengkapan",1,,,,Div1,Sek,5,5,4
+Yuniar,Caving & Mountenering,2,,,,Div2,Sek,5,5,4
+Ujo,Survei & Pelatihan,1,,,,Div4,Sek,5,5,4

@@ -1,0 +1,284 @@
+<!-- MODALS INTERAKTIF HTMX UNTUK GIMBAL (MONOTONE ORANGE) -->
+
+<!-- 1. MODAL UNGGAH BUKTI BAYAR IURAN (MEMBER) -->
+{% if modal_type == 'pay_dues' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-pay-dues"
+     x-data="{ fileChosen: false }">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="mb-4">
+            <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase">Konfirmasi Iuran</span>
+            <h2 class="text-lg font-bold text-slate-900 font-heading mt-1">{{ dues.title }}</h2>
+            <p class="text-xs text-slate-500">Nominal: <strong class="text-orange-600 font-mono text-sm">Rp {{ "{:,.0f}".format(dues.amount).replace(',', '.') }}</strong></p>
+        </div>
+
+        <div class="p-3 bg-orange-50/80 rounded-xl border border-orange-200 text-orange-950 text-xs mb-4 space-y-1">
+            <p class="font-bold text-orange-900"><i class="fas fa-university mr-1 text-orange-600"></i> Rekening Tujuan Transfer:</p>
+            <p class="font-mono font-bold text-slate-900">Bank Mandiri: 131-00-1829-3321</p>
+            <p class="text-[11px] text-slate-600">a.n KPAB GIMBAL KAS PUSAT</p>
+        </div>
+
+        <form hx-post="/member/iuran/pay/{{ dues.id }}" 
+              hx-target="#main-content"
+              hx-encoding="multipart/form-data"
+              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-4 text-xs">
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Bank / Metode Pengirim</label>
+                <input type="text" name="bank_name" placeholder="Contoh: BCA / Mandiri / GoPay / QRIS" required
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Nominal yang Ditransfer (Rp)</label>
+                <input type="number" name="amount_paid" value="{{ dues.amount|int }}" required
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Unggah Foto / Screenshot Bukti Transfer</label>
+                <input type="file" name="proof_file" accept="image/*" required
+                       class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
+                <input type="text" name="notes" placeholder="Misal: Iuran bulan maret dari Fauzan"
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow transition flex items-center gap-1.5">
+                    <i class="fas fa-paper-plane"></i> Kirim Bukti
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- 2. MODAL BUAT TAGIHAN IURAN BARU (ADMIN) -->
+{% if modal_type == 'create_dues' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-create-dues">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <h2 class="text-lg font-bold text-slate-900 font-heading mb-4">Buat Tagihan Iuran Baru</h2>
+
+        <form hx-post="/admin/dues/create" 
+              hx-target="#main-content"
+              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-4 text-xs">
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Nama / Judul Iuran</label>
+                <input type="text" name="title" placeholder="Contoh: Iuran Wajib April 2026" required
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Nominal (Rp)</label>
+                    <input type="number" name="amount" value="25000" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Kategori</label>
+                    <select name="category" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="wajib">Wajib Bulanan</option>
+                        <option value="kegiatan">Iuran Kegiatan/Trip</option>
+                        <option value="sukarela">Donasi Sukarela</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Batas Waktu (Jatuh Tempo)</label>
+                <input type="date" name="due_date"
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Keterangan / Penggunaan Kas</label>
+                <textarea name="description" rows="2" placeholder="Tujuan penarikan iuran..."
+                          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"></textarea>
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow transition">
+                    Terbitkan Tagihan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- 3. MODAL UNGGAH DOKUMEN INTERNAL (ADMIN CRUD) -->
+{% if modal_type == 'create_document' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-create-doc">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <h2 class="text-lg font-bold text-slate-900 font-heading mb-4">Unggah Dokumen Resmi Organisasi</h2>
+
+        <form hx-post="/admin/documents/create" 
+              hx-target="#main-content"
+              hx-encoding="multipart/form-data"
+              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-4 text-xs">
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Judul Dokumen</label>
+                <input type="text" name="title" placeholder="Contoh: AD/ART GIMBAL 2026, SOP Survival Rimba" required
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Kategori Dokumen</label>
+                <select name="category" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                    <option value="ad_art">AD / ART & Legalitas</option>
+                    <option value="sop">SOP Keselamatan & Pendakian</option>
+                    <option value="materi">Materi & Modul Pelatihan</option>
+                    <option value="sk_resmi">Surat Keputusan / Notulensi</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">File Dokumen (PDF)</label>
+                <input type="file" name="doc_file" accept=".pdf,.docx,.doc" required
+                       class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Deskripsi Singkat</label>
+                <textarea name="description" rows="2" placeholder="Keterangan isi dan versi dokumen..."
+                          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"></textarea>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="is_public_to_members" id="is_public" value="1" checked class="rounded text-orange-600 focus:ring-orange-500">
+                <label for="is_public" class="text-slate-700 font-semibold">Tampilkan kepada semua anggota aktif</label>
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow transition">
+                    Unggah Dokumen
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- 4. MODAL BUAT EKSPEDISI / AGENDA BARU (ADMIN) -->
+{% if modal_type == 'create_activity' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-create-act">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <h2 class="text-lg font-bold text-slate-900 font-heading mb-4">Buka Ekspedisi / Agenda Trip Baru</h2>
+
+        <form hx-post="/admin/activity/create" 
+              hx-target="#main-content"
+              onsubmit="document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-4 text-xs">
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Nama Kegiatan / Ekspedisi</label>
+                <input type="text" name="title" placeholder="Contoh: Ekspedisi Gn. Raung via Kalibaru" required
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Lokasi</label>
+                    <input type="text" name="location" placeholder="Banyuwangi, Jawa Timur" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Tanggal Kegiatan</label>
+                    <input type="text" name="activity_date" placeholder="12 - 16 November 2026" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Tingkat Kesulitan</label>
+                    <select name="difficulty" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="Santai">Santai (Family Camp / Baksos)</option>
+                        <option value="Menengah" selected>Menengah (Pendakian Jalur Resmi)</option>
+                        <option value="Ekstrem">Ekstrem (Tebing / Rintisan Jalur / Survival)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Kuota Peserta</label>
+                    <input type="number" name="quota" value="20" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">URL Foto Sampul (Gambar)</label>
+                <input type="url" name="image_url" placeholder="https://images.unsplash.com/..."
+                       value="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80"
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Deskripsi & Syarat Perlengkapan</label>
+                <textarea name="description" rows="3" placeholder="Rincian jalur, titik kumpul, dan perlengkapan wajib..."
+                          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"></textarea>
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow transition">
+                    Publikasikan Ekspedisi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}

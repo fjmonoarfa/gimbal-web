@@ -1,0 +1,672 @@
+<!-- MACROS UNTUK HALAMAN PORTAL ANGGOTA GIMBAL (MONOTONE ORANGE) -->
+
+<!-- 1. DASHBOARD ANGGOTA -->
+{% macro member_dashboard(data) %}
+{% set user = data.user %}
+<div class="space-y-6">
+
+    <!-- WELCOME / STATUS HERO BANNER -->
+    {% if user.status == 'pending' %}
+        <!-- Kondisi PENDING: Calon Anggota Menunggu Verifikasi -->
+        <div class="bg-gradient-to-r from-orange-600 via-orange-700 to-stone-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 opacity-10 text-white text-9xl pointer-events-none">
+                <i class="fas fa-hiking"></i>
+            </div>
+            <div class="relative z-10 max-w-3xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/30 rounded-full text-xs font-semibold mb-3 border border-orange-400/40">
+                    <i class="fas fa-hourglass-half animate-spin"></i> Menunggu Persetujuan Pengurus
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold font-heading mb-2">Salam Lestari, {{ user.name }}!</h1>
+                <p class="text-orange-100 text-sm sm:text-base leading-relaxed mb-6">
+                    Pendaftaran Anda sebagai calon petualang <strong>KPAB GIMBAL</strong> telah berhasil masuk. Pengurus kami sedang meninjau kelengkapan berkas dan data keselamatan Anda. Nomor anggota resmi <strong>(R-nn-YY)</strong> akan diterbitkan otomatis saat disetujui.
+                </p>
+
+                <!-- Stepper Pendaftaran -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-black/20 p-4 rounded-2xl border border-white/10 text-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-white">Akun Google</p>
+                            <p class="text-[11px] text-orange-200">Terverifikasi</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full {% if user.phone and user.emergency_phone %}bg-orange-500 text-white{% else %}bg-amber-400 text-amber-950{% endif %} flex items-center justify-center font-bold">
+                            {% if user.phone and user.emergency_phone %}<i class="fas fa-check"></i>{% else %}2{% endif %}
+                        </div>
+                        <div>
+                            <p class="font-bold text-white">Data & Kontak Darurat</p>
+                            <p class="text-[11px] text-orange-200">{% if user.phone and user.emergency_phone %}Lengkap{% else %}Harap Dilengkapi{% endif %}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-orange-500/40 text-orange-200 flex items-center justify-center font-bold animate-pulse">
+                            3
+                        </div>
+                        <div>
+                            <p class="font-bold text-white">Nomor R-nn-YY</p>
+                            <p class="text-[11px] text-orange-300">Antrean Approval</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <!-- Kondisi ACTIVE: Anggota Resmi GIMBAL -->
+        <div class="bg-gradient-to-r from-orange-950 via-stone-900 to-orange-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-orange-800/40">
+            <div class="absolute -right-6 -bottom-10 opacity-10 text-orange-200 text-9xl pointer-events-none">
+                <i class="fas fa-mountain"></i>
+            </div>
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 bg-orange-700/60 rounded-full text-xs font-bold text-orange-200 border border-orange-500/30">
+                            <i class="fas fa-id-badge mr-1"></i> Anggota Resmi GIMBAL
+                        </span>
+                        <span class="px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-black tracking-wider font-mono shadow-sm">
+                            {{ user.nra }}
+                        </span>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold font-heading text-white">Salam Lestari, {{ user.name }}!</h1>
+                    <p class="text-orange-200 text-xs sm:text-sm max-w-xl">
+                        Selamat datang di portal anggota. Pantau status iuran kas, agenda ekspedisi, dan bawa selalu KTA Digital Anda saat berpetualang di alam bebas.
+                    </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <a href="/member/kta" 
+                       class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl shadow-lg transition transform hover:-translate-y-0.5 flex items-center gap-2"
+                       hx-get="/member/kta" hx-target="#main-content" hx-push-url="true">
+                        <i class="fas fa-id-card"></i>
+                        <span>Lihat KTA Digital</span>
+                    </a>
+                    <a href="/member/iuran" 
+                       class="px-5 py-2.5 bg-orange-800/80 hover:bg-orange-700 text-white font-semibold text-xs rounded-xl border border-orange-600/50 shadow-sm transition flex items-center gap-2"
+                       hx-get="/member/iuran" hx-target="#main-content" hx-push-url="true">
+                        <i class="fas fa-coins text-orange-300"></i>
+                        <span>Iuran Kas Saya</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- 4 RINGKASAN METRIK KARTU -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Kartu 1: Status Anggota & NRA -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-slate-500">Nomor Registrasi (NRA)</span>
+                <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
+                    <i class="fas fa-id-card"></i>
+                </div>
+            </div>
+            <p class="text-xl font-black font-mono text-slate-900">{{ user.nra or 'Dalam Proses' }}</p>
+            <p class="text-xs text-slate-500 mt-1">
+                Gol. Darah: <strong class="text-orange-600">{{ user.blood_type or '-' }}</strong>
+            </p>
+        </div>
+
+        <!-- Kartu 2: Status Iuran Terakhir -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-slate-500">Iuran Bulan Ini</span>
+                <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
+                    <i class="fas fa-wallet"></i>
+                </div>
+            </div>
+            {% if data.unpaid_count and data.unpaid_count > 0 %}
+                <p class="text-xl font-black text-rose-600">{{ data.unpaid_count }} Belum Bayar</p>
+                <p class="text-xs text-rose-500 mt-1 flex items-center gap-1">
+                    <i class="fas fa-exclamation-circle"></i> Perlu unggah bukti transfer
+                </p>
+            {% else %}
+                <p class="text-xl font-black text-orange-600">Lunas</p>
+                <p class="text-xs text-orange-600 mt-1 flex items-center gap-1">
+                    <i class="fas fa-check-circle"></i> Tertib iuran kas
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Kartu 3: Kontak Darurat -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-slate-500">Safety & Emergency</span>
+                <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
+                    <i class="fas fa-first-aid"></i>
+                </div>
+            </div>
+            <p class="text-sm font-bold text-slate-900 truncate">{{ user.emergency_name or 'Belum Diisi' }}</p>
+            <p class="text-xs text-slate-500 mt-1 font-mono truncate">
+                {{ user.emergency_phone or 'Perbarui profil darurat' }}
+            </p>
+        </div>
+
+        <!-- Kartu 4: Ekspedisi / Kegiatan Aktif -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-semibold text-slate-500">Agenda Ekspedisi</span>
+                <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
+                    <i class="fas fa-compass"></i>
+                </div>
+            </div>
+            <p class="text-xl font-black text-slate-900">{{ data.open_activities|length }} Terbuka</p>
+            <p class="text-xs text-orange-600 mt-1 font-medium">Siap untuk petualangan</p>
+        </div>
+    </div>
+
+    <!-- 2 KOLOM: AGENDA EKSPEDISI & PREVIEW DATA / KTA -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Kolom Kiri (2 Span): Agenda Ekspedisi GIMBAL -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900 font-heading">Agenda Ekspedisi & Kegiatan</h2>
+                    <p class="text-xs text-slate-500">Daftar trip resmi dan kegiatan konservasi KPAB GIMBAL</p>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                {% for act in data.open_activities %}
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:border-orange-300 transition">
+                    <div class="flex items-center gap-4">
+                        <img src="{{ act.image_url or 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=300&q=80' }}" 
+                             alt="{{ act.title }}" class="w-16 h-16 rounded-xl object-cover shadow-sm flex-shrink-0">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-orange-100 text-orange-800">
+                                    {{ act.difficulty }}
+                                </span>
+                                <span class="text-xs text-slate-400"><i class="far fa-calendar-alt mr-1"></i> {{ act.activity_date }}</span>
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-900">{{ act.title }}</h3>
+                            <p class="text-xs text-slate-500 line-clamp-1"><i class="fas fa-map-marker-alt text-orange-600 mr-1"></i> {{ act.location }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2">
+                        <span class="text-xs text-slate-500">Kuota: <strong class="text-slate-800">{{ act.quota }} orang</strong></span>
+                        <button class="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-xl shadow-sm transition"
+                                hx-post="/member/activity/join/{{ act.id }}" hx-swap="none"
+                                onclick="alert('Pendaftaran trip berhasil dicatat! Tim ekspedisi akan menghubungi WhatsApp Anda.')">
+                            Ikut Ekspedisi
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 text-sm">
+                    <i class="fas fa-campground text-3xl mb-2 text-slate-300"></i>
+                    <p>Belum ada agenda ekspedisi aktif saat ini.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Kolom Kanan (1 Span): KTA Mini / Data Pribadi -->
+        <div class="space-y-4">
+            <h2 class="text-lg font-bold text-slate-900 font-heading">Identitas Keanggotaan</h2>
+
+            {% if user.status == 'active' %}
+                <!-- Mini Card KTA Preview -->
+                <div class="kta-card rounded-2xl p-5 text-white shadow-xl relative overflow-hidden border border-orange-700/50">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-2">
+                            <img src="/assets/logo.png" alt="Logo" class="w-8 h-8 object-contain">
+                            <div>
+                                <p class="text-xs font-extrabold tracking-wider font-heading">KPAB GIMBAL</p>
+                                <p class="text-[9px] text-orange-300">INDONESIA</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 bg-orange-500 text-white font-black text-[10px] rounded font-mono shadow-sm">
+                            {{ user.nra }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-3 mb-4">
+                        <img src="{{ user.avatar or 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80' }}" 
+                             alt="Foto" class="w-14 h-14 rounded-xl object-cover border-2 border-orange-400 shadow-md">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">{{ user.name }}</h3>
+                            <p class="text-[11px] text-orange-200">Golongan Darah: <strong>{{ user.blood_type or 'O' }}</strong></p>
+                            <p class="text-[10px] text-slate-300">Bergabung: {{ user.approved_at.strftime('%d/%m/%Y') if user.approved_at else '2026' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-orange-700/40 flex items-center justify-between">
+                        <span class="text-[10px] text-orange-300">Status: <strong class="text-orange-200">ANGGOTA AKTIF</strong></span>
+                        <a href="/member/kta" 
+                           class="text-xs text-orange-300 hover:text-white font-bold underline decoration-orange-400"
+                           hx-get="/member/kta" hx-target="#main-content" hx-push-url="true">
+                            Buka KTA Penuh &rarr;
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="bg-orange-50 rounded-2xl p-5 border border-orange-200 text-orange-950 text-xs space-y-3">
+                    <div class="flex items-center gap-2 font-bold text-orange-900">
+                        <i class="fas fa-info-circle text-orange-600 text-sm"></i>
+                        <span>Penerbitan KTA Digital</span>
+                    </div>
+                    <p class="leading-relaxed">
+                        KTA Digital Anda beserta nomor unik format <strong>R-nn-YY</strong> akan muncul di sini segera setelah pengurus menyetujui formulir pendaftaran Anda.
+                    </p>
+                    <a href="/member/profile" 
+                       class="inline-block px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition"
+                       hx-get="/member/profile" hx-target="#main-content" hx-push-url="true">
+                        Periksa Kelengkapan Biodata
+                    </a>
+                </div>
+            {% endif %}
+
+            <!-- Kotak Safety Ringkas -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Kontak Darurat Terdaftar</h3>
+                <div class="text-xs space-y-1 text-slate-700">
+                    <p><span class="text-slate-400">Nama:</span> <strong>{{ user.emergency_name or '-' }}</strong></p>
+                    <p><span class="text-slate-400">Hubungan:</span> {{ user.emergency_relation or '-' }}</p>
+                    <p><span class="text-slate-400">No. Telp Darurat:</span> <strong class="text-orange-600 font-mono">{{ user.emergency_phone or '-' }}</strong></p>
+                    <p><span class="text-slate-400">Catatan Medis:</span> {{ user.medical_history or 'Tidak ada catatan alergi khusus' }}</p>
+                </div>
+                <div class="pt-2">
+                    <a href="/member/profile" class="text-xs font-semibold text-orange-600 hover:underline"
+                       hx-get="/member/profile" hx-target="#main-content" hx-push-url="true">
+                        Edit Data Medis & Darurat &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endmacro %}
+
+
+<!-- 2. KTA DIGITAL (KARTU TANDA ANGGOTA RESMI) -->
+{% macro member_kta(data) %}
+{% set user = data.user %}
+<div class="w-full space-y-6">
+
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-black text-slate-900 font-heading">Kartu Tanda Anggota (KTA) Digital</h1>
+            <p class="text-xs text-slate-500">Identitas resmi petualang Generasi Indonesia Menyatu Bersama Alam (GIMBAL)</p>
+        </div>
+        <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
+            <i class="fas fa-print"></i> Cetak / Simpan PDF
+        </button>
+    </div>
+
+    <!-- FISIK KTA DIGITAL (PREVIEW INTERAKTIF) -->
+    <div id="kta-card-print" class="kta-card rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border border-orange-600/40">
+        <!-- Watermark Background -->
+        <div class="absolute right-4 -bottom-10 opacity-10 pointer-events-none">
+            <img src="/assets/logo.png" alt="Logo Watermark" class="w-72 h-72 object-contain filter grayscale invert">
+        </div>
+
+        <!-- Header KTA -->
+        <div class="flex items-center justify-between border-b border-orange-700/50 pb-4 mb-6 relative z-10">
+            <div class="flex items-center gap-3">
+                <img src="/assets/logo.png" alt="Logo GIMBAL" class="w-12 h-12 object-contain drop-shadow">
+                <div>
+                    <h2 class="text-lg font-black tracking-wider text-white font-heading">KPAB - GIMBAL</h2>
+                    <p class="text-[10px] text-orange-300 uppercase tracking-widest font-semibold">Generasi Indonesia Menyatu Bersama Alam</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="px-3 py-1 bg-orange-500 text-white font-black text-sm rounded-lg font-mono tracking-wider shadow">
+                    {{ user.nra or 'R-00-00' }}
+                </span>
+                <p class="text-[9px] text-orange-200 mt-1 uppercase font-semibold">NRA Resmi</p>
+            </div>
+        </div>
+
+        <!-- Body KTA: Foto, Detail, & QR Code -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center relative z-10">
+            <!-- Foto Anggota -->
+            <div class="flex flex-col items-center text-center">
+                <img src="{{ user.avatar or 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' }}" 
+                     alt="Foto Anggota" 
+                     class="w-32 h-40 object-cover rounded-2xl border-2 border-orange-400 shadow-xl bg-stone-800">
+                <span class="mt-2 text-[10px] text-orange-300 font-bold uppercase tracking-wider">
+                    Anggota Biasa
+                </span>
+            </div>
+
+            <!-- Detail Anggota -->
+            <div class="sm:col-span-2 space-y-2 text-xs">
+                <div>
+                    <p class="text-[10px] text-orange-300 uppercase">Nama Lengkap</p>
+                    <p class="text-base sm:text-lg font-extrabold text-white font-heading">{{ user.name }}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <p class="text-[10px] text-orange-300 uppercase">Nomor Registrasi (NRA)</p>
+                        <p class="text-sm font-bold font-mono text-orange-200">{{ user.nra }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-orange-300 uppercase">Golongan Darah</p>
+                        <p class="text-sm font-bold text-orange-200">{{ user.blood_type or 'O' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-orange-300 uppercase">Tempat/Tgl Lahir</p>
+                        <p class="text-xs font-semibold text-slate-200">{{ user.birth_place or '-' }}, {{ user.birth_date or '-' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-orange-300 uppercase">Masa Berlaku</p>
+                        <p class="text-xs font-semibold text-orange-200">Seumur Hidup</p>
+                    </div>
+                </div>
+
+                <!-- Kontak Darurat pada KTA -->
+                <div class="pt-2 border-t border-orange-800/40 text-[11px] text-slate-300">
+                    <p><span class="text-orange-400">Kontak Darurat:</span> {{ user.emergency_name }} ({{ user.emergency_relation }}) - {{ user.emergency_phone }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer KTA: QR Code Verifikasi Lapangan -->
+        <div class="mt-6 pt-4 border-t border-orange-700/50 flex flex-col sm:flex-row items-center justify-between gap-4 relative z-10 text-xs">
+            <div class="flex items-center gap-3">
+                <!-- QR Code Validasi -->
+                {% if data.qr_base64 %}
+                <img src="data:image/png;base64,{{ data.qr_base64 }}" alt="QR Validasi KTA" class="w-16 h-16 bg-white p-1 rounded-xl shadow-md">
+                {% endif %}
+                <div>
+                    <p class="text-[10px] font-bold text-orange-300 uppercase">QR Code Validasi Lapangan</p>
+                    <p class="text-[9px] text-orange-300 max-w-xs">Scan untuk memverifikasi keabsahan keanggotaan aktif GIMBAL secara online.</p>
+                </div>
+            </div>
+            <div class="text-center sm:text-right">
+                <p class="text-[10px] text-slate-400">Sekretariat Pengurus Pusat GIMBAL</p>
+                <p class="text-xs font-serif italic text-orange-300">"Generasi Indonesia Menyatu Bersama Alam"</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAUTAN VALIDASI PUBLIK -->
+    <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between text-xs">
+        <div>
+            <p class="font-bold text-slate-800">Tautan Verifikasi Keabsahan:</p>
+            <p class="text-slate-500 font-mono text-[11px] truncate max-w-md">/verify-kta/{{ user.nra }}</p>
+        </div>
+        <a href="/verify-kta/{{ user.nra }}" target="_blank" class="px-3 py-1.5 bg-orange-50 text-orange-800 font-bold rounded-lg hover:bg-orange-100 transition">
+            Buka Halaman Verifikasi &rarr;
+        </a>
+    </div>
+
+</div>
+{% endmacro %}
+
+
+<!-- 3. IURAN SAYA & KAS ANGGOTA -->
+{% macro member_iuran(data) %}
+{% set user = data.user %}
+<div class="space-y-6">
+
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-black text-slate-900 font-heading">Iuran & Kas Anggota</h1>
+            <p class="text-xs text-slate-500">Kewajiban iuran bulanan dan transparansi keuangan kas GIMBAL</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="px-3 py-1 bg-orange-50 text-orange-800 border border-orange-200 text-xs font-bold rounded-xl">
+                <i class="fas fa-shield-alt mr-1"></i> Rekening Resmi: Mandiri 131-00-1829-3321 a.n GIMBAL
+            </span>
+        </div>
+    </div>
+
+    <!-- TAGIHAN AKTIF -->
+    <div class="space-y-3">
+        <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Tagihan Iuran Aktif</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for d in data.active_dues %}
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-orange-300 transition">
+                <div class="space-y-1 mb-4">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-orange-100 text-orange-800 uppercase">
+                            {{ d.category }}
+                        </span>
+                        <span class="text-xs text-slate-400">Jatuh Tempo: {{ d.due_date or 'Akhir Bulan' }}</span>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900">{{ d.title }}</h3>
+                    <p class="text-xs text-slate-500">{{ d.description }}</p>
+                </div>
+
+                <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <span class="text-lg font-black font-mono text-orange-700">
+                        Rp {{ "{:,.0f}".format(d.amount).replace(',', '.') }}
+                    </span>
+                    <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5"
+                            hx-get="/member/iuran/pay-modal/{{ d.id }}" hx-target="#modal-container">
+                        <i class="fas fa-upload text-xs"></i>
+                        <span>Unggah Bukti Bayar</span>
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-span-2 p-6 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 text-xs">
+                Tidak ada tagihan iuran baru saat ini. Terima kasih telah tertib berkontribusi!
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- RIWAYAT PEMBAYARAN IURAN -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="text-sm font-bold text-slate-800 font-heading">Riwayat Pembayaran & Bukti Transfer</h2>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
+                    <tr>
+                        <th class="px-6 py-3">Nama Iuran</th>
+                        <th class="px-6 py-3">Nominal</th>
+                        <th class="px-6 py-3">Tanggal Bayar</th>
+                        <th class="px-6 py-3">Bank / Metode</th>
+                        <th class="px-6 py-3">Bukti</th>
+                        <th class="px-6 py-3">Status Verifikasi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for pay in data.my_payments %}
+                    <tr class="hover:bg-slate-50/50">
+                        <td class="px-6 py-3 font-semibold text-slate-900">{{ pay.dues.title if pay.dues else 'Iuran Anggota' }}</td>
+                        <td class="px-6 py-3 font-bold font-mono text-slate-800">Rp {{ "{:,.0f}".format(pay.amount_paid).replace(',', '.') }}</td>
+                        <td class="px-6 py-3 text-slate-500">{{ pay.payment_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td class="px-6 py-3">{{ pay.bank_name or '-' }}</td>
+                        <td class="px-6 py-3">
+                            <a href="{{ pay.proof_image }}" target="_blank" class="text-orange-600 hover:underline font-bold flex items-center gap-1">
+                                <i class="fas fa-image"></i> Lihat
+                            </a>
+                        </td>
+                        <td class="px-6 py-3">
+                            {% if pay.status == 'approved' %}
+                                <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 rounded-full font-bold text-[10px]">
+                                    <i class="fas fa-check-circle mr-1"></i> Terverifikasi
+                                </span>
+                            {% elif pay.status == 'rejected' %}
+                                <span class="px-2.5 py-0.5 bg-rose-100 text-rose-800 rounded-full font-bold text-[10px]">
+                                    <i class="fas fa-times-circle mr-1"></i> Ditolak
+                                </span>
+                            {% else %}
+                                <span class="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full font-bold text-[10px]">
+                                    <i class="fas fa-clock mr-1"></i> Menunggu Verifikasi
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-slate-400">
+                            Belum ada riwayat pembayaran yang tercatat.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endmacro %}
+
+
+<!-- 4. ARSIP DOKUMEN INTERNAL -->
+{% macro member_documents(data) %}
+<div class="space-y-6">
+
+    <div>
+        <h1 class="text-2xl font-black text-slate-900 font-heading">Arsip & Dokumen Internal GIMBAL</h1>
+        <p class="text-xs text-slate-500">Akses resmi Anggaran Dasar, Standar Operasional Keselamatan, dan Modul Pelatihan</p>
+    </div>
+
+    <!-- GRID DOKUMEN -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {% for doc in data.documents %}
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+            <div class="space-y-2 mb-4">
+                <div class="flex items-center justify-between">
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-orange-100 text-orange-800">
+                        {{ doc.category.replace('_', ' ') }}
+                    </span>
+                    <span class="text-[11px] text-slate-400 font-mono">{{ doc.file_size_fmt or '1.5 MB' }}</span>
+                </div>
+                <h2 class="text-sm font-bold text-slate-900 leading-snug">{{ doc.title }}</h2>
+                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">{{ doc.description }}</p>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[10px] text-slate-400">Format: <strong>PDF</strong></span>
+                <a href="{{ doc.file_path }}" target="_blank" download
+                   class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5">
+                    <i class="fas fa-file-pdf"></i> Unduh Dokumen
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-3 p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs">
+            Belum ada dokumen yang dipublikasikan oleh pengurus.
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endmacro %}
+
+
+<!-- 5. PROFIL & INFORMASI MEDIS PRIBADI -->
+{% macro member_profile(data) %}
+{% set user = data.user %}
+<div class="w-full space-y-6">
+
+    <div>
+        <h1 class="text-2xl font-black text-slate-900 font-heading">Profil & Informasi Keselamatan Medis</h1>
+        <p class="text-xs text-slate-500">Pastikan data kontak darurat dan informasi kesehatan selalu mutakhir sebelum mengikuti trip</p>
+    </div>
+
+    <form hx-post="/member/profile" hx-target="#main-content" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+        
+        <!-- BAGIAN 1: IDENTITAS UTAMA (AKUN GOOGLE) -->
+        <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 pb-1 border-b border-slate-100">
+                1. Data Akun Terverifikasi
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap</label>
+                    <input type="text" name="name" value="{{ user.name }}" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Email Google (Read-only)</label>
+                    <input type="email" value="{{ user.email }}" readonly
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor WhatsApp Aktif</label>
+                    <input type="tel" name="phone" value="{{ user.phone or '' }}" placeholder="08xxxxxxxxxx" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tempat & Tanggal Lahir</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" name="birth_place" value="{{ user.birth_place or '' }}" placeholder="Kota Lahir"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        <input type="date" name="birth_date" value="{{ user.birth_date or '' }}"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Domisili Lengkap</label>
+                <textarea name="address" rows="2" placeholder="Nama Jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten"
+                          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ user.address or '' }}</textarea>
+            </div>
+        </div>
+
+        <!-- BAGIAN 2: DATA KESEHATAN KHUSUS ALAM BEBAS -->
+        <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-orange-600 mb-3 pb-1 border-b border-orange-100 flex items-center gap-1.5">
+                <i class="fas fa-heartbeat"></i> 2. Informasi Medis & Kesehatan Lapangan
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Golongan Darah</label>
+                    <select name="blood_type" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="O" {% if user.blood_type == 'O' %}selected{% endif %}>O</option>
+                        <option value="A" {% if user.blood_type == 'A' %}selected{% endif %}>A</option>
+                        <option value="B" {% if user.blood_type == 'B' %}selected{% endif %}>B</option>
+                        <option value="AB" {% if user.blood_type == 'AB' %}selected{% endif %}>AB</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Riwayat Penyakit / Alergi Obat / Cedera</label>
+                    <input type="text" name="medical_history" value="{{ user.medical_history or '' }}" placeholder="Contoh: Asma ringan, alergi dingin, pernah dislokasi bahu"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+            </div>
+        </div>
+
+        <!-- BAGIAN 3: KONTAK DARURAT (EMERGENCY CONTACT) -->
+        <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-orange-600 mb-3 pb-1 border-b border-orange-100 flex items-center gap-1.5">
+                <i class="fas fa-phone-alt"></i> 3. Kontak Darurat (Keluarga / Kerabat Dekat)
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Kontak Darurat</label>
+                    <input type="text" name="emergency_name" value="{{ user.emergency_name or '' }}" placeholder="Nama Ayah/Ibu/Pasangan" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Hubungan</label>
+                    <input type="text" name="emergency_relation" value="{{ user.emergency_relation or '' }}" placeholder="Orang Tua / Pasangan / Kakak" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Telepon Darurat</label>
+                    <input type="tel" name="emergency_phone" value="{{ user.emergency_phone or '' }}" placeholder="08xxxxxxxxxx" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none font-mono">
+                </div>
+            </div>
+        </div>
+
+        <!-- TOMBOL SIMPAN -->
+        <div class="pt-4 border-t border-slate-100 flex justify-end">
+            <button type="submit" class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2">
+                <i class="fas fa-save"></i>
+                <span>Simpan Perubahan Data</span>
+            </button>
+        </div>
+
+    </form>
+
+</div>
+{% endmacro %}

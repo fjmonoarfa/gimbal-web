@@ -1,0 +1,54 @@
+{
+  "kegiatan": [
+    {
+      "id": 1,
+      "nama": "Pelatihan & Pendidikan Dasar",
+      "deskripsi": "Pelatihan & Pendidikan Dasar tentang Manajemen Perjalanan, Navigasi, Botani-Zologi, Survival",
+      "tanggal": "2026-01-xx",
+      "image": "/assets/pics/kegiatan/7.jpg"
+    },
+    {
+      "id": 2,
+      "nama": "Arung Jeram",
+      "deskripsi": "Arung Jeram di sungai.....",
+      "tanggal": "2024-02-05",
+      "image": "/assets/pics/kegiatan/2.jpg"
+    },
+    {
+      "id": 3,
+      "nama": "Eksplorasi Gua",
+      "deskripsi": "Eksplorasi Gua.........",
+      "tanggal": "2024-02-05",
+      "image": "/assets/pics/kegiatan/3.jpg"
+    },
+    {
+      "id": 4,
+      "nama": "Camping",
+      "deskripsi": "Camping...",
+      "tanggal": "2024-02-05",
+      "image": "/assets/pics/kegiatan/4.jpg"
+    },
+    {
+      "id": 5,
+      "nama": "Konservasi Alam",
+      "deskripsi": "Konservasi Alam...",
+      "tanggal": "2024-02-05",
+      "image": "/assets/pics/kegiatan/5.jpg"
+    },
+    {
+      "id": 6,
+      "nama": "Survei",
+      "deskripsi": "Konservasi Alam...",
+      "tanggal": "2024-02-05",
+      "image": "/assets/pics/kegiatan/6.jpg"
+    },
+    {
+      "id": 7,
+      "nama": "Pendakian Gunung",
+      "deskripsi": "Pendakian Gunung.............",
+      "tanggal": "2024-01-12",
+      "image": "/assets/pics/kegiatan/1.jpg"
+
+    }
+  ]
+}
