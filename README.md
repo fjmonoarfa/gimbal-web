@@ -1,139 +1,218 @@
-# KPAB GIMBAL Web Application
+# KPAB GIMBAL Web Application & Ecosystem
 **Generasi Indonesia Menyatu Bersama Alam**
 
-Aplikasi web modern untuk organisasi petualang alam bebas **KPAB GIMBAL**, dibangun dengan arsitektur **Python Flask + Full HTMX (Dual-Layer) + SQLite Database**.
+Aplikasi web modern dan portal terintegrasi organisasi petualang alam bebas **KPAB GIMBAL**, dibangun dengan arsitektur **Python Flask + Modular Blueprints + Full Dual-Layer HTMX + Tailwind CSS + Alpine.js**, serta mendukung database **SQLite** (lokal) dan **MySQL / PostgreSQL** (produksi).
 
 ---
 
-## 🌟 Fitur Utama yang Telah Diimplementasikan
+## 🌟 Fitur Utama & Ekosistem Aplikasi
 
-### 1. Arsitektur Dual-Layer HTMX (Sesuai Standar Koperasi STU)
-* **Layer 1 (`index.html`)**: Outer Shell Frame dengan Tailwind CSS lokal, HTMX lokal, Alpine.js lokal, FontAwesome icons, dan Google Fonts.
-* **Layer 2 (`shell.html`)**: Application Shell bernuansa outdoor dengan Header navigasi sticky, indikator loading (`#loading`), status badge keanggotaan, modal container (`#modal-container`), dan wadah utama `#main-content`.
-* **SPA Feel**: Navigasi antar halaman menggunakan HTMX swap instan tanpa *page reload*, disertai pembaruan URL otomatis (`hx-push-url="true"`).
+### 1. Arsitektur Dual-Layer HTMX (Modular Blueprints)
+* **Layer 1 (`templates/index.html`)**: Outer Shell Frame dengan skeleton loader, Tailwind CSS, Alpine.js, HTMX lokal, FontAwesome, dan Google Fonts.
+* **Layer 2 (`templates/shell.html`)**: Application Frame bernuansa outdoor dengan Header navigasi responsif, Google-Style Account Hub, dropdown Pengaturan Admin, wadah modal terpusat (`#modal-container`), dan kontainer utama `#main-content`.
+* **Modular Flask Architecture**:
+  * `app.py`: Inisialisasi aplikasi, Google OAuth 2.0 SSO, Jinja context processors, dan public landing handler.
+  * `admin_pages.py` (`admin_bp`): Dashboard admin, persetujuan anggota (approval), verifikasi iuran kas, manajemen dokumen, agenda ekspedisi, kurasi galeri, master jabatan/struktur organisasi, serta pengaturan sistem.
+  * `members_page.py` (`members_bp`): Portal anggota, linimasa petualangan (feed), KTA digital interaktif, riwayat kas & iuran, live chat room & private message, serta pembaruan profil & kontak darurat.
+  * `web_api.py` (`api_bp`): Gateway pembayaran Midtrans (Snap Token & Webhook Notification), sinkronisasi langganan Google Pay, Gimbal Maps GIS API, dan realtime polling chat.
+  * `helpers.py`: Route guards (`login_required`, `admin_required`, `check_member_access`) dan dual-layer rendering engine.
+  * `cloudflare_email.py`: Sinkronisasi otomatis alias email resmi organisasi `@gimbal.my.id` melalui Cloudflare Email Routing API.
+* **Single Page Application (SPA) Feel**: Navigasi instan tanpa reload halaman penuh (`hx-push-url="true"`), transisi mulus, dan performa tinggi.
 
-### 2. Autentikasi Google OAuth & Mode Cepat Pengujian (Dev Switcher)
-* Pendaftaran 1-klik dengan Akun Google resmi.
-* **Dev Mode Switcher**: Memungkinkan pengujian instan berganti peran tanpa harus setup Google Cloud credentials terlebih dahulu:
-  * Masuk sebagai **Pengurus Admin** (`admin@gimbal.org` / `R-01-26`)
-  * Masuk sebagai **Anggota Aktif** (`budi.pendaki@gmail.com` / `R-02-26`)
-  * Masuk sebagai **Calon Anggota Pending** (`calon.petualang@gmail.com`)
+---
 
-### 3. Logika Penomoran Anggota Resmi (`R-nn-YY`)
-* **Format**: `R-nn-YY` (contoh: `R-01-26`, `R-02-26`, `R-03-26`).
-* **Aturan Khusus**:
+### 2. Autentikasi Google OAuth 2.0 & Alur Pendaftaran Berjenjang (Gated Onboarding)
+* **Google Identity Services & OAuth 2.0**: Pendaftaran dan login 1-klik terintegrasi untuk domain produksi `https://www.gimbal.my.id` dan localhost.
+* **Alur Pendaftaran Berjenjang**:
+  1. **Google Sign-In**: Pengguna mendaftar dengan akun Google resmi.
+  2. **Kelengkapan Profil Wajib (`/member/complete-profile`)**: Pengisian data wajib mencakup nomor WhatsApp, tempat & tanggal lahir, golongan darah, alamat domisili, riwayat medis/alergi, dan kontak darurat (*Safety First*).
+  3. **Pembayaran Iuran Pokok Registrasi (`/member/onboarding-status`)**: Pilihan metode pembayaran via Transfer Bank Manual (dengan bukti transfer & live preview) atau QRIS.
+  4. **Persetujuan Pengurus (Admin Approval)**: Admin memverifikasi data dan bukti pembayaran.
+  5. **Aktivasi Akun & Penerbitan NRA**: Setelah disetujui, akun aktif dan nomor keanggotaan diterbitkan secara otomatis. Calon anggota berstatus *pending* dipagari oleh *route guard* dan tidak dapat mengakses linimasa atau fitur anggota sebelum verifikasi selesai.
+
+---
+
+### 3. Logika Penomoran Anggota Resmi Atomik (`R-nn-YY`)
+* **Format**: `R-nn-YY` (contoh: `R-01-26`, `R-02-26`).
+* **Aturan Atomik**:
   * `YY` = 2 digit tahun saat admin menyetujui pendaftaran (misal tahun 2026 -> `26`).
   * `nn` = nomor urut persetujuan admin pada tahun tersebut (dimulai dari `01`).
-  * **Reset tahunan**: Nomor urut `nn` otomatis kembali ke `01` pada pergantian tahun baru.
-  * Calon anggota yang baru mendaftar berstatus `PENDING` (belum memiliki NRA). Begitu admin menekan tombol **"Setujui & Terbitkan R-nn-YY"**, sistem mengkalkulasi urutan persetujuan tertinggi dan mengalokasikan nomor NRA resmi secara atomik.
+  * **Reset tahunan**: Nomor urut otomatis kembali ke `01` pada pergantian tahun baru kalender.
+
+---
 
 ### 4. KTA Digital & QR Code Validasi Lapangan
-* Desain fisik kartu digital bernuansa outdoor khas GIMBAL (Nama, NRA `R-nn-YY`, Gol. Darah, Foto Profil, Status).
-* **QR Code Interaktif**: Mengarah ke halaman validasi publik `/verify-kta/<nra>` untuk pembuktian keabsahan keanggotaan di pos perizinan pendakian (Simaksi) atau di lapangan.
-
-### 5. Manajemen Iuran Kas & Verifikasi Pembayaran
-* **Anggota**: Memantau status iuran bulanan dan mengunggah foto/screenshot slip bukti transfer via modal HTMX.
-* **Admin**: Verifikasi bukti transfer (Setujui / Tolak), rekapitulasi total kas masuk, dan pembuatan master tagihan iuran baru.
-
-### 6. CRUD Dokumen Resmi Organisasi (Backend Admin)
-* Pengurus dapat menambah, mengedit, dan menghapus dokumen internal:
-  * **AD / ART & Legalitas**
-  * **SOP Keselamatan & Pendakian**
-  * **Modul Navigasi & Survival Rimba**
-* Anggota aktif dapat mengunduh dokumen langsung dari portal anggota.
-
-### 7. Agenda Ekspedisi & Kegiatan
-* Menampilkan daftar kegiatan petualangan (tingkat kesulitan, kuota peserta, tanggal, lokasi).
-* Anggota dapat mendaftarkan diri secara instan.
-
-### 8. Konfigurasi Terpusat Lebar Konten & Warna Monotone Tahunan
-* **File Konfigurasi Utama**: [static/js/theme-config.js](file:///g:/My%20Drive/priv_web_apps/gimbal-web/static/js/theme-config.js) & [static/css/theme.css](file:///g:/My%20Drive/priv_web_apps/gimbal-web/static/css/theme.css)
-* **Pengaturan 1 Variabel untuk Lebar Konten**:
-  * Cukup ubah `GIMBAL_SITE_WIDTH = '70%';` untuk mengatur lebar seluruh halaman website (Landing, Portal Anggota, Admin, Header, Footer).
-* **Pengaturan 1 Variabel untuk Warna Monotone Tahunan**:
-  * Cukup ubah `GIMBAL_THEME_COLOR = 'orange';` dengan preset tahunan:
-    * `'orange'` (Oranye Resmi GIMBAL)
-    * `'emerald'` (Hijau Rimba / Konservasi)
-    * `'blue'` (Biru Tirta / Air)
-    * `'amber'` (Emas Fajar)
-    * `'rose'` (Merah Terracotta Tebing)
-    * `'teal'` (Toska Danau Gunung)
-  * Seluruh komponen tombol, kartu KTA, badge, gradasi hero, dan aksen navigasi akan otomatis berubah seragam.
-* **Pengaturan 1 Variabel untuk Mode Tampilan (Bright & Dark Mode)**:
-  * Cukup ubah `GIMBAL_COLOR_MODE = 'bright';` (`'bright'` atau `'dark'`) sebagai default mode utama seluruh web.
-  * Dilengkapi tombol toggle interaktif (ikon Matahari / Bulan) di navigasi desktop & mobile pada semua bagian website.
-* **Section Hero Sinematik**:
-  * Lebar gambar latar belakang membentang penuh 100% (*edge-to-edge*).
-  * Konten teks, judul, tombol, dan metrik di dalamnya otomatis mengikuti lebar kontainer (`.site-container`).
-
-### 9. Modul CRUD Galeri Ekspedisi (Pin-Down System)
-* **Pusat Kurasi Foto**: Mengumpulkan dokumentasi dari seluruh agenda ekspedisi dan perjalanan petualang.
-* **Sistem Pin-down**: Pengurus dapat menentukan foto mana saja yang di-pin ke etalase galeri landing page utama atau disimpan sebagai arsip ekspedisi.
-* **Fitur**: Upload foto lokal ke `uploads/gallery/` atau URL gambar, hubungkan ke agenda ekspedisi, pilih kategori divisi, edit, toggle pin instan via HTMX, dan hapus foto.
-
-### 10. Ilustrasi Visual Cartoonized & 3D Character Avatars
-* Seluruh visual di landing page menggunakan gaya ilustrasi anime adventure / Ghibli landscape dan avatar pengurus 3D Pixar-style yang tersimpan di `static/pics/cartoon/`.
+* Desain kartu digital eksklusif petualang GIMBAL (Nama, NRA `R-nn-YY`, Golongan Darah, Foto Profil, Status Keanggotaan, dan Tanggal Terbit).
+* **QR Code Dinamis**: Terhubung ke halaman verifikasi publik `/verify-kta/<nra>` untuk pembuktian keabsahan identitas di pos perizinan pendakian (Simaksi), posko SAR, atau kegiatan lapangan.
 
 ---
 
-## 📜 Rekam Jejak Percakapan & Keputusan Arsitektur
-Seluruh kronologi instruksi, keputusan arsitektural, dan spesifikasi teknis telah didokumentasikan secara lengkap dalam file:
-👉 **[CONVERSATION_HISTORY.md](file:///g:/My%20Drive/priv_web_apps/gimbal-web/CONVERSATION_HISTORY.md)**
+### 5. Widget Obrolan Terapung (Bottom Float Chat) & Basecamp Live Chat
+* **Dual Chat System**:
+  * **Basecamp Public Room**: Ruang obrolan umum antar seluruh petualang aktif.
+  * **Private Direct Message (DM)**: Percakapan privat antar anggota secara personal.
+* **Bottom Float Widget (`templates/components/float_chat.html`)**:
+  * Widget terapung di pojok kanan bawah dengan mesin ganda yang deterministik (**Alpine.js + Vanilla JS fallback**).
+  * Dilengkapi tombol minimize, maximize, pemilih kontak DM, dan counter unread.
+  * **Otomatis Tersembunyi untuk Guest**: Hanya aktif dan muncul setelah anggota masuk (login), menjaga landing page publik tetap bersih.
 
 ---
 
-## 🚀 Cara Menjalankan Aplikasi
-
-1. **Jalankan Seeder Database (Inisialisasi SQLite)**:
-   ```bash
-   python seed.py
-   ```
-
-2. **Jalankan Server Flask**:
-   ```bash
-   python app.py
-   ```
-   Aplikasi akan berjalan di: `http://127.0.0.1:8083`
-
-3. **Menjalankan Automated Unit Tests**:
-   ```bash
-   python test_app.py
-   ```
+### 6. Manajemen Kas, Iuran Multi-Channel & Ekosistem Gimbal Maps
+* **Multi-Channel Kas & Iuran**:
+  * **Transfer Bank Manual**: Verifikasi slip transfer oleh bendahara dengan live modal preview.
+  * **Midtrans Payment Gateway**: Pembayaran instan otomatis menggunakan Snap Token, QRIS, dan Bank Virtual Account.
+  * **Google Pay / In-App Subscription**: Sinkronisasi otomatis langganan dari aplikasi mobile lapangan **gimbal-maps** (`/api/v1/maps/subscription/google-pay`).
+* **Org Member Featured Access**: Status lunas iuran membuka akses penuh ke repositori peta offline, impor vektor KML/GeoJSON, rute navigasi tak terbatas, dan berbagi track GPX di aplikasi `gimbal-maps`.
+* **Fitur Sakelar Iuran (Enable/Disable Dues)**: Pengurus dapat mengaktifkan atau menonaktifkan penagihan iuran sewaktu-waktu dari menu Pengaturan Admin.
 
 ---
 
-## 📁 Struktur Direktori
+### 7. Dewan Pengurus Inti & Divisi Operasional Dinamis di Landing Page
+* **Dewan Pengurus Inti**: Terhubung langsung ke tabel master `positions` dan penetapan anggota aktif, menampilkan struktur amanah pengurus, foto, dan NRA di landing page.
+* **Divisi Operasional Lapangan**: Menampilkan profil divisi petualangan resmi secara dinamis:
+  * 🏔️ **Gunung Hutan** (*Mountaineering*)
+  * 🧗 **Panjat Tebing** (*Rock Climbing*)
+  * 🦇 **Susur Gua** (*Speleology / Caving*)
+  * 🚣 **Arung Jeram** (*River Running / Rafting*)
+  * 🌿 **Konservasi & LH** (*Ecology, Conservation & SAR*)
+* **Footer Terintegrasi**: Alamat sekretariat basecamp, nomor telepon/WhatsApp, dan email resmi terhubung ke data `SystemSetting` yang dapat diubah dari dashboard admin.
+
+---
+
+### 8. Linimasa Petualangan (Adventure Community Feed) & Galeri Ekspedisi
+* **Linimasa Komunitas**: Berbagi cerita perjalanan, catatan rute, foto lapangan, interaksi *likes*, dan komentar antar anggota.
+* **Galeri Ekspedisi (Pin-Down System)**:
+  * Pengurus mengunggah dokumentasi kegiatan dan menghubungkannya dengan agenda ekspedisi.
+  * Tombol cepat **Pin-down**: Menampilkan foto kurasi terbaik langsung pada etalase galeri di landing page publik.
+
+---
+
+### 9. Konfigurasi Terpusat Tema Monotone & Pure Bright Mode
+* **Konfigurasi 1 Variabel**:
+  * Lebar Konten: `GIMBAL_SITE_WIDTH = '85%';` di `static/js/theme-config.js` dan `static/css/theme.css`.
+  * Tema Monotone Tahunan: `GIMBAL_THEME_COLOR = 'orange';` dengan 6 pilihan preset warna (`orange`, `emerald`, `blue`, `amber`, `rose`, `teal`).
+* **Pure Bright Mode Permanen**: Menghadirkan antarmuka bertaraf profesional, bersih, tajam, dan kontras tinggi tanpa distraksi dark mode.
+
+---
+
+## 📁 Struktur Direktori Proyek
 
 ```text
 gimbal-web/
-├── app.py                     # Entrypoint & routing Flask (Dual-Layer HTMX Engine)
-├── models.py                  # Model SQLAlchemy SQLite & generator auto R-nn-YY
-├── seed.py                    # Seeder data awal admin, anggota, iuran, dokumen
-├── test_app.py                # 7 Unit test suite pengujian otomatis
+├── app.py                     # Core Flask, Google OAuth 2.0 SSO, public landing & config
+├── admin_pages.py             # Blueprint Admin: Approval, Kas, Anggota, Ekspedisi, Galeri, Jabatan
+├── members_page.py            # Blueprint Member: Linimasa Feed, KTA, Iuran, Chat DM, Profil
+├── web_api.py                 # Blueprint API: Midtrans Gateway, Gimbal Maps API, Live Chat Polling
+├── helpers.py                 # Decorators, route guards, and dual-layer HTMX renderers
+├── models.py                  # SQLAlchemy Models (User, Dues, Activity, Gallery, Position, Chat, dll.)
+├── cloudflare_email.py        # Integrasi Cloudflare Email Routing API (@gimbal.my.id)
+├── seed.py                    # Seeder data awal & migrasi otomatis kolom skema
+├── test_app.py                # Suite pengujian otomatis (21 automated unit tests)
 ├── requirements.txt           # Dependensi Python
-├── CONVERSATION_HISTORY.md    # Rekam jejak seluruh percakapan & referensi arsitektur
+├── CONVERSATION_HISTORY.md    # Rekam jejak seluruh keputusan arsitektur & sesi pengembangan
+├── deploy_remote.py           # Skrip otomatisasi deployment SSH/SCP ke remote Ubuntu server
 ├── instance/
-│   └── gimbal.db              # Database SQLite
-├── uploads/
-│   ├── proofs/                # File upload bukti transfer iuran
-│   ├── docs/                  # File upload dokumen PDF internal
-│   └── gallery/               # File upload foto kurasi ekspedisi
+│   └── gimbal.db              # Database SQLite (lingkungan development)
+├── uploads/                   # Folder media upload (terlindungi .gitignore)
+│   ├── proofs/                # Bukti transfer pembayaran iuran
+│   ├── docs/                  # Berkas dokumen resmi / SOP PDF
+│   ├── gallery/               # Foto galeri ekspedisi kurasi
+│   ├── posts/                 # Foto lampiran postingan linimasa
+│   ├── maps/                  # Berkas GPX / track rute navigasi
+│   └── avatars/               # Foto profil anggota
 ├── templates/
-│   ├── index.html             # LAYER 1: Outer Shell Frame
-│   ├── shell.html             # LAYER 2: Application Shell (Header, Nav, Footer)
-│   ├── landing.html           # Halaman Publik Utama KPAB GIMBAL
-│   ├── verify_kta.html        # Halaman Publik Validasi QR KTA
-│   ├── member/
-│   │   └── member_pages.html  # Macros Halaman Anggota (Dashboard, KTA, Iuran, Dokumen, Profil)
+│   ├── index.html             # LAYER 1: Outer Shell Frame & Fallback Loader
+│   ├── shell.html             # LAYER 2: Application Shell (Header, Nav, Modal Container)
+│   ├── landing.html           # Landing page publik (Hero, Filosofi, Divisi, Galeri, Pengurus)
+│   ├── verify_kta.html        # Halaman publik verifikasi pemindaian QR KTA
 │   ├── admin/
-│   │   └── admin_pages.html   # Macros Halaman Admin (Approvals, Members, Dues, CRUD Dokumen, Galeri)
+│   │   └── admin_pages.html   # Macro views portal admin
+│   ├── member/
+│   │   └── member_pages.html  # Macro views portal anggota
 │   └── components/
-│       └── modals.html        # Modals HTMX (Upload bukti bayar, Buat iuran, Dokumen, Pin Galeri)
+│       ├── float_chat.html    # Widget floating chat (Basecamp Public & Private DM)
+│       └── modals.html        # Kumpulan modal dialog responsif HTMX
 └── static/
-    ├── css/theme.css          # Desain sistem & variabel lebar konten / monotone
-    ├── js/theme-config.js     # Variabel konfigurasi terpusat (lebar & preset warna)
-    ├── vendor/                # HTMX, Tailwind, Alpine.js lokal
-    ├── pics/cartoon/          # 10 Ilustrasi kartun petualang & avatar 3D pengurus
-    └── docs/                  # File sampel PDF resmi
+    ├── css/theme.css          # Sistem tema monotone, kontainer lebar situs & animasi
+    ├── js/theme-config.js     # Variabel konfigurasi terpusat (lebar & preset warna tema)
+    ├── vendor/                # HTMX, Tailwind CSS, Alpine.js (lokal)
+    ├── pics/cartoon/          # Ilustrasi kartun petualang & avatar pengurus 3D
+    └── docs/                  # Contoh dokumen SOP & modul materi
 ```
 
+---
+
+## 🚀 Panduan Menjalankan Aplikasi
+
+### 1. Persiapan Lingkungan & Dependensi
+Pastikan Python 3.10+ telah terpasang. Buat dan aktifkan virtual environment:
+```bash
+python -m venv venv
+# Di Windows:
+venv\Scripts\activate
+# Di Linux/macOS:
+source venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+### 2. Inisialisasi Database (Development - SQLite)
+Jalankan seeder untuk membuat tabel dan data awal akun pengurus, anggota, master jabatan, dan pengaturan:
+```bash
+python seed.py
+```
+
+### 3. Menjalankan Server Lokal
+```bash
+python app.py
+```
+Aplikasi akan aktif di: `http://localhost:5000` (atau port sesuai variabel `PORT`).
+
+### 4. Menjalankan Automated Unit Tests
+Seluruh 21 suite pengujian otomatis mencakup OAuth, alur onboarding, KTA QR, galeri, izin admin, dan API:
+```bash
+python test_app.py
+```
+
+---
+
+## 🌐 Deployment Produksi (Remote Server)
+
+Untuk mendeploy ke server produksi (misal Ubuntu Server dengan Gunicorn, Nginx, dan MySQL/PostgreSQL):
+1. Konfigurasikan target server pada [deploy_remote.py](file:///d:/Projects/My%20Drive/priv_web_apps/gimbal/gimbal-web/deploy_remote.py).
+2. Jalankan skrip deployment:
+   ```bash
+   python deploy_remote.py
+   ```
+3. Skrip akan otomatis mengunggah seluruh berkas kode, aset static, template, menyinkronkan migrasi kolom database, dan me-restart service aplikasi di server.
+
+---
+
+## 🔒 Variabel Lingkungan (`.env`)
+
+Contoh berkas konfigurasi `.env` pada lingkungan produksi:
+```env
+SECRET_KEY=kunci-rahasia-keamanan-gimbal-2026
+PORT=8082
+DATABASE_URL=mysql://gimbal-web:P4ssw0rd!@127.0.0.1/gimbal-web
+
+# Google OAuth 2.0 Credentials
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URI=https://www.gimbal.my.id
+
+# Midtrans Gateway (Opsional jika menggunakan payment gateway)
+MIDTRANS_SERVER_KEY=SB-Mid-server-xxxxxx
+MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxxxx
+MIDTRANS_IS_PRODUCTION=false
+
+# Cloudflare Email Routing (Opsional untuk alias @gimbal.my.id)
+CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
+CLOUDFLARE_ZONE_ID=your-zone-id
+```
+
+---
+
+## 📜 Lisensi & Hak Cipta
+Hak Cipta © 2026 **KPAB GIMBAL** (*Generasi Indonesia Menyatu Bersama Alam*). Seluruh hak dilindungi undang-undang.

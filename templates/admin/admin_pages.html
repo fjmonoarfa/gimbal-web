@@ -1,8 +1,55 @@
 <!-- MACROS UNTUK HALAMAN BACKEND ADMIN GIMBAL (MONOTONE ORANGE) -->
 
+<!-- HELPER FLASH MESSAGES DENGAN KETERANGAN JELAS -->
+{% macro flash_alerts() %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="space-y-2 mb-4 animate-fade-in" id="admin-flash-messages">
+            {% for category, message in messages %}
+            <div class="p-4 rounded-lg border text-xs font-semibold flex items-center justify-between shadow-sm
+                        {% if category in ['error', 'danger'] %}
+                            bg-rose-50 border-rose-200 text-rose-800
+                        {% elif category == 'success' %}
+                            bg-emerald-50 border-emerald-200 text-emerald-800
+                        {% elif category == 'warning' %}
+                            bg-amber-50 border-amber-200 text-amber-800
+                        {% else %}
+                            bg-blue-50 border-blue-200 text-blue-800
+                        {% endif %}">
+                <div class="flex items-center gap-2.5">
+                    {% if category in ['error', 'danger'] %}
+                        <div class="w-7 h-7 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-sm"></i>
+                        </div>
+                    {% elif category == 'success' %}
+                        <div class="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check-circle text-sm"></i>
+                        </div>
+                    {% elif category == 'warning' %}
+                        <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-sm"></i>
+                        </div>
+                    {% else %}
+                        <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-info-circle text-sm"></i>
+                        </div>
+                    {% endif %}
+                    <span class="leading-relaxed">{{ message }}</span>
+                </div>
+                <button type="button" onclick="this.closest('.p-4').remove()" class="text-slate-400 hover:text-slate-700 p-1 rounded transition ml-2">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+{% endmacro %}
+
 <!-- 1. DASHBOARD ADMIN -->
 {% macro admin_dashboard(data) %}
 <div class="space-y-6">
+    {{ flash_alerts() }}
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -11,7 +58,7 @@
         </div>
         <div class="flex items-center gap-2">
             <a href="/admin/approvals" 
-               class="px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2"
+               class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-md transition flex items-center gap-2"
                hx-get="/admin/approvals" hx-target="#main-content" hx-push-url="true">
                 <i class="fas fa-user-check"></i>
                 <span>Verifikasi Calon Anggota ({{ data.pending_count }})</span>
@@ -22,10 +69,10 @@
     <!-- 4 KARTU STATISTIK METRIK -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Metrik 1: Calon Pending -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-slate-500">Calon Anggota Baru</span>
-                <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
+                <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
                     <i class="fas fa-user-clock"></i>
                 </span>
             </div>
@@ -36,10 +83,10 @@
         </div>
 
         <!-- Metrik 2: Total Anggota Aktif -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-slate-500">Anggota Resmi Aktif</span>
-                <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
+                <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
                     <i class="fas fa-users"></i>
                 </span>
             </div>
@@ -48,10 +95,10 @@
         </div>
 
         <!-- Metrik 3: Kas Iuran Terkumpul -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-slate-500">Total Kas Iuran Masuk</span>
-                <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
+                <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
                     <i class="fas fa-coins"></i>
                 </span>
             </div>
@@ -60,10 +107,10 @@
         </div>
 
         <!-- Metrik 4: Dokumen & SOP -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-semibold text-slate-500">Dokumen & SOP Aktif</span>
-                <span class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
+                <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
                     <i class="fas fa-file-contract"></i>
                 </span>
             </div>
@@ -76,7 +123,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         <!-- Kiri: Antrean Approval Calon Anggota (Dengan Auto R-nn-YY) -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
                     <h2 class="text-sm font-bold text-slate-900 font-heading">Antrean Verifikasi Calon Anggota</h2>
@@ -122,7 +169,7 @@
         </div>
 
         <!-- Kanan: Bukti Transfer Menunggu Cek -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
                     <h2 class="text-sm font-bold text-slate-900 font-heading">Verifikasi Bukti Transfer Iuran</h2>
@@ -177,6 +224,7 @@
 <!-- 2. VERIFIKASI CALON ANGGOTA & PENERBITAN R-nn-YY -->
 {% macro admin_approvals(data) %}
 <div class="space-y-6">
+    {{ flash_alerts() }}
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -186,7 +234,7 @@
                 <strong class="text-orange-700 font-mono">R-nn-{{ data.current_year_2digit }}</strong>
             </p>
         </div>
-        <span class="px-3 py-1.5 bg-orange-50 text-orange-900 border border-orange-200 rounded-xl text-xs font-bold">
+        <span class="px-3 py-1.5 bg-orange-50 text-orange-900 border border-orange-200 rounded-lg text-xs font-bold">
             Tahun Berjalan: 20{{ data.current_year_2digit }} | Urutan Berikutnya: #{{ data.next_seq_preview }}
         </span>
     </div>
@@ -194,11 +242,11 @@
     <!-- DAFTAR CALON LENGKAP -->
     <div class="space-y-4">
         {% for cand in data.pending_members %}
-        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-orange-300 transition flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:border-orange-300 transition flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             
             <div class="flex items-start gap-4">
                 <img src="{{ cand.avatar or 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80' }}" 
-                     alt="{{ cand.name }}" class="w-16 h-16 rounded-2xl object-cover border-2 border-slate-200 shadow-sm flex-shrink-0">
+                     alt="{{ cand.name }}" class="w-16 h-16 rounded-lg object-cover border-2 border-slate-200 shadow-sm flex-shrink-0">
                 
                 <div class="space-y-1">
                     <div class="flex items-center gap-2">
@@ -229,12 +277,39 @@
                         </span>
                         {% endif %}
                     </div>
+
+                    <!-- Status Pembayaran Iuran Calon Anggota -->
+                    <div class="flex flex-wrap items-center gap-2.5 pt-2 text-xs">
+                        {% if not data.dues_enabled %}
+                        <span class="px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 font-bold rounded-lg flex items-center gap-1.5">
+                            <i class="fas fa-power-off text-slate-500"></i> Iuran Dinonaktifkan (Bebas Iuran)
+                        </span>
+                        {% elif cand.is_dues_paid %}
+                        <span class="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold rounded-lg flex items-center gap-1.5">
+                            <i class="fas fa-check-circle text-emerald-600"></i> Iuran Keanggotaan Lunas
+                        </span>
+                        {% elif cand.latest_dues_payment and cand.latest_dues_payment.status == 'pending' %}
+                        <span class="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 font-bold rounded-lg flex items-center gap-1.5">
+                            <i class="fas fa-hourglass-half text-amber-600"></i> Bukti Transfer Diunggah ({{ cand.latest_dues_payment.bank_name }} - Rp {{ "{:,.0f}".format(cand.latest_dues_payment.amount_paid) }})
+                        </span>
+                        {% if cand.latest_dues_payment.proof_image %}
+                        <a href="{{ cand.latest_dues_payment.proof_image }}" target="_blank"
+                           class="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-200 font-bold rounded-lg flex items-center gap-1 text-[11px] transition">
+                            <i class="fas fa-external-link-alt text-stone-500"></i> Lihat Bukti Transfer
+                        </a>
+                        {% endif %}
+                        {% else %}
+                        <span class="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 font-bold rounded-lg flex items-center gap-1.5">
+                            <i class="fas fa-exclamation-triangle text-rose-500"></i> Belum Membayar Iuran
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
             <!-- Action Buttons: Setujui (Auto R-nn-YY) & Tolak -->
             <div class="flex items-center gap-3 w-full lg:w-auto justify-end border-t lg:border-t-0 pt-3 lg:pt-0">
-                <button class="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2"
+                <button class="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-md transition flex items-center gap-2"
                         hx-post="/admin/member/approve/{{ cand.id }}"
                         hx-target="#main-content"
                         hx-confirm="Terbitkan nomor anggota resmi format R-nn-{{ data.current_year_2digit }} untuk {{ cand.name }}?">
@@ -242,7 +317,7 @@
                     <span>Setujui & Terbitkan R-nn-YY</span>
                 </button>
 
-                <button class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition"
+                <button class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-lg border border-rose-200 transition"
                         hx-post="/admin/member/reject/{{ cand.id }}"
                         hx-target="#main-content"
                         hx-confirm="Tolak pendaftaran calon anggota ini?">
@@ -253,7 +328,7 @@
 
         </div>
         {% else %}
-        <div class="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 space-y-3">
+        <div class="p-12 text-center bg-white rounded-lg border border-slate-200 text-slate-400 space-y-3">
             <i class="fas fa-user-check text-4xl text-orange-500"></i>
             <h3 class="text-base font-bold text-slate-800">Tidak Ada Antrean Pendaftaran Baru</h3>
             <p class="text-xs text-slate-500 max-w-md mx-auto">
@@ -270,6 +345,7 @@
 <!-- 3. DATA MASTER ANGGOTA (SEARCH & EXPORT) -->
 {% macro admin_members(data) %}
 <div class="space-y-6">
+    {{ flash_alerts() }}
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -277,19 +353,24 @@
             <p class="text-xs text-slate-500">Direktori seluruh anggota resmi, calon pendaftar, dan pengurus</p>
         </div>
         <div class="flex items-center gap-2">
-            <a href="/admin/members/export-csv" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-2">
+            <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2"
+                    hx-get="/admin/members/create-modal" hx-target="#modal-container">
+                <i class="fas fa-user-plus"></i>
+                <span>Tambah Anggota</span>
+            </button>
+            <a href="/admin/members/export-csv" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2">
                 <i class="fas fa-file-csv text-orange-400"></i>
-                <span>Ekspor CSV / Excel</span>
+                <span>Ekspor CSV</span>
             </a>
         </div>
     </div>
 
     <!-- FILTER & SEARCH BAR -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
+    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div class="relative w-full sm:w-80">
             <i class="fas fa-search absolute left-3.5 top-3 text-slate-400 text-xs"></i>
             <input type="text" id="member-search" name="q" placeholder="Cari nama, NRA (R-nn-YY), telepon..."
-                   class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                   class="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"
                    hx-get="/admin/members" hx-trigger="keyup changed delay:300ms" hx-target="#main-content">
         </div>
 
@@ -305,24 +386,24 @@
     </div>
 
     <!-- TABEL MASTER ANGGOTA -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs text-slate-700">
                 <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
                     <tr>
-                        <th class="px-6 py-3.5">NRA Resmi</th>
-                        <th class="px-6 py-3.5">Nama & Profil</th>
-                        <th class="px-6 py-3.5">Kontak</th>
-                        <th class="px-6 py-3.5">Gol. Darah</th>
-                        <th class="px-6 py-3.5">Kontak Darurat</th>
-                        <th class="px-6 py-3.5">Status</th>
-                        <th class="px-6 py-3.5 text-right">Aksi</th>
+                        <th class="px-5 py-3.5">NRA Resmi</th>
+                        <th class="px-5 py-3.5">Nama & Profil</th>
+                        <th class="px-5 py-3.5">Kontak</th>
+                        <th class="px-4 py-3.5">Gol. Darah</th>
+                        <th class="px-5 py-3.5">Status</th>
+                        <th class="px-5 py-3.5">Terakhir Masuk</th>
+                        <th class="px-5 py-3.5 text-right">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     {% for m in data.members %}
                     <tr class="hover:bg-slate-50/60 transition">
-                        <td class="px-6 py-3.5 font-mono font-bold text-slate-900">
+                        <td class="px-5 py-3.5 font-mono font-bold text-slate-900">
                             {% if m.nra %}
                                 <span class="px-2 py-0.5 bg-orange-50 text-orange-800 rounded border border-orange-200">
                                     {{ m.nra }}
@@ -331,41 +412,101 @@
                                 <span class="text-slate-400 italic">Belum Ada</span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-3.5">
+                        <td class="px-5 py-3.5">
                             <div class="flex items-center gap-3">
                                 <img src="{{ m.avatar or 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80' }}" 
                                      alt="Avatar" class="w-8 h-8 rounded-full object-cover border border-slate-200">
                                 <div>
-                                    <p class="font-bold text-slate-900">{{ m.name }}</p>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <p class="font-bold text-slate-900">{{ m.name }}</p>
+                                        {% if m.role == 'superadmin' %}
+                                        <span class="px-1.5 py-0.2 bg-slate-900 text-amber-300 font-mono font-bold text-[9px] rounded shadow-sm">SUPERADMIN</span>
+                                        {% elif m.role == 'admin' %}
+                                        <span class="px-1.5 py-0.2 bg-blue-100 text-blue-800 font-bold text-[9px] rounded border border-blue-200">ADMIN</span>
+                                        {% endif %}
+                                    </div>
                                     <p class="text-[10px] text-slate-400">{{ m.email }}</p>
+                                    
+                                    <!-- Cloudflare Email Forwarding Alias -->
+                                    <div class="mt-0.5 flex items-center gap-1 text-[10px] font-mono text-orange-700 bg-orange-50/80 px-1.5 py-0.2 rounded border border-orange-200/60 w-fit" title="Alamat Cloudflare Email Forwarding ke {{ m.email }}">
+                                        <i class="fas fa-shield-alt text-[9px] text-orange-600"></i>
+                                        <span>{{ m.gimbal_alias_email or (m.email.split('@')[0] + '@gimbal.my.id') }}</span>
+                                    </div>
+
+                                    {% if m.jabatan %}
+                                    <div class="mt-0.5">
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded font-semibold text-[9px]">
+                                            <i class="fas fa-sitemap text-[8px] text-orange-600"></i> {{ m.jabatan }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-3.5 font-mono text-slate-600">{{ m.phone or '-' }}</td>
-                        <td class="px-6 py-3.5 font-bold text-rose-700">{{ m.blood_type or '-' }}</td>
-                        <td class="px-6 py-3.5 text-slate-600">
-                            {{ m.emergency_name or '-' }} <span class="text-slate-400">({{ m.emergency_phone or '-' }})</span>
+                        <td class="px-5 py-3.5">
+                            <span class="font-mono text-slate-600 block">{{ m.phone or '-' }}</span>
+                            {% if m.emergency_name %}
+                            <span class="text-[10px] text-slate-400 block">Darurat: {{ m.emergency_name }} ({{ m.emergency_phone or '-' }})</span>
+                            {% endif %}
                         </td>
-                        <td class="px-6 py-3.5">
+                        <td class="px-4 py-3.5 font-bold text-rose-700">{{ m.blood_type or '-' }}</td>
+                        <td class="px-5 py-3.5">
                             {% if m.status == 'active' %}
-                                <span class="px-2 py-0.5 bg-orange-100 text-orange-800 rounded-full font-bold text-[10px]">Aktif</span>
+                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px] flex items-center gap-1 w-fit">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktif
+                                </span>
                             {% elif m.status == 'pending' %}
-                                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full font-bold text-[10px]">Pending</span>
+                                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full font-bold text-[10px] flex items-center gap-1 w-fit">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending
+                                </span>
                             {% else %}
-                                <span class="px-2 py-0.5 bg-rose-100 text-rose-800 rounded-full font-bold text-[10px]">Ditolak</span>
+                                <span class="px-2 py-0.5 bg-rose-100 text-rose-800 rounded-full font-bold text-[10px] flex items-center gap-1 w-fit">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Nonaktif
+                                </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-3.5 text-right">
-                            {% if m.nra %}
-                            <a href="/verify-kta/{{ m.nra }}" target="_blank" class="text-orange-600 hover:underline font-bold text-xs">
-                                <i class="fas fa-id-card mr-1"></i> KTA
-                            </a>
+                        <td class="px-5 py-3.5">
+                            {% if m.last_login %}
+                                <span class="font-mono text-slate-800 font-semibold block text-[11px]">{{ m.last_login.strftime('%d/%m/%Y %H:%M') }} WIB</span>
+                                <span class="text-[10px] text-emerald-600 flex items-center gap-1 font-medium">
+                                    <i class="fas fa-check-circle text-[9px]"></i> Terdata
+                                </span>
                             {% else %}
-                            <button class="text-orange-600 hover:underline font-bold text-xs"
-                                    hx-post="/admin/member/approve/{{ m.id }}" hx-target="#main-content">
-                                Approve
-                            </button>
+                                <span class="text-slate-400 italic text-[11px]">Belum pernah</span>
                             {% endif %}
+                        </td>
+                        <td class="px-5 py-3.5 text-right">
+                            <div class="inline-flex items-center gap-1.5 justify-end">
+                                {% if m.nra %}
+                                <a href="/verify-kta/{{ m.nra }}" target="_blank" class="px-2 py-1 bg-slate-100 hover:bg-orange-50 text-slate-700 hover:text-orange-700 font-bold rounded-lg transition text-[11px] flex items-center gap-1" title="Lihat KTA Digital">
+                                    <i class="fas fa-id-card text-orange-600"></i> KTA
+                                </a>
+                                {% else %}
+                                <button class="px-2.5 py-1 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition text-[11px] shadow-sm"
+                                        hx-post="/admin/member/approve/{{ m.id }}" hx-target="#main-content">
+                                    Approve
+                                </button>
+                                {% endif %}
+                                <button class="p-1.5 rounded-lg text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition"
+                                        hx-get="/admin/member/edit-modal/{{ m.id }}" hx-target="#modal-container"
+                                        title="Edit Lengkap">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <!-- Opsi Proper: Nonaktifkan Akun (Soft Deactivation tanpa merusak cascade) -->
+                                <button class="p-1.5 rounded-lg {% if m.status == 'active' %}text-amber-500 hover:text-amber-700 hover:bg-amber-50{% else %}text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50{% endif %} transition"
+                                        hx-post="/admin/member/toggle-status/{{ m.id }}" hx-target="#main-content"
+                                        hx-confirm="Ubah status aktif/nonaktif akun {{ m.name }}?"
+                                        title="{% if m.status == 'active' %}Nonaktifkan Akun (Aman, simpan rekam jejak kas){% else %}Aktifkan Kembali Akun{% endif %}">
+                                    <i class="fas {% if m.status == 'active' %}fa-user-slash{% else %}fa-user-check{% endif %}"></i>
+                                </button>
+                                <!-- Hapus Permanen dengan Cascades Cleanup -->
+                                <button class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                                        hx-post="/admin/member/delete/{{ m.id }}" hx-target="#main-content"
+                                        hx-confirm="PERINGATAN: Menghapus permanen anggota {{ m.name }} beserta seluruh riwayat terkait. Lanjutkan?"
+                                        title="Hapus Permanen">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -381,21 +522,85 @@
 <!-- 4. IURAN & KEUANGAN KAS ADMIN -->
 {% macro admin_dues(data) %}
 <div class="space-y-6">
+    {{ flash_alerts() }}
 
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
             <h1 class="text-2xl font-black text-slate-900 font-heading">Manajemen Iuran & Kas GIMBAL</h1>
-            <p class="text-xs text-slate-500">Kelola master tagihan iuran, verifikasi bukti pembayaran, dan laporan kas</p>
+            <p class="text-xs text-slate-500">Kelola master tarif tagihan iuran, status penagihan global, verifikasi bukti pembayaran, dan alokasi kas</p>
         </div>
-        <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-2"
+        <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2 cursor-pointer"
                 hx-get="/admin/dues/create-modal" hx-target="#modal-container">
             <i class="fas fa-plus"></i>
-            <span>Buat Tagihan Iuran Baru</span>
+            <span>Tambah Jenis Iuran Baru</span>
         </button>
     </div>
 
-    <!-- VERIFIKASI PEMBAYARAN MASUK -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <!-- CARD 1: SAKELAR GLOBAL PENAGIHAN IURAN -->
+    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase tracking-wider">Master Control</span>
+                <h2 class="text-base font-extrabold text-slate-900 font-heading mt-1">Sakelar Penagihan Iuran Organisasi</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Kontrol global apakah seluruh kewajiban penagihan iuran kas diberlakukan atau dibebaskan sementara</p>
+            </div>
+            {% set is_dues_active = data.dues_enabled %}
+            <span class="px-3.5 py-1.5 rounded-full text-xs font-bold self-start sm:self-auto flex items-center gap-2 {{ 'bg-emerald-100 text-emerald-800 border border-emerald-300' if is_dues_active else 'bg-slate-100 text-slate-600 border border-slate-300' }}">
+                <span class="w-2.5 h-2.5 rounded-full {{ 'bg-emerald-500 animate-pulse' if is_dues_active else 'bg-slate-400' }}"></span>
+                <span>Status Sistem: {{ 'Aktif (Penagihan Diberlakukan)' if is_dues_active else 'Nonaktif (Bebas Iuran)' }}</span>
+            </span>
+        </div>
+
+        <form hx-post="/admin/settings/dues" hx-target="#main-content" class="space-y-4 text-xs">
+            <input type="hidden" name="dues_title" value="{{ data.active_dues.title if data.active_dues else 'Iuran Wajib Bulanan Anggota' }}">
+            <input type="hidden" name="dues_amount" value="{{ data.active_dues.amount|int if data.active_dues else 15000 }}">
+            <input type="hidden" name="due_date" value="{{ data.active_dues.due_date if data.active_dues else '' }}">
+            <input type="hidden" name="description" value="{{ data.active_dues.description if data.active_dues else '' }}">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition select-none {{ 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-200' if is_dues_active else 'bg-white border-slate-200 hover:border-emerald-300' }}">
+                    <input type="radio" name="is_active" value="1" {% if is_dues_active %}checked{% endif %} class="text-orange-600 focus:ring-orange-500 mt-0.5">
+                    <div class="space-y-1">
+                        <p class="font-extrabold text-slate-900 text-xs flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span>Aktifkan Sistem Iuran (Enable)</span>
+                        </p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">
+                            Kewajiban iuran diberlakukan. Anggota akan menerima notifikasi tagihan dan pendaftar baru wajib menyelesaikan iuran pokok pendaftaran sebelum disahkan.
+                        </p>
+                    </div>
+                </label>
+
+                <label class="flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition select-none {{ 'bg-slate-50 border-slate-500 ring-2 ring-slate-200' if not is_dues_active else 'bg-white border-slate-200 hover:border-slate-400' }}">
+                    <input type="radio" name="is_active" value="0" {% if not is_dues_active %}checked{% endif %} class="text-orange-600 focus:ring-orange-500 mt-0.5">
+                    <div class="space-y-1">
+                        <p class="font-extrabold text-slate-900 text-xs flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                            <span>Nonaktifkan Sistem Iuran (Disable)</span>
+                        </p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">
+                            Bebas iuran / pembebasan kas sementara. Dashboard anggota bersih dari tagihan, dan pendaftar baru tidak diminta pembayaran transfer iuran saat registrasi.
+                        </p>
+                    </div>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+                <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                    <i class="fas fa-shield-alt text-orange-600"></i>
+                    <span>Perubahan sakelar langsung berlaku seketika pada portal anggota & alur pendaftaran.</span>
+                </div>
+                <button type="submit"
+                        class="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-sm transition flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-save"></i>
+                    <span>Simpan Status Sakelar</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- CARD 2: VERIFIKASI PEMBAYARAN MASUK -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 class="text-sm font-bold text-slate-900 font-heading">Konfirmasi Pembayaran Bukti Transfer</h2>
             <span class="text-xs text-slate-400">Total Transaksi: {{ data.payments|length }}</span>
@@ -455,9 +660,129 @@
                             {% endif %}
                         </td>
                     </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-slate-400 italic">Belum ada transaksi pembayaran iuran yang tercatat.</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- CARD 3: DAFTAR MASTER JENIS & TARIF IURAN (CRUD MANAGEMENT) -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase tracking-wider">CRUD Tagihan</span>
+                    <h2 class="text-base font-extrabold text-slate-900 font-heading">Daftar Master Jenis & Tarif Iuran</h2>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Kelola ragam kategori iuran (Wajib Bulanan, Ekspedisi/Trip, Sarana & Alat, Sukarela). Tambah, ubah tarif, atau hapus jenis iuran.</p>
+            </div>
+            <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+                    hx-get="/admin/dues/create-modal" hx-target="#modal-container">
+                <i class="fas fa-plus"></i>
+                <span>Tambah Jenis Iuran Baru</span>
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
+                    <tr>
+                        <th class="px-6 py-3.5">Nama & Alokasi Tagihan</th>
+                        <th class="px-6 py-3.5">Kategori</th>
+                        <th class="px-6 py-3.5">Nominal Tarif</th>
+                        <th class="px-6 py-3.5">Jatuh Tempo</th>
+                        <th class="px-6 py-3.5 text-center">Status Tagihan</th>
+                        <th class="px-6 py-3.5 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for d in data.all_dues %}
+                    <tr class="hover:bg-slate-50/60 transition">
+                        <td class="px-6 py-4">
+                            <p class="font-extrabold text-slate-900 text-xs">{{ d.title }}</p>
+                            <p class="text-[11px] text-slate-500 mt-0.5 max-w-sm leading-snug">{{ d.description or 'Tidak ada catatan alokasi' }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if d.category == 'wajib' %}
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 uppercase">
+                                    Wajib Bulanan
+                                </span>
+                            {% elif d.category == 'kegiatan' %}
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 uppercase">
+                                    Kegiatan / Trip
+                                </span>
+                            {% elif d.category == 'sarpras' %}
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 uppercase">
+                                    Sarana & Alat
+                                </span>
+                            {% else %}
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">
+                                    {{ d.category }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 font-mono font-extrabold text-sm text-orange-700 whitespace-nowrap">
+                            Rp {{ "{:,.0f}".format(d.amount).replace(',', '.') }}
+                        </td>
+                        <td class="px-6 py-4 text-slate-600 whitespace-nowrap">
+                            {{ d.due_date or 'Akhir Bulan' }}
+                        </td>
+                        <td class="px-6 py-4 text-center whitespace-nowrap">
+                            <div class="inline-flex items-center gap-2">
+                                {% if d.is_active %}
+                                    <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px]">Aktif</span>
+                                {% else %}
+                                    <span class="px-2.5 py-0.5 bg-slate-200 text-slate-600 rounded-full font-bold text-[10px]">Nonaktif</span>
+                                {% endif %}
+                                <button hx-post="/admin/dues/toggle-active/{{ d.id }}" hx-target="#main-content"
+                                        class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded text-[10px] font-semibold transition cursor-pointer"
+                                        title="Ubah status aktif/nonaktif">
+                                    <i class="fas fa-sync-alt text-[9px]"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right whitespace-nowrap">
+                            <div class="inline-flex items-center gap-1.5">
+                                <button class="px-3 py-1.5 bg-slate-100 hover:bg-orange-50 text-slate-700 hover:text-orange-700 font-bold rounded-lg transition text-xs flex items-center gap-1 cursor-pointer"
+                                        hx-get="/admin/dues/edit-modal/{{ d.id }}" hx-target="#modal-container"
+                                        title="Ubah detail tarif iuran">
+                                    <i class="fas fa-edit text-orange-600"></i>
+                                    <span>Edit</span>
+                                </button>
+                                <button class="p-1.5 bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 font-bold rounded-lg transition text-xs cursor-pointer"
+                                        hx-post="/admin/dues/delete/{{ d.id }}" hx-target="#main-content"
+                                        hx-confirm="Hapus jenis iuran '{{ d.title }}'? Seluruh catatan pembayaran terkait akan ikut terhapus."
+                                        title="Hapus iuran secara permanen">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-slate-400 text-xs">
+                            <i class="fas fa-receipt text-3xl text-slate-300 mb-2 block"></i>
+                            Belum ada jenis iuran kas yang terdaftar. Klik tombol <b>Tambah Jenis Iuran Baru</b> untuk membuat master tagihan.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Rekening Kas Info Bar -->
+        <div class="p-4 bg-orange-50/60 border-t border-orange-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-orange-950">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-university text-orange-600"></i>
+                <span>Rekening Kas Utama: <b>{{ data.bank_primary_name or 'Bank Mandiri' }} ({{ data.bank_primary_number or '131-00-1829-3321' }}) a.n {{ data.bank_primary_holder or 'KPAB GIMBAL KAS PUSAT' }}</b></span>
+            </div>
+            <a href="/admin/settings?tab=organization" hx-get="/admin/settings?tab=organization" hx-target="#main-content" class="font-bold text-orange-700 hover:underline text-[11px]">
+                Ubah Nomor Rekening &rarr;
+            </a>
         </div>
     </div>
 
@@ -474,7 +799,7 @@
             <h1 class="text-2xl font-black text-slate-900 font-heading">Dokumen & Arsip Organisasi</h1>
             <p class="text-xs text-slate-500">Kelola berkas resmi (AD/ART, SOP Keselamatan Pendakian, Modul Edukasi)</p>
         </div>
-        <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-2"
+        <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2"
                 hx-get="/admin/documents/create-modal" hx-target="#modal-container">
             <i class="fas fa-file-upload"></i>
             <span>Unggah Dokumen Baru</span>
@@ -482,7 +807,7 @@
     </div>
 
     <!-- TABEL CRUD DOKUMEN -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs text-slate-700">
                 <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
@@ -553,7 +878,7 @@
             <h1 class="text-2xl font-black text-slate-900 font-heading">Agenda Ekspedisi & Kegiatan</h1>
             <p class="text-xs text-slate-500">Buka pendaftaran trip petualang, pantau kuota rombongan, dan manifest peserta</p>
         </div>
-        <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-2"
+        <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2"
                 hx-get="/admin/activity/create-modal" hx-target="#modal-container">
             <i class="fas fa-mountain"></i>
             <span>Buka Ekspedisi Baru</span>
@@ -563,7 +888,7 @@
     <!-- GRID EKSPEDISI -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         {% for act in data.activities %}
-        <div class="bg-white dark:bg-stone-900 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col justify-between card-hover">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between card-hover">
             <div class="relative h-48">
                 <img src="{{ act.image_url or '/static/pics/cartoon/hero.jpg' }}" 
                      alt="{{ act.title }}" class="w-full h-full object-cover">
@@ -599,7 +924,7 @@
                     <button type="button"
                             hx-get="/admin/activity/edit-modal/{{ act.id }}"
                             hx-target="#modal-container"
-                            class="px-3 py-1.5 bg-brand-600 hover:brightness-110 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition shadow-sm">
+                            class="px-3 py-1.5 bg-brand-600 hover:brightness-110 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
                         <i class="fas fa-edit"></i>
                         <span>Edit</span>
                     </button>
@@ -608,7 +933,7 @@
                     <button type="button"
                             hx-post="/admin/activity/toggle-status/{{ act.id }}"
                             hx-target="#main-content"
-                            class="px-2.5 py-1.5 {% if act.is_open %}bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200{% else %}bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200{% endif %} font-bold rounded-xl text-xs flex items-center gap-1 transition"
+                            class="px-2.5 py-1.5 {% if act.is_open %}bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200{% else %}bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200{% endif %} font-bold rounded-lg text-xs flex items-center gap-1 transition"
                             title="{% if act.is_open %}Tutup Pendaftaran{% else %}Buka Pendaftaran{% endif %}">
                         <i class="fas {% if act.is_open %}fa-lock{% else %}fa-lock-open{% endif %}"></i>
                     </button>
@@ -618,7 +943,7 @@
                             hx-post="/admin/activity/delete/{{ act.id }}"
                             hx-target="#main-content"
                             hx-confirm="Yakin ingin menghapus agenda ekspedisi '{{ act.title }}'? Semua partisipan terdaftar akan dibatalkan."
-                            class="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold rounded-xl text-xs transition"
+                            class="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold rounded-lg text-xs transition"
                             title="Hapus Ekspedisi">
                         <i class="fas fa-trash-alt"></i>
                     </button>
@@ -626,7 +951,7 @@
             </div>
         </div>
         {% else %}
-        <div class="col-span-2 p-12 text-center bg-white dark:bg-stone-900 rounded-3xl border border-slate-200 dark:border-white/10 text-slate-400">
+        <div class="col-span-2 p-12 text-center bg-white rounded-lg border border-slate-200 text-slate-400">
             <i class="fas fa-mountain text-4xl mb-3 text-slate-300"></i>
             <p class="text-sm font-semibold">Belum ada agenda ekspedisi yang dibuat.</p>
             <p class="text-xs text-slate-500 mt-1">Klik tombol "Buka Ekspedisi Baru" di atas untuk menambahkan trip pertama.</p>
@@ -646,7 +971,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
             <div class="flex items-center gap-2">
-                <span class="w-8 h-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center text-sm shadow-sm">
+                <span class="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center text-sm shadow-sm">
                     <i class="fas fa-camera-retro"></i>
                 </span>
                 <h1 class="text-2xl font-black text-slate-900 font-heading">Galeri Pin-down Ekspedisi</h1>
@@ -654,7 +979,7 @@
             <p class="text-xs text-slate-500 mt-1">Kurasi foto-foto terbaik dari setiap ekspedisi dan kegiatan untuk dipajang di galeri landing page utama</p>
         </div>
         <div class="flex items-center gap-2">
-            <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2"
+            <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-md transition flex items-center gap-2"
                     hx-get="/admin/gallery/create-modal" hx-target="#modal-container">
                 <i class="fas fa-thumbtack"></i>
                 <span>Pin Foto Ekspedisi</span>
@@ -665,61 +990,61 @@
     <!-- 3 KARTU STATISTIK METRIK -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <!-- Metrik 1: Total Foto -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
                 <span class="text-xs font-semibold text-slate-500 block">Total Foto Dokumentasi</span>
                 <p class="text-2xl sm:text-3xl font-black font-mono text-slate-900 mt-1">{{ data.total_count }}</p>
                 <p class="text-[11px] text-slate-400 mt-0.5">Tersimpan dalam repositori</p>
             </div>
-            <span class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-lg">
+            <span class="w-12 h-12 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-lg">
                 <i class="fas fa-images"></i>
             </span>
         </div>
 
         <!-- Metrik 2: Pinned di Landing Page -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
                 <span class="text-xs font-semibold text-slate-500 block">Pin-down di Landing Page</span>
                 <p class="text-2xl sm:text-3xl font-black font-mono text-orange-600 mt-1">{{ data.pinned_count }}</p>
                 <p class="text-[11px] text-orange-700 font-medium mt-0.5">Aktif tampil di etalase depan</p>
             </div>
-            <span class="w-12 h-12 rounded-2xl bg-orange-100 text-orange-700 flex items-center justify-center text-lg">
+            <span class="w-12 h-12 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center text-lg">
                 <i class="fas fa-thumbtack"></i>
             </span>
         </div>
 
         <!-- Metrik 3: Ekspedisi Terhubung -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
                 <span class="text-xs font-semibold text-slate-500 block">Ekspedisi Terdaftar</span>
                 <p class="text-2xl sm:text-3xl font-black font-mono text-slate-900 mt-1">{{ data.activities|length }}</p>
                 <p class="text-[11px] text-slate-400 mt-0.5">Agenda trip petualang</p>
             </div>
-            <span class="w-12 h-12 rounded-2xl bg-stone-100 text-stone-700 flex items-center justify-center text-lg">
+            <span class="w-12 h-12 rounded-lg bg-stone-100 text-stone-700 flex items-center justify-center text-lg">
                 <i class="fas fa-mountain"></i>
             </span>
         </div>
     </div>
 
     <!-- FILTER & NAVIGASI KURASI -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+    <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
         
         <!-- Filter Status Pin -->
         <div class="flex items-center gap-1.5 flex-wrap">
             <span class="font-bold text-slate-700 mr-2"><i class="fas fa-filter text-orange-600 mr-1"></i> Status:</span>
             <a href="/admin/gallery" 
-               class="px-3 py-1.5 rounded-xl font-bold transition {% if not data.selected_pinned and not data.selected_activity_id %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}"
+               class="px-3 py-1.5 rounded-lg font-bold transition {% if not data.selected_pinned and not data.selected_activity_id %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}"
                hx-get="/admin/gallery" hx-target="#main-content" hx-push-url="true">
                 Semua ({{ data.total_count }})
             </a>
             <a href="/admin/gallery?pinned=1" 
-               class="px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 {% if data.selected_pinned == '1' %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}"
+               class="px-3 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 {% if data.selected_pinned == '1' %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}"
                hx-get="/admin/gallery?pinned=1{% if data.selected_activity_id %}&activity_id={{ data.selected_activity_id }}{% endif %}" hx-target="#main-content" hx-push-url="true">
                 <i class="fas fa-thumbtack text-[10px]"></i>
                 <span>Hanya Pinned ({{ data.pinned_count }})</span>
             </a>
             <a href="/admin/gallery?pinned=0" 
-               class="px-3 py-1.5 rounded-xl font-bold transition {% if data.selected_pinned == '0' %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}"
+               class="px-3 py-1.5 rounded-lg font-bold transition {% if data.selected_pinned == '0' %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}"
                hx-get="/admin/gallery?pinned=0{% if data.selected_activity_id %}&activity_id={{ data.selected_activity_id }}{% endif %}" hx-target="#main-content" hx-push-url="true">
                 Arsip Non-Pinned ({{ data.total_count - data.pinned_count }})
             </a>
@@ -728,7 +1053,7 @@
         <!-- Filter Dropdown Ekspedisi -->
         <div class="flex items-center gap-2">
             <span class="text-slate-500 font-semibold whitespace-nowrap">Filter Ekspedisi:</span>
-            <select class="px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"
+            <select class="px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"
                     onchange="let url = '/admin/gallery?activity_id=' + this.value + '{% if data.selected_pinned %}&pinned={{ data.selected_pinned }}{% endif %}'; htmx.ajax('GET', url, {target: '#main-content', pushUrl: true});">
                 <option value="">Semua Ekspedisi</option>
                 {% for act in data.activities %}
@@ -744,7 +1069,7 @@
     <!-- GRID FOTO GALERI -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {% for item in data.gallery_items %}
-        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between transition hover:shadow-md group">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between transition hover:shadow-md group">
             
             <div>
                 <!-- Image Wrapper with Badges -->
@@ -774,7 +1099,7 @@
 
                     <!-- Location Tag on Bottom-Left Image -->
                     {% if item.location %}
-                    <div class="absolute bottom-2 left-2 right-2 px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-[10px] font-medium flex items-center gap-1.5 truncate">
+                    <div class="absolute bottom-2 left-2 right-2 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-[10px] font-medium flex items-center gap-1.5 truncate">
                         <i class="fas fa-map-marker-alt text-orange-400"></i>
                         <span class="truncate">{{ item.location }}</span>
                     </div>
@@ -828,13 +1153,13 @@
 
         </div>
         {% else %}
-        <div class="col-span-full py-16 text-center bg-white rounded-3xl border border-slate-200 p-8 space-y-3">
-            <span class="w-16 h-16 rounded-3xl bg-orange-50 text-orange-500 flex items-center justify-center mx-auto text-2xl">
+        <div class="col-span-full py-16 text-center bg-white rounded-lg border border-slate-200 p-8 space-y-3">
+            <span class="w-16 h-16 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center mx-auto text-2xl">
                 <i class="fas fa-images"></i>
             </span>
             <h3 class="text-base font-bold text-slate-800">Belum Ada Foto Sesuai Kriteria</h3>
             <p class="text-xs text-slate-500 max-w-sm mx-auto">Silakan tambahkan pin-down foto ekspedisi baru atau ubah filter pencarian di atas.</p>
-            <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow transition inline-flex items-center gap-2"
+            <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow transition inline-flex items-center gap-2"
                     hx-get="/admin/gallery/create-modal" hx-target="#modal-container">
                 <i class="fas fa-thumbtack"></i> Pin Foto Ekspedisi Baru
             </button>
@@ -844,4 +1169,1050 @@
 
 </div>
 {% endmacro %}
+
+
+<!-- 8. PENGATURAN & HAK AKSES SISTEM ORGANISASI -->
+{% macro admin_settings(data) %}
+{% set curr_tab = data.active_tab or data.initial_tab or 'organization' %}
+<div id="admin-settings-container" class="space-y-6" x-data="{ activeTab: '{{ curr_tab }}' }">
+    {{ flash_alerts() }}
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center text-sm shadow-sm">
+                    <i class="fas fa-sliders-h"></i>
+                </span>
+                <h1 class="text-2xl font-black text-slate-900 font-heading">Pengaturan & Hak Akses Organisasi</h1>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Konfigurasi rekening resmi organisasi, skema warna tema antarmuka, gateway pembayaran online, dan audit log keamanan</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 flex items-center gap-1.5">
+                <i class="fas fa-user-shield text-orange-600"></i>
+                <span>Superadmin: <b>{{ current_user.name }}</b></span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Segmented Navigation Tabs -->
+    <div class="flex overflow-x-auto p-1.5 bg-slate-100 rounded-lg border border-slate-200 text-xs font-semibold gap-1">
+        <button type="button" @click="activeTab = 'organization'" onclick="window.switchAdminTab('organization')"
+                data-tab="organization"
+                :class="activeTab === 'organization' ? 'bg-white text-orange-700 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'"
+                class="admin-tab-btn py-2 px-3.5 rounded-lg transition flex items-center gap-2 whitespace-nowrap {{ 'bg-white text-orange-700 shadow-sm font-bold' if curr_tab == 'organization' else 'text-slate-600 hover:text-slate-900' }}">
+            <i class="fas fa-university text-xs"></i>
+            <span>Rekening & Organisasi</span>
+        </button>
+        <button type="button" @click="activeTab = 'positions'" onclick="window.switchAdminTab('positions')"
+                data-tab="positions"
+                :class="activeTab === 'positions' ? 'bg-white text-orange-700 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'"
+                class="admin-tab-btn py-2 px-3.5 rounded-lg transition flex items-center gap-2 whitespace-nowrap {{ 'bg-white text-orange-700 shadow-sm font-bold' if curr_tab == 'positions' else 'text-slate-600 hover:text-slate-900' }}">
+            <i class="fas fa-sitemap text-xs"></i>
+            <span>Struktur & Jabatan ({{ data.positions|length if data.positions else 0 }})</span>
+        </button>
+        <button type="button" @click="activeTab = 'theme'" onclick="window.switchAdminTab('theme')"
+                data-tab="theme"
+                :class="activeTab === 'theme' ? 'bg-white text-orange-700 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'"
+                class="admin-tab-btn py-2 px-3.5 rounded-lg transition flex items-center gap-2 whitespace-nowrap {{ 'bg-white text-orange-700 shadow-sm font-bold' if curr_tab == 'theme' else 'text-slate-600 hover:text-slate-900' }}">
+            <i class="fas fa-palette text-xs"></i>
+            <span>Warna Tema & Tampilan</span>
+        </button>
+        <button type="button" @click="activeTab = 'midtrans'" onclick="window.switchAdminTab('midtrans')"
+                data-tab="midtrans"
+                :class="activeTab === 'midtrans' ? 'bg-white text-orange-700 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'"
+                class="admin-tab-btn py-2 px-3.5 rounded-lg transition flex items-center gap-2 whitespace-nowrap {{ 'bg-white text-orange-700 shadow-sm font-bold' if curr_tab == 'midtrans' else 'text-slate-600 hover:text-slate-900' }}">
+            <i class="fas fa-qrcode text-xs"></i>
+            <span>Gateway Midtrans</span>
+        </button>
+        <button type="button" @click="activeTab = 'cloudflare'" onclick="window.switchAdminTab('cloudflare')"
+                data-tab="cloudflare"
+                :class="activeTab === 'cloudflare' ? 'bg-white text-orange-700 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'"
+                class="admin-tab-btn py-2 px-3.5 rounded-lg transition flex items-center gap-2 whitespace-nowrap {{ 'bg-white text-orange-700 shadow-sm font-bold' if curr_tab == 'cloudflare' else 'text-slate-600 hover:text-slate-900' }}">
+            <i class="fas fa-envelope-open-text text-xs"></i>
+            <span>Cloudflare Email (@gimbal.my.id)</span>
+        </button>
+        <button type="button" @click="activeTab = 'audit'" onclick="window.switchAdminTab('audit')"
+                data-tab="audit"
+                :class="activeTab === 'audit' ? 'bg-white text-orange-700 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'"
+                class="admin-tab-btn py-2 px-3.5 rounded-lg transition flex items-center gap-2 whitespace-nowrap {{ 'bg-white text-orange-700 shadow-sm font-bold' if curr_tab == 'audit' else 'text-slate-600 hover:text-slate-900' }}">
+            <i class="fas fa-history text-xs"></i>
+            <span>Audit Trail Log</span>
+        </button>
+    </div>
+
+    <!-- TAB 1: PENGATURAN INFORMASI REKENING & ORGANISASI -->
+    <div id="admin-panel-organization" class="admin-tab-panel space-y-4" x-show="activeTab === 'organization'" x-cloak {% if curr_tab != 'organization' %}style="display: none;"{% endif %}>
+        <form hx-post="/admin/settings/organization" hx-target="#main-content" class="space-y-6">
+            
+            <!-- Card 1: Rekening Kas Resmi Organisasi -->
+            <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+                            <i class="fas fa-university text-orange-600"></i> Informasi Rekening Kas Resmi Organisasi
+                        </h2>
+                        <p class="text-xs text-slate-500">Nomor rekening ini akan tampil otomatis pada instruksi transfer iuran anggota & konfirmasi pembayaran</p>
+                    </div>
+                    <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase">Kas Utama & Sekunder</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Rekening Utama -->
+                    <div class="p-4 bg-orange-50/50 rounded-lg border border-orange-200 space-y-3">
+                        <p class="text-xs font-bold text-orange-950 uppercase tracking-wide flex items-center gap-1.5">
+                            <i class="fas fa-star text-amber-500"></i> Rekening Utama (Wajib)
+                        </p>
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1">Nama Bank</label>
+                            <input type="text" name="bank_primary_name" value="{{ data.settings.bank_primary_name or 'Bank Mandiri' }}" required
+                                   placeholder="Contoh: Bank Mandiri"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1">Nomor Rekening</label>
+                            <input type="text" name="bank_primary_number" value="{{ data.settings.bank_primary_number or '131-00-1829-3321' }}" required
+                                   placeholder="Contoh: 131-00-1829-3321"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono font-bold text-xs text-orange-700 focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1">Atas Nama (Pemilik Rekening)</label>
+                            <input type="text" name="bank_primary_holder" value="{{ data.settings.bank_primary_holder or 'KPAB GIMBAL KAS PUSAT' }}" required
+                                   placeholder="Contoh: KPAB GIMBAL KAS PUSAT"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Rekening Sekunder -->
+                    <div class="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
+                        <p class="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                            <i class="fas fa-wallet text-slate-500"></i> Rekening Sekunder / Alternatif (Opsional)
+                        </p>
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1">Nama Bank</label>
+                            <input type="text" name="bank_secondary_name" value="{{ data.settings.bank_secondary_name or '' }}"
+                                   placeholder="Contoh: Bank Central Asia (BCA)"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1">Nomor Rekening</label>
+                            <input type="text" name="bank_secondary_number" value="{{ data.settings.bank_secondary_number or '' }}"
+                                   placeholder="Contoh: 593-019-4821 (Kosongkan bila tidak ada)"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono font-bold text-xs text-slate-800 focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1">Atas Nama (Pemilik Rekening)</label>
+                            <input type="text" name="bank_secondary_holder" value="{{ data.settings.bank_secondary_holder or '' }}"
+                                   placeholder="Contoh: KPAB GIMBAL KAS PUSAT"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Identitas & Kontak Resmi Organisasi -->
+            <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-4">
+                <div class="border-b border-slate-100 pb-3">
+                    <h2 class="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+                        <i class="fas fa-id-badge text-orange-600"></i> Identitas & Kontak Resmi Organisasi
+                    </h2>
+                    <p class="text-xs text-slate-500">Informasi kesekretariatan untuk kop dokumen, invoice iuran, dan kontak publik</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-700 text-xs mb-1">Nama Resmi Organisasi</label>
+                        <input type="text" name="org_name" value="{{ data.settings.org_name or 'KPAB GIMBAL' }}" required
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 text-xs mb-1">No. WhatsApp / Telepon Sekretariat</label>
+                        <input type="text" name="org_phone" value="{{ data.settings.org_phone or '+62 822-9388-7261' }}"
+                               placeholder="Contoh: +62 822-9388-7261"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 text-xs mb-1">Email Resmi</label>
+                        <input type="email" name="org_email" value="{{ data.settings.org_email or 'sekretariat@gimbal.org' }}"
+                               placeholder="sekretariat@gimbal.org"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 text-xs mb-1">Alamat Sekretariat Lengkap</label>
+                    <textarea name="org_address" rows="2"
+                              class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                              placeholder="Alamat kantor sekretariat pusat...">{{ data.settings.org_address or 'Sekretariat Pusat KPAB GIMBAL, Gorontalo' }}</textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="submit"
+                        class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-md transition flex items-center gap-2">
+                    <i class="fas fa-save"></i>
+                    <span>Simpan Pengaturan Organisasi & Rekening</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 2: MASTER STRUKTUR & JABATAN ORGANISASI (CRUD) -->
+    <div id="admin-panel-positions" class="admin-tab-panel space-y-4" x-show="activeTab === 'positions'" x-cloak {% if curr_tab != 'positions' %}style="display: none;"{% endif %}>
+        
+        <!-- Header Banner & Action -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+                <div class="w-11 h-11 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-lg shrink-0 shadow-sm">
+                    <i class="fas fa-sitemap"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 font-heading">Master Struktur & Jabatan Organisasi</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Kelola nomenklatur jabatan, hierarki kepengurusan, divisi teknis lapangan, dan wewenang organisasi KPAB GIMBAL</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button"
+                        hx-get="/admin/positions/create-modal"
+                        hx-target="#modal-container"
+                        class="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-sm text-xs flex items-center gap-2 transition cursor-pointer">
+                    <i class="fas fa-plus"></i>
+                    <span>Tambah Jabatan Baru</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Statistics Pills -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm font-bold">
+                    <i class="fas fa-list-ol"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Total Jabatan</p>
+                    <p class="text-base font-black text-slate-900 font-heading">{{ data.positions|length if data.positions else 0 }}</p>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Jabatan Aktif</p>
+                    <p class="text-base font-black text-emerald-600 font-heading">
+                        {{ data.positions|selectattr('is_active')|list|length if data.positions else 0 }}
+                    </p>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Pengurus Harian</p>
+                    <p class="text-base font-black text-blue-600 font-heading">
+                        {% set bph_count = 0 %}
+                        {% if data.positions %}
+                            {% for p in data.positions %}
+                                {% if p.category == 'Pengurus Harian' %}{% set bph_count = bph_count + 1 %}{% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {{ bph_count }}
+                    </p>
+                </div>
+            </div>
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm font-bold">
+                    <i class="fas fa-mountain"></i>
+                </div>
+                <div>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Divisi Lapangan</p>
+                    <p class="text-base font-black text-purple-600 font-heading">
+                        {% set div_count = 0 %}
+                        {% if data.positions %}
+                            {% for p in data.positions %}
+                                {% if p.category == 'Divisi Teknis' %}{% set div_count = div_count + 1 %}{% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {{ div_count }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Master Jabatan -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-table-list text-slate-400"></i>
+                    <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Daftar Jabatan & Hierarki Kepengurusan</h3>
+                </div>
+                <span class="text-[11px] text-slate-500">Total: <b>{{ data.positions|length if data.positions else 0 }}</b> posisi</span>
+            </div>
+
+            {% if data.positions and data.positions|length > 0 %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase font-semibold text-[10px] tracking-wider">
+                            <th class="px-4 py-3 text-center w-14">Urutan</th>
+                            <th class="px-5 py-3">Nama Jabatan</th>
+                            <th class="px-4 py-3">Kategori Tingkatan</th>
+                            <th class="px-5 py-3">Uraian Tugas / Wewenang</th>
+                            <th class="px-4 py-3 text-center">Anggota Aktif</th>
+                            <th class="px-4 py-3 text-center">Status</th>
+                            <th class="px-4 py-3 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        {% for pos in data.positions %}
+                        <tr class="hover:bg-orange-50/40 transition">
+                            <td class="px-4 py-3.5 text-center font-mono font-bold text-slate-500">
+                                <span class="w-7 h-7 rounded-lg bg-slate-100 border border-slate-200 inline-flex items-center justify-center text-[11px]">
+                                    {{ pos.order_index }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3.5">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center text-xs font-bold shrink-0">
+                                        <i class="fas {% if 'Ketua' in pos.name %}fa-crown{% elif 'Sekretaris' in pos.name or 'Sekjen' in pos.name %}fa-file-signature{% elif 'Bendahara' in pos.name %}fa-wallet{% elif 'Divisi' in pos.name or 'Kadiv' in pos.name %}fa-compass{% else %}fa-user-tag{% endif %}"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-900 text-xs">{{ pos.name }}</p>
+                                        <p class="text-[10px] text-slate-400">ID #{{ pos.id }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5">
+                                {% if pos.category == 'Pengurus Harian' %}
+                                    <span class="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-md font-bold text-[10px] inline-flex items-center gap-1">
+                                        <i class="fas fa-star text-[9px] text-amber-500"></i> Pengurus Harian
+                                    </span>
+                                {% elif pos.category == 'Divisi Teknis' %}
+                                    <span class="px-2.5 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-md font-bold text-[10px] inline-flex items-center gap-1">
+                                        <i class="fas fa-hiking text-[9px] text-blue-500"></i> Divisi Teknis
+                                    </span>
+                                {% elif pos.category == 'Badan Pertimbangan & Kehormatan' %}
+                                    <span class="px-2.5 py-1 bg-purple-50 text-purple-800 border border-purple-200 rounded-md font-bold text-[10px] inline-flex items-center gap-1">
+                                        <i class="fas fa-balance-scale text-[9px] text-purple-500"></i> Badan Pertimbangan
+                                    </span>
+                                {% elif pos.category == 'Keanggotaan' %}
+                                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md font-bold text-[10px] inline-flex items-center gap-1">
+                                        <i class="fas fa-id-badge text-[9px] text-emerald-500"></i> Keanggotaan
+                                    </span>
+                                {% else %}
+                                    <span class="px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-md font-semibold text-[10px]">
+                                        {{ pos.category }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-5 py-3.5 text-slate-600 text-[11px] max-w-xs truncate" title="{{ pos.description or '' }}">
+                                {{ pos.description or '-' }}
+                            </td>
+                            <td class="px-4 py-3.5 text-center">
+                                <span class="px-2 py-0.5 rounded-full font-bold text-[10px] {% if pos.member_count > 0 %}bg-orange-100 text-orange-800 border border-orange-200{% else %}bg-slate-100 text-slate-500{% endif %}">
+                                    {{ pos.member_count }} orang
+                                </span>
+                            </td>
+                            <td class="px-4 py-3.5 text-center">
+                                <button type="button"
+                                        hx-post="/admin/positions/toggle-active/{{ pos.id }}"
+                                        hx-target="#main-content"
+                                        title="Klik untuk toggle status aktif"
+                                        class="cursor-pointer transition">
+                                    {% if pos.is_active %}
+                                        <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-bold text-[10px] border border-emerald-200 hover:bg-emerald-200 transition">
+                                            <i class="fas fa-check-circle text-[9px] mr-0.5"></i> Aktif
+                                        </span>
+                                    {% else %}
+                                        <span class="px-2.5 py-0.5 bg-slate-100 text-slate-500 rounded-full font-semibold text-[10px] border border-slate-200 hover:bg-slate-200 transition">
+                                            <i class="fas fa-times-circle text-[9px] mr-0.5"></i> Nonaktif
+                                        </span>
+                                    {% endif %}
+                                </button>
+                            </td>
+                            <td class="px-4 py-3.5 text-right">
+                                <div class="inline-flex items-center gap-1.5 justify-end">
+                                    <button type="button"
+                                            hx-get="/admin/positions/edit-modal/{{ pos.id }}"
+                                            hx-target="#modal-container"
+                                            class="p-1.5 rounded-lg text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition"
+                                            title="Edit Jabatan">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button"
+                                            hx-post="/admin/positions/delete/{{ pos.id }}"
+                                            hx-target="#main-content"
+                                            hx-confirm="Yakin ingin menghapus jabatan {{ pos.name }}? Data keanggotaan terkait akan dialihkan ke tanpa jabatan."
+                                            class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                                            title="Hapus Jabatan">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-12 text-center text-slate-400 space-y-3">
+                <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-xl">
+                    <i class="fas fa-sitemap"></i>
+                </div>
+                <div>
+                    <p class="font-bold text-slate-700">Belum Ada Data Jabatan</p>
+                    <p class="text-xs text-slate-400 mt-1">Tambahkan struktur dan jabatan pertama kepengurusan organisasi Anda</p>
+                </div>
+                <button type="button"
+                        hx-get="/admin/positions/create-modal"
+                        hx-target="#modal-container"
+                        class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-xs transition inline-flex items-center gap-1.5">
+                    <i class="fas fa-plus"></i> Tambah Jabatan Sekarang
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- TAB 3: PENGATURAN WARNA TEMA & TAMPILAN -->
+    <div id="admin-panel-theme" class="admin-tab-panel space-y-4" x-show="activeTab === 'theme'" x-cloak {% if curr_tab != 'theme' %}style="display: none;"{% endif %}>
+        <form hx-post="/admin/settings/theme" hx-target="#main-content" class="space-y-6"
+              x-data="{ 
+                  selectedTheme: '{{ data.settings.theme_color or 'orange' }}', 
+                  selectedWidth: '{{ data.settings.site_width or '85%' }}',
+                  selectTheme(theme) {
+                      this.selectedTheme = theme;
+                      if (window.applyGimbalThemeDynamic) {
+                          window.applyGimbalThemeDynamic(theme, this.selectedWidth);
+                      }
+                  },
+                  selectWidth(w) {
+                      this.selectedWidth = w;
+                      if (window.applyGimbalThemeDynamic) {
+                          window.applyGimbalThemeDynamic(this.selectedTheme, w);
+                      }
+                  }
+              }">
+            
+            <!-- Card 1: Pilihan Warna Tema -->
+            <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-4">
+                <div class="border-b border-slate-100 pb-3">
+                    <h2 class="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+                        <i class="fas fa-palette text-orange-600"></i> Pilihan Skema Warna Tema Sistem
+                    </h2>
+                    <p class="text-xs text-slate-500">Pilih palet warna aksen yang serasi untuk seluruh antarmuka portal publik, member, dan admin (klik kartu untuk memilih)</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <!-- Tema Orange (Default) -->
+                    <div @click="selectTheme('orange')"
+                         :class="selectedTheme === 'orange' ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-500/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'"
+                         class="relative flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition select-none">
+                        <input type="radio" name="theme_color" value="orange" x-model="selectedTheme" class="sr-only">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full shadow-sm flex items-center justify-center text-white text-xs font-bold shrink-0" style="background-color: #f97316;">
+                                <i class="fas fa-mountain"></i>
+                            </span>
+                            <div>
+                                <p class="text-xs font-bold text-slate-900">Oranye Petualang (Bawaan)</p>
+                                <p class="text-[10px] text-slate-500">Ciri khas KPAB GIMBAL Gorontalo</p>
+                            </div>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0"
+                             :class="selectedTheme === 'orange' ? 'border-orange-600 bg-orange-600 text-white' : 'border-slate-300 bg-slate-50'">
+                            <i class="fas fa-check text-[10px]" x-show="selectedTheme === 'orange'"></i>
+                        </div>
+                    </div>
+
+                    <!-- Tema Emerald -->
+                    <div @click="selectTheme('emerald')"
+                         :class="selectedTheme === 'emerald' ? 'border-emerald-500 bg-emerald-50/70 ring-2 ring-emerald-500/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'"
+                         class="relative flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition select-none">
+                        <input type="radio" name="theme_color" value="emerald" x-model="selectedTheme" class="sr-only">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full shadow-sm flex items-center justify-center text-white text-xs font-bold shrink-0" style="background-color: #059669;">
+                                <i class="fas fa-tree"></i>
+                            </span>
+                            <div>
+                                <p class="text-xs font-bold text-slate-900">Hijau Rimba (Emerald)</p>
+                                <p class="text-[10px] text-slate-500">Nuansa konservasi hutan & alam</p>
+                            </div>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0"
+                             :class="selectedTheme === 'emerald' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-slate-50'">
+                            <i class="fas fa-check text-[10px]" x-show="selectedTheme === 'emerald'"></i>
+                        </div>
+                    </div>
+
+                    <!-- Tema Blue -->
+                    <div @click="selectTheme('blue')"
+                         :class="selectedTheme === 'blue' ? 'border-blue-500 bg-blue-50/70 ring-2 ring-blue-500/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'"
+                         class="relative flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition select-none">
+                        <input type="radio" name="theme_color" value="blue" x-model="selectedTheme" class="sr-only">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full shadow-sm flex items-center justify-center text-white text-xs font-bold shrink-0" style="background-color: #2563eb;">
+                                <i class="fas fa-water"></i>
+                            </span>
+                            <div>
+                                <p class="text-xs font-bold text-slate-900">Biru Samudra (Blue)</p>
+                                <p class="text-[10px] text-slate-500">Maritim, sungai & arung jeram</p>
+                            </div>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0"
+                             :class="selectedTheme === 'blue' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 bg-slate-50'">
+                            <i class="fas fa-check text-[10px]" x-show="selectedTheme === 'blue'"></i>
+                        </div>
+                    </div>
+
+                    <!-- Tema Amber -->
+                    <div @click="selectTheme('amber')"
+                         :class="selectedTheme === 'amber' ? 'border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'"
+                         class="relative flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition select-none">
+                        <input type="radio" name="theme_color" value="amber" x-model="selectedTheme" class="sr-only">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full shadow-sm flex items-center justify-center text-white text-xs font-bold shrink-0" style="background-color: #d97706;">
+                                <i class="fas fa-compass"></i>
+                            </span>
+                            <div>
+                                <p class="text-xs font-bold text-slate-900">Kuning Emas (Amber)</p>
+                                <p class="text-[10px] text-slate-500">Hangat, klasik & dinamis</p>
+                            </div>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0"
+                             :class="selectedTheme === 'amber' ? 'border-amber-600 bg-amber-600 text-white' : 'border-slate-300 bg-slate-50'">
+                            <i class="fas fa-check text-[10px]" x-show="selectedTheme === 'amber'"></i>
+                        </div>
+                    </div>
+
+                    <!-- Tema Rose -->
+                    <div @click="selectTheme('rose')"
+                         :class="selectedTheme === 'rose' ? 'border-rose-500 bg-rose-50/70 ring-2 ring-rose-500/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'"
+                         class="relative flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition select-none">
+                        <input type="radio" name="theme_color" value="rose" x-model="selectedTheme" class="sr-only">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full shadow-sm flex items-center justify-center text-white text-xs font-bold shrink-0" style="background-color: #e11d48;">
+                                <i class="fas fa-shield-alt"></i>
+                            </span>
+                            <div>
+                                <p class="text-xs font-bold text-slate-900">Merah Tangguh (Rose)</p>
+                                <p class="text-[10px] text-slate-500">Berani, tegas & solid</p>
+                            </div>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0"
+                             :class="selectedTheme === 'rose' ? 'border-rose-600 bg-rose-600 text-white' : 'border-slate-300 bg-slate-50'">
+                            <i class="fas fa-check text-[10px]" x-show="selectedTheme === 'rose'"></i>
+                        </div>
+                    </div>
+
+                    <!-- Tema Teal -->
+                    <div @click="selectTheme('teal')"
+                         :class="selectedTheme === 'teal' ? 'border-teal-500 bg-teal-50/70 ring-2 ring-teal-500/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'"
+                         class="relative flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition select-none">
+                        <input type="radio" name="theme_color" value="teal" x-model="selectedTheme" class="sr-only">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full shadow-sm flex items-center justify-center text-white text-xs font-bold shrink-0" style="background-color: #0d9488;">
+                                <i class="fas fa-campground"></i>
+                            </span>
+                            <div>
+                                <p class="text-xs font-bold text-slate-900">Toska Pesisir (Teal)</p>
+                                <p class="text-[10px] text-slate-500">Modern, segar & ramah</p>
+                            </div>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0"
+                             :class="selectedTheme === 'teal' ? 'border-teal-600 bg-teal-600 text-white' : 'border-slate-300 bg-slate-50'">
+                            <i class="fas fa-check text-[10px]" x-show="selectedTheme === 'teal'"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Lebar Tampilan Halaman (Site Width) -->
+            <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-4">
+                <div class="border-b border-slate-100 pb-3">
+                    <h2 class="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+                        <i class="fas fa-arrows-alt-h text-orange-600"></i> Pengaturan Lebar Konten Layar (Site Width)
+                    </h2>
+                    <p class="text-xs text-slate-500">Sesuaikan persentase lebar layout website pada layar desktop/laptop (klik kartu untuk memilih)</p>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <!-- 80% -->
+                    <div @click="selectWidth('80%')"
+                         :class="selectedWidth === '80%' ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-500/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'"
+                         class="flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition select-none">
+                        <input type="radio" name="site_width" value="80%" x-model="selectedWidth" class="sr-only">
+                        <div>
+                            <span class="text-xs font-mono font-bold text-slate-900">80%</span>
+                            <p class="text-[10px] text-slate-500">Fokus Ringkas</p>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0"
+                             :class="selectedWidth === '80%' ? 'border-orange-600 bg-orange-600 text-white' : 'border-slate-300 bg-slate-50'">
+                            <i class="fas fa-check text-[10px]" x-show="selectedWidth === '80%'"></i>
+                        </div>
+                    </div>
+
+                    <!-- 85% -->
+                    <div @click="selectWidth('85%')"
+                         :class="selectedWidth === '85%' ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-500/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'"
+                         class="flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition select-none">
+                        <input type="radio" name="site_width" value="85%" x-model="selectedWidth" class="sr-only">
+                        <div>
+                            <span class="text-xs font-mono font-bold text-slate-900">85%</span>
+                            <p class="text-[10px] text-slate-500">Standar Bawaan</p>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0"
+                             :class="selectedWidth === '85%' ? 'border-orange-600 bg-orange-600 text-white' : 'border-slate-300 bg-slate-50'">
+                            <i class="fas fa-check text-[10px]" x-show="selectedWidth === '85%'"></i>
+                        </div>
+                    </div>
+
+                    <!-- 90% -->
+                    <div @click="selectWidth('90%')"
+                         :class="selectedWidth === '90%' ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-500/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'"
+                         class="flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition select-none">
+                        <input type="radio" name="site_width" value="90%" x-model="selectedWidth" class="sr-only">
+                        <div>
+                            <span class="text-xs font-mono font-bold text-slate-900">90%</span>
+                            <p class="text-[10px] text-slate-500">Lapang Luas</p>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0"
+                             :class="selectedWidth === '90%' ? 'border-orange-600 bg-orange-600 text-white' : 'border-slate-300 bg-slate-50'">
+                            <i class="fas fa-check text-[10px]" x-show="selectedWidth === '90%'"></i>
+                        </div>
+                    </div>
+
+                    <!-- 100% -->
+                    <div @click="selectWidth('100%')"
+                         :class="selectedWidth === '100%' ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-500/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 bg-white'"
+                         class="flex items-center justify-between p-3.5 rounded-lg border cursor-pointer transition select-none">
+                        <input type="radio" name="site_width" value="100%" x-model="selectedWidth" class="sr-only">
+                        <div>
+                            <span class="text-xs font-mono font-bold text-slate-900">100%</span>
+                            <p class="text-[10px] text-slate-500">Penuh Layar</p>
+                        </div>
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center transition shrink-0"
+                             :class="selectedWidth === '100%' ? 'border-orange-600 bg-orange-600 text-white' : 'border-slate-300 bg-slate-50'">
+                            <i class="fas fa-check text-[10px]" x-show="selectedWidth === '100%'"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Preview Info Card -->
+            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="space-y-1">
+                    <p class="text-xs font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fas fa-eye text-orange-600"></i>
+                        <span>Pratinjau Status Pilihan:</span>
+                    </p>
+                    <div class="flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
+                        <span>Tema Terpilih: <strong class="uppercase text-orange-600 font-bold" x-text="selectedTheme"></strong></span>
+                        <span>&bull;</span>
+                        <span>Lebar Layar: <strong class="text-orange-600 font-bold" x-text="selectedWidth"></strong></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] px-2.5 py-1 bg-white border border-slate-200 rounded-md font-medium text-slate-600 shadow-sm flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Klik kartu opsi di atas untuk memilih</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="submit"
+                        class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-md transition flex items-center gap-2">
+                    <i class="fas fa-save"></i>
+                    <span>Terapkan & Simpan Pengaturan Tampilan</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 3: PAYMENT GATEWAY MIDTRANS -->
+    <div id="admin-panel-midtrans" class="admin-tab-panel space-y-4" x-show="activeTab === 'midtrans'" x-cloak {% if curr_tab != 'midtrans' %}style="display: none;"{% endif %}>
+        <div class="bg-white p-6 rounded-lg border border-slate-200 shadow-sm max-w-2xl space-y-4">
+            <div class="border-b border-slate-100 pb-3">
+                <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase">Payment Gateway</span>
+                <h2 class="text-base font-bold text-slate-900 font-heading mt-1">Konfigurasi Gateway Midtrans</h2>
+                <p class="text-xs text-slate-500">Menerima pembayaran QRIS (GoPay, ShopeePay, OVO, LinkAja) & Virtual Account Bank secara real-time</p>
+            </div>
+
+            <form hx-post="/admin/settings/midtrans" hx-target="#main-content" class="space-y-4 text-xs">
+                
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Mode Lingkungan (Environment)</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2 p-3 rounded-lg border border-slate-200 bg-slate-50 cursor-pointer">
+                            <input type="radio" name="midtrans_mode" value="sandbox" {% if data.settings.midtrans_mode != 'production' %}checked{% endif %} class="text-orange-600 focus:ring-orange-500">
+                            <div>
+                                <p class="font-bold text-slate-900">Sandbox (Uji Coba)</p>
+                                <p class="text-[10px] text-slate-500">Menggunakan simulator Midtrans</p>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 rounded-lg border border-slate-200 bg-slate-50 cursor-pointer">
+                            <input type="radio" name="midtrans_mode" value="production" {% if data.settings.midtrans_mode == 'production' %}checked{% endif %} class="text-orange-600 focus:ring-orange-500">
+                            <div>
+                                <p class="font-bold text-slate-900">Production (Live)</p>
+                                <p class="text-[10px] text-slate-500">Transaksi uang riil rekening resmi</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Client Key</label>
+                    <input type="text" name="midtrans_client_key" value="{{ data.settings.midtrans_client_key or '' }}" placeholder="SB-Mid-client-..."
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Server Key</label>
+                    <input type="password" name="midtrans_server_key" value="{{ data.settings.midtrans_server_key or '' }}" placeholder="SB-Mid-server-..."
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Merchant ID</label>
+                    <input type="text" name="midtrans_merchant_id" value="{{ data.settings.midtrans_merchant_id or 'GIMBAL-MERCHANT' }}" placeholder="GIMBAL-MERCHANT"
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="p-3.5 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                    <p class="font-bold text-slate-800 flex items-center gap-1.5"><i class="fas fa-link text-orange-600"></i> URL Notifikasi Webhook Midtrans:</p>
+                    <p class="font-mono text-[11px] text-slate-600 select-all bg-white p-2 rounded-lg border border-slate-200">https://www.gimbal.my.id/payment/midtrans/notification</p>
+                    <p class="text-[10px] text-slate-400">Salin URL di atas ke menu <i>Settings > Configuration > Payment Notification URL</i> di Dashboard Midtrans Anda.</p>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit"
+                            class="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-md transition flex items-center gap-2">
+                        <i class="fas fa-save"></i>
+                        <span>Simpan Konfigurasi Midtrans</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TAB: CLOUDFLARE EMAIL ROUTING (@gimbal.my.id) -->
+    <div id="admin-panel-cloudflare" class="admin-tab-panel space-y-4" x-show="activeTab === 'cloudflare'" x-cloak {% if curr_tab != 'cloudflare' %}style="display: none;"{% endif %}>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+            <div class="flex items-start justify-between border-b border-slate-100 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-lg shadow-sm">
+                        <i class="fas fa-envelope-open-text"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900 font-heading">Otomatisasi Cloudflare Email Routing</h2>
+                        <p class="text-xs text-slate-500">Menerbitkan otomatis alamat email resmi <code class="font-mono text-orange-700 font-bold">user_name_email@gimbal.my.id</code> saat akun login</p>
+                    </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold {% if data.settings.cloudflare_enabled %}bg-emerald-100 text-emerald-800{% else %}bg-slate-100 text-slate-600{% endif %}">
+                    {% if data.settings.cloudflare_enabled %}Aktif & Tersambung{% else %}Belum Diaktifkan{% endif %}
+                </span>
+            </div>
+
+            <div class="p-4 bg-orange-50/60 rounded-xl border border-orange-200/80 text-xs text-orange-950 space-y-2 leading-relaxed">
+                <p class="font-bold flex items-center gap-1.5"><i class="fas fa-info-circle text-orange-600"></i> Cara Kerja Integrasi Email Forwarding:</p>
+                <ul class="list-disc list-inside space-y-1 text-slate-700 ml-1">
+                    <li>Setiap anggota yang login dengan <strong>Google/Gmail</strong> atau email lainnya akan otomatis mendapatkan alias <strong class="text-orange-900 font-mono">nama_pengguna@gimbal.my.id</strong>.</li>
+                    <li>Sistem backend menggunakan <strong>Cloudflare Email Routing Rules API</strong> untuk membuat rule: semua email yang masuk ke alias tersebut otomatis diteruskan (forward) ke email asli anggota.</li>
+                    <li>Sebelum rule aktif di Cloudflare, pastikan domain <code class="font-mono bg-white px-1.5 py-0.5 rounded border">gimbal.my.id</code> sudah mengaktifkan fitur Email Routing di Cloudflare Dashboard.</li>
+                </ul>
+            </div>
+
+            <form hx-post="/admin/settings/cloudflare" hx-target="#main-content" class="space-y-4 text-xs">
+                <!-- Sakelar Enable -->
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="font-bold text-slate-800 block text-xs">Status Otomatisasi Cloudflare API</label>
+                        <p class="text-[11px] text-slate-500">Aktifkan sinkronisasi otomatis saat user login / mendaftar</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="cloudflare_enabled" value="true" class="sr-only peer" {% if data.settings.cloudflare_enabled %}checked{% endif %}>
+                        <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+                    </label>
+                </div>
+
+                <!-- Domain Organisasi -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Domain Email Organisasi</label>
+                    <input type="text" name="cloudflare_domain" value="{{ data.settings.cloudflare_domain or 'gimbal.my.id' }}" required
+                           placeholder="Contoh: gimbal.my.id"
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <!-- Zone ID -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Cloudflare Zone ID</label>
+                    <input type="text" name="cloudflare_zone_id" value="{{ data.settings.cloudflare_zone_id or '' }}"
+                           placeholder="Contoh: c8f3b145a90d45a98bf... (Dapat dilihat pada halaman Overview domain di Cloudflare)"
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <!-- API Token -->
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Cloudflare API Token</label>
+                    <input type="password" name="cloudflare_api_token" value="{{ data.settings.cloudflare_api_token or '' }}"
+                           placeholder="Token API dengan permission Zone.Email Routing Rules (Edit & Read)"
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    <p class="text-[10px] text-slate-400 mt-1">Buat API Token di <i>Cloudflare Dashboard > My Profile > API Tokens > Create Token > Edit zone DNS & Email Routing</i>.</p>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit"
+                            class="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-md transition flex items-center gap-2 cursor-pointer">
+                        <i class="fas fa-save"></i>
+                        <span>Simpan Pengaturan Cloudflare</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TAB 4: AUDIT TRAIL LOG -->
+    <div id="admin-panel-audit" class="admin-tab-panel space-y-4" x-show="activeTab === 'audit'" x-cloak {% if curr_tab != 'audit' %}style="display: none;"{% endif %}>
+        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+                <h2 class="text-sm font-bold text-slate-900 font-heading">Log Aktivitas & Keamanan Administrator</h2>
+                <p class="text-xs text-slate-500">Mencatat riwayat persetujuan anggota, perubahan tarif, dan administrasi pengguna</p>
+            </div>
+            <span class="text-xs font-mono text-slate-400">Total Log: {{ data.audit_logs|length }}</span>
+        </div>
+
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-700">
+                    <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
+                        <tr>
+                            <th class="px-6 py-3.5">Waktu</th>
+                            <th class="px-6 py-3.5">Admin Pelaksana</th>
+                            <th class="px-6 py-3.5">Aksi Tindakan</th>
+                            <th class="px-6 py-3.5">Target</th>
+                            <th class="px-6 py-3.5">Detail Catatan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for log in data.audit_logs %}
+                        <tr class="hover:bg-slate-50/60 transition">
+                            <td class="px-6 py-3.5 font-mono text-[11px] text-slate-500">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else '-' }}</td>
+                            <td class="px-6 py-3.5 font-bold text-slate-900">{{ log.admin.name if log.admin else 'Sistem / Superadmin' }}</td>
+                            <td class="px-6 py-3.5">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-orange-100 text-orange-800">
+                                    {{ log.action }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-3.5 font-medium text-slate-600">{{ log.target_type or '-' }} #{{ log.target_id or '' }}</td>
+                            <td class="px-6 py-3.5 text-slate-600">{{ log.details or '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-slate-400 italic">Belum ada catatan aktivitas admin terbaru.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Switcher & Auto-Select Engine (Guarantees tabs work consistently across all browsers & Alpine states) -->
+    <script>
+        (function() {
+            window.switchAdminTab = function(tabName, updateUrl) {
+                if (!tabName) tabName = 'organization';
+
+                // 1. Show only target panel, hide all other panels
+                var panels = document.querySelectorAll('.admin-tab-panel');
+                var found = false;
+                panels.forEach(function(panel) {
+                    if (panel.id === 'admin-panel-' + tabName) {
+                        panel.style.display = 'block';
+                        panel.removeAttribute('x-cloak');
+                        found = true;
+                    } else {
+                        panel.style.display = 'none';
+                    }
+                });
+
+                // Fallback to organization if tabName didn't match any panel
+                if (!found && panels.length > 0) {
+                    tabName = 'organization';
+                    var firstPanel = document.getElementById('admin-panel-organization') || panels[0];
+                    if (firstPanel) {
+                        firstPanel.style.display = 'block';
+                        firstPanel.removeAttribute('x-cloak');
+                    }
+                }
+
+                // 2. Update button active states
+                var btns = document.querySelectorAll('.admin-tab-btn');
+                btns.forEach(function(btn) {
+                    if (btn.getAttribute('data-tab') === tabName) {
+                        btn.className = 'admin-tab-btn py-2 px-3.5 rounded-lg transition flex items-center gap-2 whitespace-nowrap bg-white text-orange-700 shadow-sm font-bold active';
+                    } else {
+                        btn.className = 'admin-tab-btn py-2 px-3.5 rounded-lg transition flex items-center gap-2 whitespace-nowrap text-slate-600 hover:text-slate-900';
+                    }
+                });
+
+                // 3. Sync Alpine state if running
+                var container = document.getElementById('admin-settings-container');
+                if (window.Alpine && container && container._x_dataStack && container._x_dataStack[0]) {
+                    container._x_dataStack[0].activeTab = tabName;
+                }
+
+                // 4. Update browser URL without reload (so refresh/share remembers tab)
+                if (updateUrl !== false && window.history && window.history.replaceState) {
+                    try {
+                        var currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('tab', tabName);
+                        window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search);
+                    } catch (e) {}
+                }
+            };
+
+            window.autoSelectAdminTab = function() {
+                try {
+                    var params = new URLSearchParams(window.location.search);
+                    var tabFromUrl = params.get('tab');
+                    var hash = window.location.hash ? window.location.hash.replace('#', '') : null;
+                    var initialTab = tabFromUrl || hash || '{{ curr_tab }}' || 'organization';
+                    window.switchAdminTab(initialTab, false);
+                } catch (e) {
+                    window.switchAdminTab('{{ curr_tab }}' || 'organization', false);
+                }
+            };
+
+            // Auto-select immediately
+            window.autoSelectAdminTab();
+
+            // Auto-select on DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', window.autoSelectAdminTab);
+            }
+
+            // Auto-select after HTMX swaps
+            document.addEventListener('htmx:afterSwap', function(e) {
+                if (document.getElementById('admin-settings-container')) {
+                    window.autoSelectAdminTab();
+                }
+            });
+        })();
+    </script>
+
+</div>
+{% endmacro %}
+
+
+<!-- ============================================================================== -->
+<!-- MACRO: MANAJEMEN REPO PETA GIMBAL (ADMIN) -->
+<!-- ============================================================================== -->
+{% macro admin_repo_maps(data) %}
+<div class="space-y-6">
+
+    <!-- Top Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">
+                    <i class="fas fa-map-marked-alt"></i>
+                </span>
+                <h1 class="text-lg font-bold text-slate-900 font-heading">Repo Peta Ekspedisi & Geodata GIMBAL</h1>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">
+                Kelola berkas peta offline (MBTiles), rute pendakian presisi (GPX/KML), dan zonasi cagar alam untuk aplikasi <b>Gimbal Maps</b>.
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <button class="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-md transition flex items-center gap-2"
+                    hx-get="/admin/repo-maps/create-modal" hx-target="#modal-container">
+                <i class="fas fa-upload"></i>
+                <span>Unggah Peta Baru</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Table of Maps -->
+    <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
+                    <tr>
+                        <th class="px-6 py-4">Format</th>
+                        <th class="px-6 py-4">Judul Peta & Jalur</th>
+                        <th class="px-6 py-4">Wilayah & Kategori</th>
+                        <th class="px-6 py-4">Metrik Lintasan</th>
+                        <th class="px-6 py-4">Ukuran & Unduhan</th>
+                        <th class="px-6 py-4 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for m in data.maps %}
+                    <tr class="hover:bg-slate-50/60 transition">
+                        <td class="px-6 py-4">
+                            <span class="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase
+                                {% if m.file_type == 'mbtiles' %}bg-purple-100 text-purple-800
+                                {% elif m.file_type == 'gpx' %}bg-emerald-100 text-emerald-800
+                                {% elif m.file_type == 'geojson' %}bg-sky-100 text-sky-800
+                                {% else %}bg-orange-100 text-orange-800{% endif %}">
+                                .{{ m.file_type|upper }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="font-bold text-slate-900 text-sm">{{ m.title }}</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{{ m.description or 'Tidak ada keterangan tambahan' }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-semibold text-slate-700 block">{{ m.region }}</span>
+                            <span class="text-[10px] text-slate-400 font-mono capitalize">{{ m.category.replace('_', ' ') }}</span>
+                        </td>
+                        <td class="px-6 py-4 font-mono text-[11px]">
+                            {% if m.total_distance_km and m.total_distance_km > 0 %}
+                            <p class="font-bold text-slate-800">{{ m.total_distance_km }} km</p>
+                            {% endif %}
+                            {% if m.total_waypoints and m.total_waypoints > 0 %}
+                            <p class="text-slate-400 text-[10px]">{{ m.total_waypoints }} POI</p>
+                            {% endif %}
+                            {% if not m.total_distance_km and not m.total_waypoints %}
+                            <span class="text-slate-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 font-mono text-[11px]">
+                            <p class="font-bold text-slate-700">{{ m.file_size_fmt }}</p>
+                            <p class="text-[10px] text-slate-400">{{ m.downloads_count or 0 }}x diunduh</p>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <a href="/api/v1/maps/repo/download/{{ m.id }}"
+                                   class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs transition" title="Unduh Berkas">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button type="button"
+                                        hx-post="/admin/repo-maps/delete/{{ m.id }}"
+                                        hx-target="#main-content"
+                                        hx-confirm="Yakin ingin menghapus berkas peta '{{ m.title }}' dari server?"
+                                        class="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs transition" title="Hapus Berkas Peta">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-slate-400 italic">
+                            Belum ada berkas peta diunggah. Klik tombol "Unggah Peta Baru" di atas untuk menambahkan.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endmacro %}
+
 

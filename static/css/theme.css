@@ -73,185 +73,292 @@
 }
 
 /* ============================================================================
-   DARK & BRIGHT MODE GLOBAL SYSTEM
-   Menjamin mode terang dan gelap bekerja rapi di seluruh halaman
+   SISTEM TAMPILAN STANDAR (BRIGHT MODE PERMANEN)
+   Menjamin mode terang bekerja rapi, kontras tinggi, dan bersih di seluruh halaman
    ============================================================================ */
 
-/* Transisi halus saat berganti mode */
-html {
-    transition: background-color 0.25s ease, color 0.25s ease;
+body {
+    background-color: var(--color-bg-body, #fcfcfb);
+    color: #0f172a;
 }
 
-html.dark {
-    color-scheme: dark;
-    --color-bg-body: #0c0f14;
-    --color-bg-card: #151b26;
-    --color-bg-elevated: #1c2433;
-    --color-text-main: #f3f4f6;
-    --color-text-sub: #94a3b8;
-    --color-border: #222c3d;
+.bg-white {
+    background-color: #ffffff !important;
 }
 
-/* 1. Latar Belakang Utama Halaman */
-html.dark body {
-    background-color: #0c0f14 !important;
-    color: #f3f4f6 !important;
+.text-slate-400 {
+    color: #64748b !important;
+}
+.text-stone-400 {
+    color: #78716c !important;
+}
+.text-gray-400 {
+    color: #6b7280 !important;
 }
 
-/* 2. Kartu dan Panel Putih -> Slate Gelap Elegan */
-html.dark .bg-white {
-    background-color: #151b26 !important;
+/* ============================================================================
+   TOP NAVBAR RESMI GIMBAL (BERBASIS WARNA TEMA MONOTONE FLAT - TEKS PUTIH)
+   ============================================================================ */
+.top-navbar-theme,
+nav.top-navbar-theme,
+header.top-navbar-theme {
+    background: var(--brand-600, #ea580c) !important;
+    background-color: var(--brand-600, #ea580c) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.15) !important;
+    color: #ffffff !important;
 }
 
-html.dark .bg-slate-50,
-html.dark .bg-stone-50,
-html.dark .bg-gray-50,
-html.dark .bg-orange-50\/20,
-html.dark .bg-orange-50\/30,
-html.dark .bg-orange-50\/40,
-html.dark .bg-orange-50\/70,
-html.dark .bg-brand-50\/20,
-html.dark .bg-brand-50\/30,
-html.dark .bg-brand-50\/40 {
-    background-color: #0c0f14 !important;
+/* Hanya elemen top navbar langsung di bar atas (BUKAN di dalam dropdown) yang berwarna putih */
+.top-navbar-theme #user-profile-btn,
+.top-navbar-theme #user-profile-btn *,
+.top-navbar-theme #admin-menu-btn,
+.top-navbar-theme #admin-menu-btn *,
+.top-navbar-theme #mobile-menu-btn,
+.top-navbar-theme #mobile-menu-btn * {
+    color: #ffffff !important;
 }
 
-html.dark .bg-slate-100,
-html.dark .bg-stone-100,
-html.dark .bg-gray-100,
-html.dark .bg-orange-50 {
-    background-color: #1c2433 !important;
+/* Pastikan ukuran dan tinggi kedua tombol navbar persis sama */
+#admin-menu-btn,
+#user-profile-btn {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    box-sizing: border-box !important;
 }
 
-/* 3. Penyesuaian Teks Mode Gelap */
-html.dark .text-stone-950,
-html.dark .text-stone-900,
-html.dark .text-stone-800,
-html.dark .text-slate-950,
-html.dark .text-slate-900,
-html.dark .text-slate-800,
-html.dark .text-gray-950,
-html.dark .text-gray-900,
-html.dark .text-gray-800,
-html.dark .text-brand-950 {
-    color: #f3f4f6 !important;
+/* ============================================================================
+   DROPDOWN MENUS (ADMIN & USER PROFILE): TEKS TERANG, KONTRAS TINGGI, THEME FLAT
+   ============================================================================ */
+#admin-menu-dropdown,
+#user-profile-dropdown {
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    border: 1px solid #e2e8f0 !important;
 }
 
-html.dark .text-stone-700,
-html.dark .text-stone-600,
-html.dark .text-slate-700,
-html.dark .text-slate-600,
-html.dark .text-gray-700,
-html.dark .text-gray-600,
-html.dark .text-brand-800,
-html.dark .text-brand-900 {
-    color: #cbd5e1 !important;
+/* ADMIN & MEMBER NAV ITEM BASE (INACTIVE) */
+.admin-nav-item:not(.active),
+.member-nav-item:not(.active) {
+    color: #334155 !important;
+    background-color: transparent !important;
+    transition: all 0.15s ease-in-out;
 }
 
-html.dark .text-stone-500,
-html.dark .text-stone-400,
-html.dark .text-slate-500,
-html.dark .text-slate-400,
-html.dark .text-gray-500,
-html.dark .text-gray-400 {
-    color: #94a3b8 !important;
+.admin-nav-item:not(.active) span,
+.member-nav-item:not(.active) p.leading-tight {
+    color: #0f172a !important;
+    font-weight: 700 !important;
 }
 
-/* 4. Border Halus Mode Gelap */
-html.dark .border-stone-200,
-html.dark .border-stone-200\/80,
-html.dark .border-stone-100,
-html.dark .border-slate-200,
-html.dark .border-slate-200\/80,
-html.dark .border-slate-100,
-html.dark .border-gray-200,
-html.dark .border-gray-100,
-html.dark .border-brand-200,
-html.dark .border-brand-200\/80,
-html.dark .border-brand-100,
-html.dark .border-orange-200,
-html.dark .border-orange-100 {
-    border-color: #222c3d !important;
-}
-
-/* 5. Top Navbar Landing Page */
-html.dark nav.bg-white\/95 {
-    background-color: rgba(12, 15, 20, 0.95) !important;
-    border-color: #222c3d !important;
-}
-
-/* 6. Form Input, Select, & Textarea */
-html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
-html.dark select,
-html.dark textarea {
-    background-color: #1c2433 !important;
-    border-color: #2e3a4e !important;
-    color: #f3f4f6 !important;
-}
-
-html.dark input::placeholder,
-html.dark textarea::placeholder {
+.member-nav-item:not(.active) p.opacity-75 {
     color: #64748b !important;
 }
 
-html.dark select option {
-    background-color: #151b26;
-    color: #f3f4f6;
+.admin-nav-item:not(.active) .nav-icon-box,
+.member-nav-item:not(.active) .nav-icon-box {
+    background-color: var(--brand-50, #fff7ed) !important;
+    color: var(--brand-600, #ea580c) !important;
 }
 
-/* 7. Tabel Admin & Member */
-html.dark table thead th {
-    background-color: #1c2433 !important;
-    color: #cbd5e1 !important;
-    border-color: #222c3d !important;
+.admin-nav-item:not(.active) .nav-icon-box i,
+.member-nav-item:not(.active) .nav-icon-box i {
+    color: var(--brand-600, #ea580c) !important;
 }
 
-html.dark table tbody tr {
-    border-color: #222c3d !important;
+.admin-nav-item:not(.active) .nav-arrow,
+.member-nav-item:not(.active) .nav-arrow {
+    color: #94a3b8 !important;
 }
 
-html.dark table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.04) !important;
+/* HOVER: Background warna tema lembut, teks & icon warna tema */
+.admin-nav-item:not(.active):hover,
+.member-nav-item:not(.active):hover {
+    background-color: var(--brand-50, #fff7ed) !important;
 }
 
-html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
-html.dark .divide-stone-200 > :not([hidden]) ~ :not([hidden]),
-html.dark .divide-orange-200 > :not([hidden]) ~ :not([hidden]),
-html.dark .divide-brand-200 > :not([hidden]) ~ :not([hidden]) {
-    border-color: #222c3d !important;
+.admin-nav-item:not(.active):hover *,
+.member-nav-item:not(.active):hover * {
+    color: var(--brand-600, #ea580c) !important;
 }
 
-/* 8. Bayangan Elemen (Shadows) */
-html.dark .shadow-2xl,
-html.dark .shadow-xl,
-html.dark .shadow-md {
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
+.admin-nav-item:not(.active):hover .nav-icon-box,
+.member-nav-item:not(.active):hover .nav-icon-box {
+    background-color: var(--brand-100, #ffedd5) !important;
 }
 
-/* 9. Tombol Toggle Tema (Sun / Moon) */
-.gimbal-theme-toggle {
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    user-select: none;
+/* SELECTED / ACTIVE: Background flat warna tema utama, SEMUA TEKS PUTIH TAJAM */
+.admin-nav-item.active,
+.admin-nav-item.bg-orange-600,
+.member-nav-item.active,
+.member-nav-item.bg-orange-600 {
+    background-color: var(--brand-600, #ea580c) !important;
+    background: var(--brand-600, #ea580c) !important;
+    color: #ffffff !important;
 }
 
-.gimbal-theme-toggle:hover {
-    transform: translateY(-1px);
+.admin-nav-item.active *,
+.admin-nav-item.bg-orange-600 *,
+.member-nav-item.active *,
+.member-nav-item.bg-orange-600 * {
+    color: #ffffff !important;
 }
 
-.gimbal-theme-toggle:active {
-    transform: translateY(0);
+.admin-nav-item.active .nav-icon-box,
+.admin-nav-item.bg-orange-600 .nav-icon-box,
+.member-nav-item.active .nav-icon-box,
+.member-nav-item.bg-orange-600 .nav-icon-box {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
 }
 
-html.dark .gimbal-theme-toggle {
-    background-color: rgba(255, 255, 255, 0.08) !important;
-    border-color: rgba(255, 255, 255, 0.15) !important;
-    color: #f3f4f6 !important;
+.admin-nav-item.active .nav-icon-box i,
+.admin-nav-item.bg-orange-600 .nav-icon-box i,
+.member-nav-item.active .nav-icon-box i,
+.member-nav-item.bg-orange-600 .nav-icon-box i {
+    color: #ffffff !important;
 }
 
-html.dark .gimbal-theme-toggle:hover {
-    background-color: rgba(255, 255, 255, 0.14) !important;
-    border-color: var(--brand-500) !important;
+.admin-nav-item.active .nav-arrow,
+.admin-nav-item.bg-orange-600 .nav-arrow,
+.member-nav-item.active .nav-arrow,
+.member-nav-item.bg-orange-600 .nav-arrow {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* ============================================================================
+   KOMPONEN DROPDOWN & SIDEBAR SESUAI WARNA UTAMA TEMA
+   ============================================================================ */
+
+/* 1. Header Identitas Profil Pengguna di Dropdown (Warna Utama Tema - Teks Putih) */
+.theme-profile-header-card {
+    background: var(--brand-600, #ea580c) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.28) !important;
+    box-shadow: 0 4px 16px -2px rgba(var(--brand-600-rgb, 234, 88, 12), 0.35) !important;
+}
+
+.theme-profile-header-card,
+.theme-profile-header-card *,
+.theme-profile-header-card p,
+.theme-profile-header-card span:not(.badge-admin),
+.theme-profile-header-card div {
+    color: #ffffff !important;
+}
+
+.theme-profile-header-card .badge-admin {
+    background-color: #ffffff !important;
+    color: var(--brand-700, #c2410c) !important;
+}
+
+/* 2. Tombol Kelola Profil & Akun Hub (Teks Terbaca Jelas & Kontras Tinggi) */
+.theme-account-hub-btn {
+    background-color: var(--brand-50, #fff7ed) !important;
+    border: 1px solid var(--brand-200, #fed7aa) !important;
+    color: var(--brand-900, #7c2d12) !important;
+}
+
+.theme-account-hub-btn,
+.theme-account-hub-btn *,
+.theme-account-hub-btn span {
+    color: var(--brand-900, #7c2d12) !important;
+}
+
+.theme-account-hub-btn i {
+    color: var(--brand-600, #ea580c) !important;
+}
+
+.theme-account-hub-btn:hover {
+    background-color: var(--brand-100, #ffedd5) !important;
+    border-color: var(--brand-400, #fb923c) !important;
+}
+
+.theme-account-hub-btn:hover,
+.theme-account-hub-btn:hover *,
+.theme-account-hub-btn:hover span {
+    color: var(--brand-950, #431407) !important;
+}
+
+/* Jaminan ID-scoped untuk kontras maksimal di dropdown */
+#user-profile-dropdown .theme-account-hub-btn,
+#user-profile-dropdown .theme-account-hub-btn *,
+#user-profile-dropdown .theme-account-hub-btn span {
+    color: #7c2d12 !important;
+}
+
+#user-profile-dropdown .theme-account-hub-btn i {
+    color: #ea580c !important;
+}
+
+#user-profile-dropdown .member-nav-item.active,
+#user-profile-dropdown .member-nav-item.active *,
+#user-profile-dropdown .member-nav-item.active p,
+#user-profile-dropdown .member-nav-item.active span,
+#admin-menu-dropdown .admin-nav-item.active,
+#admin-menu-dropdown .admin-nav-item.active *,
+#admin-menu-dropdown .admin-nav-item.active span {
+    color: #ffffff !important;
+}
+
+/* 3. Kotak Simulasi Peran Dev Mode (Aksen Warna Tema) */
+.theme-dev-role-box {
+    background-color: var(--brand-50, #fff7ed) !important;
+    border: 1.5px solid var(--brand-200, #fed7aa) !important;
+}
+
+.theme-dev-role-box .role-title {
+    color: var(--brand-800, #9a3412) !important;
+}
+
+.theme-dev-role-box a {
+    color: #334155 !important;
+}
+
+.theme-dev-role-box a:hover {
+    background-color: #ffffff !important;
+    color: var(--brand-600, #ea580c) !important;
+}
+
+.theme-dev-role-box a.active-role {
+    background-color: rgba(var(--brand-500-rgb, 249, 115, 22), 0.18) !important;
+    color: var(--brand-900, #7c2d12) !important;
+    font-weight: 800 !important;
+}
+
+/* 4. Kotak Mode Sistem (Sidebar Kiri Admin) */
+.theme-system-mode-box {
+    background-color: var(--brand-50, #fff7ed) !important;
+    border: 1.5px solid var(--brand-200, #fed7aa) !important;
+}
+
+.theme-system-mode-box .mode-title {
+    color: var(--brand-900, #7c2d12) !important;
+}
+
+.theme-system-mode-box .mode-sub {
+    color: var(--brand-700, #c2410c) !important;
+}
+
+/* Menu Navigasi Sidebar Admin (Kontras Tinggi Sempurna) */
+.admin-nav-item:not(.active) {
+    color: #334155 !important; /* Slate 700 gelap dan tegas di mode terang */
+    background-color: transparent !important;
+}
+
+.admin-nav-item:not(.active) i,
+.admin-nav-item:not(.active) span {
+    color: #334155 !important;
+}
+
+.admin-nav-item:not(.active):hover {
+    color: var(--brand-600) !important;
+    background-color: rgba(var(--brand-500-rgb), 0.12) !important;
+}
+
+.admin-nav-item:not(.active):hover i,
+.admin-nav-item:not(.active):hover span {
+    color: var(--brand-600) !important;
 }
 
 /* ============================================================================
@@ -300,10 +407,29 @@ html.dark .gimbal-theme-toggle:hover {
     border-top: 1px solid var(--brand-800) !important;
 }
 
-/* Kartu Tanda Anggota (KTA) Digital */
+/* Kartu Tanda Anggota (KTA) Digital: FLAT WARNA TEMA UTAMA TANPA GRADIENT */
 .kta-card {
-    background: linear-gradient(145deg, var(--brand-800) 0%, var(--brand-950) 60%, #0c0f14 100%) !important;
-    box-shadow: 0 20px 30px -10px rgba(var(--brand-900-rgb), 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    background: var(--brand-600, #ea580c) !important;
+    background-color: var(--brand-600, #ea580c) !important;
+    box-shadow: 0 10px 25px -5px rgba(var(--brand-600-rgb, 234, 88, 12), 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
+
+.kta-card h1, .kta-card h2, .kta-card h3, .kta-card p, .kta-card span {
+    color: #ffffff !important;
+}
+
+/* Hero Banner Dashboard Anggota: FLAT WARNA TEMA UTAMA TANPA GRADIENT */
+.member-hero-banner {
+    background: var(--brand-600, #ea580c) !important;
+    background-color: var(--brand-600, #ea580c) !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 25px -5px rgba(var(--brand-600-rgb, 234, 88, 12), 0.3) !important;
+}
+
+.member-hero-banner h1, .member-hero-banner h2, .member-hero-banner h3, .member-hero-banner p {
+    color: #ffffff !important;
 }
 
 /* Tombol & Aksen Universal */
@@ -323,4 +449,14 @@ html.dark .gimbal-theme-toggle:hover {
 
 .bg-brand-primary {
     background-color: var(--brand-600);
+}
+
+/* Card Hover Animation Effect */
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 30px -10px rgba(var(--brand-700-rgb, 194, 65, 12), 0.25);
 }

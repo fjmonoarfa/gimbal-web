@@ -8,18 +8,53 @@
     <link rel="icon" href="/assets/logo.png" type="image/png">
 
     <!-- Central Theme & Site Width Configuration -->
-    <link rel="stylesheet" href="/static/css/theme.css?v=20260926_3">
-    <script src="/static/js/theme-config.js?v=20260926_3"></script>
+    <link rel="stylesheet" href="/static/css/theme.css?v=20260930_6">
+    <script>
+        window.GIMBAL_SERVER_THEME = "{{ server_theme_color or 'orange' }}";
+        window.GIMBAL_SERVER_WIDTH = "{{ server_site_width or '85%' }}";
+    </script>
+    <script src="/static/js/theme-config.js?v=20260930_6"></script>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <script src="https://unpkg.com/feather-icons"></script>
 
-    <!-- HTMX (Local Vendor) -->
-    <script src="/static/vendor/htmx/htmx.min.js"></script>
+    <!-- HTMX (Local Vendor with onerror Fallback) -->
+    <script src="/static/vendor/htmx/htmx.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/htmx.org@1.9.12'"></script>
 
-    <!-- Alpine.js (Local Vendor) -->
-    <script defer src="/static/vendor/alpine/alpine.min.js"></script>
+    <!-- Alpine.js (Local Vendor with dynamic Fallback) -->
+    <script defer src="/static/vendor/alpine/alpine.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.defer=true;s.src='https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js';document.head.appendChild(s);"></script>
+
+    <!-- Google Identity Services (GIS) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Global HTMX + Alpine.js Lifecycle Integration -->
+    <script>
+        function initAlpineTreeSafely(el) {
+            if (window.Alpine && typeof window.Alpine.initTree === 'function') {
+                try {
+                    window.Alpine.initTree(el || document.body);
+                } catch (e) {
+                    console.warn('Alpine.initTree notice:', e);
+                }
+            }
+        }
+        document.addEventListener('htmx:load', function(evt) {
+            initAlpineTreeSafely(evt.detail && evt.detail.elt);
+        });
+        document.addEventListener('htmx:afterSwap', function(evt) {
+            initAlpineTreeSafely(evt.detail && evt.detail.target);
+        });
+        document.addEventListener('alpine:init', function() {
+            setTimeout(function() { initAlpineTreeSafely(document.body); }, 50);
+        });
+        document.addEventListener('alpine:initialized', function() {
+            setTimeout(function() { initAlpineTreeSafely(document.body); }, 50);
+        });
+        window.addEventListener('load', function() {
+            setTimeout(function() { initAlpineTreeSafely(document.body); }, 100);
+        });
+    </script>
 
     <!-- FontAwesome 6 Icons CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -31,6 +66,10 @@
 
     <!-- Custom Theme & HTMX Global Styles -->
     <style>
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 5rem;
+        }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
@@ -55,24 +94,15 @@
         ::-webkit-scrollbar-track {
             background: #f1f5f9;
         }
-        html.dark ::-webkit-scrollbar-track {
-            background: #0b0f17;
-        }
         ::-webkit-scrollbar-thumb {
             background: #94a3b8;
             border-radius: 9999px;
         }
-        html.dark ::-webkit-scrollbar-thumb {
-            background: #334155;
-        }
         ::-webkit-scrollbar-thumb:hover {
             background: #64748b;
         }
-        html.dark ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
-        }
         .adventure-gradient {
-            background: linear-gradient(135deg, var(--brand-700, #c2410c) 0%, var(--brand-800, #9a3412) 50%, var(--brand-900, #7c2d12) 100%);
+            background: var(--brand-600, #ea580c);
         }
         .gimbal-orange {
             color: var(--brand-600, #ea580c);
@@ -81,8 +111,9 @@
             background-color: var(--brand-600, #ea580c);
         }
         .kta-card {
-            background: linear-gradient(145deg, var(--brand-800, #9a3412) 0%, var(--brand-950, #431407) 60%, #1c0903 100%);
-            box-shadow: 0 20px 30px -10px rgba(var(--brand-900-rgb, 124, 45, 18), 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            background: var(--brand-600, #ea580c);
+            background-color: var(--brand-600, #ea580c);
+            box-shadow: 0 10px 25px -5px rgba(var(--brand-600-rgb, 234, 88, 12), 0.35);
         }
     </style>
 </head>
@@ -106,5 +137,22 @@
         </div>
     </div>
 
+    <!-- Safety Net Failsafe for Network / CDN latency -->
+    <script>
+        setTimeout(function() {
+            var shell = document.getElementById('app-shell');
+            if (shell && shell.querySelector('.animate-spin')) {
+                var retryUrl = "{{ shell_url or '/app-shell' }}";
+                shell.innerHTML = '<div class="min-h-screen flex items-center justify-center bg-slate-900 text-white p-6 text-center">' +
+                    '<div class="space-y-4 max-w-md bg-slate-800/90 p-8 rounded-xl border border-orange-500/40 shadow-2xl">' +
+                    '<div class="w-12 h-12 rounded-2xl bg-orange-500/20 text-orange-400 flex items-center justify-center mx-auto text-xl"><i class="fas fa-satellite-dish"></i></div>' +
+                    '<h2 class="text-base font-bold font-heading">Koneksi Sedang Menghubungkan</h2>' +
+                    '<p class="text-xs text-slate-300">Jika dashboard tidak terbuka otomatis, silakan klik tombol di bawah untuk memuat portal secara langsung:</p>' +
+                    '<a href="' + retryUrl + '" class="inline-block px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition shadow-lg">' +
+                    '<i class="fas fa-sync-alt mr-1.5"></i> Buka Portal Langsung</a>' +
+                    '</div></div>';
+            }
+        }, 5000);
+    </script>
 </body>
 </html>

@@ -16,3 +16,21 @@ instance/*.db
 connections.csv
 .DS_Store
 Thumbs.db
+*.code-workspace
+
+# Uploads (ignore user content, preserve gitkeeps)
+uploads/*/*
+!uploads/*/.gitkeep
+
+# Backups & Scratch
+backups/
+scratch/
+*.bundle
+*.tar.gz
+*.zip
+tilongkabila.gpx
+
+# Credentials & OAuth Keys
+client_secret*.json
+*.pem
+*.key

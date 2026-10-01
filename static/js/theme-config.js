@@ -2,7 +2,7 @@
  * ============================================================================
  * KONFIGURASI PUSAT KPAB GIMBAL (CENTRAL THEME & LAYOUT ENGINE)
  * ============================================================================
- * CUKUP UBAH 3 VARIABEL UTAMA DI BAWAH INI UNTUK MENGUBAH SELURUH WEBSITE:
+ * CUKUP UBAH 2 VARIABEL UTAMA DI BAWAH INI UNTUK MENGUBAH SELURUH WEBSITE:
  * 
  * 1. GIMBAL_SITE_WIDTH:
  *    Mengatur lebar konten seluruh halaman web (landing, dashboard anggota, admin).
@@ -18,17 +18,14 @@
  *    - 'rose'     : Merah Terracotta Tebing
  *    - 'teal'     : Toska Danau Gunung
  * 
- * 3. GIMBAL_COLOR_MODE:
- *    Mengatur mode tampilan utama (Bright / Dark mode).
- *    Nilai default:
- *    - 'bright'   : Mode Terang (Default)
- *    - 'dark'     : Mode Gelap
+ * CATATAN TAMPILAN:
+ * Seluruh antarmuka secara permanen menggunakan Mode Terang (Bright Mode)
+ * default tanpa switch atau konfigurasi dark mode.
  * ============================================================================
  */
 
-const GIMBAL_SITE_WIDTH = '70%';      /* <-- 1 VARIABEL UTAMA: LEBAR KONTEN */
-const GIMBAL_THEME_COLOR = 'oranye';   /* <-- 1 VARIABEL UTAMA: WARNA TAHUNAN */
-const GIMBAL_COLOR_MODE = 'bright';    /* <-- 1 VARIABEL UTAMA: DEFAULT MODE TAMPILAN ('bright' | 'dark') */
+const GIMBAL_SITE_WIDTH = (typeof window !== 'undefined' && window.GIMBAL_SERVER_WIDTH) ? window.GIMBAL_SERVER_WIDTH : '85%';
+const GIMBAL_THEME_COLOR = (typeof window !== 'undefined' && window.GIMBAL_SERVER_THEME) ? window.GIMBAL_SERVER_THEME : 'orange';
 
 /**
  * PALET MONOTONE PRESET TAHUNAN
@@ -153,87 +150,30 @@ const GIMBAL_THEME_PRESETS = {
 GIMBAL_THEME_PRESETS.oranye = GIMBAL_THEME_PRESETS.orange;
 
 // ============================================================================
-// SISTEM MODE TAMPILAN TERANG / GELAP (BRIGHT & DARK MODE)
+// PENEGAKAN STANDAR MODE TERANG (BRIGHT MODE PERMANEN)
 // ============================================================================
-
-function getActiveColorMode() {
-    const configDefault = (typeof GIMBAL_COLOR_MODE !== 'undefined' && GIMBAL_COLOR_MODE === 'dark') ? 'dark' : 'bright';
-    try {
-        const lastConfig = localStorage.getItem('gimbal_last_config_default');
-        // Jika developer merubah GIMBAL_COLOR_MODE di theme-config.js, sinkronkan mode default baru
-        if (lastConfig !== configDefault) {
-            localStorage.setItem('gimbal_last_config_default', configDefault);
-            localStorage.setItem('gimbal_color_mode', configDefault);
-            return configDefault;
-        }
-        const saved = localStorage.getItem('gimbal_color_mode');
-        if (saved === 'dark' || saved === 'bright') {
-            return saved;
-        }
-    } catch (e) {
-        // Fallback jika localStorage tidak tersedia
-    }
-    return configDefault;
-}
-
-function updateToggleButtons(isDark) {
-    if (typeof document === 'undefined') return;
-    const buttons = document.querySelectorAll('.gimbal-theme-toggle');
-    buttons.forEach(function (btn) {
-        const icon = btn.querySelector('.theme-toggle-icon');
-        const text = btn.querySelector('.theme-toggle-text');
-        if (icon) {
-            icon.className = isDark
-                ? 'theme-toggle-icon fas fa-sun text-amber-400'
-                : 'theme-toggle-icon fas fa-moon text-stone-600';
-        }
-        if (text) {
-            text.textContent = isDark ? 'Terang' : 'Gelap';
-        }
-        btn.setAttribute('title', isDark ? 'Beralih ke Mode Terang (Bright)' : 'Beralih ke Mode Gelap (Dark)');
-        btn.setAttribute('aria-label', isDark ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap');
-    });
-}
-
-function applyColorMode(mode) {
+function enforceBrightMode() {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
-    const isDark = (mode === 'dark');
-    if (isDark) {
-        root.classList.add('dark');
-        root.setAttribute('data-theme', 'dark');
-        root.style.colorScheme = 'dark';
-    } else {
-        root.classList.remove('dark');
-        root.setAttribute('data-theme', 'bright');
-        root.style.colorScheme = 'light';
-    }
-    updateToggleButtons(isDark);
-}
-
-function setGimbalColorMode(mode) {
+    root.classList.remove('dark');
+    root.setAttribute('data-theme', 'bright');
+    root.style.colorScheme = 'light';
     try {
-        localStorage.setItem('gimbal_color_mode', mode);
-    } catch (e) { }
-    applyColorMode(mode);
+        localStorage.removeItem('gimbal_color_mode');
+        localStorage.removeItem('gimbal_last_config_default');
+    } catch (e) {}
 }
 
-function toggleGimbalColorMode() {
-    const isCurrentlyDark = document.documentElement.classList.contains('dark');
-    const nextMode = isCurrentlyDark ? 'bright' : 'dark';
-    setGimbalColorMode(nextMode);
-}
-
-// Expose fungsi ke global window
-window.toggleGimbalColorMode = toggleGimbalColorMode;
-window.setGimbalColorMode = setGimbalColorMode;
-window.getActiveColorMode = getActiveColorMode;
+// Stubs kompatibilitas aman
+window.toggleGimbalColorMode = function () { enforceBrightMode(); };
+window.setGimbalColorMode = function () { enforceBrightMode(); };
+window.getActiveColorMode = function () { return 'bright'; };
 
 // Helper untuk menyuntikkan override CSS dinamis ke DOM secara instan
 function applyDynamicThemeColors(selectedTheme) {
     if (typeof document === 'undefined') return;
     const shades = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
-    let css = '/* KPAB GIMBAL - Auto Generated Monotone Theme Overrides */\n';
+    let css = '/* KPAB GIMBAL - Auto Generated Monotone Theme Overrides (Bright Mode) */\n';
 
     shades.forEach(function (s) {
         const val = selectedTheme[s];
@@ -279,6 +219,13 @@ function applyDynamicThemeColors(selectedTheme) {
         css += `.btn-brand-primary:hover { background-color: ${selectedTheme[700] || selectedTheme[600]} !important; }\n`;
         css += `.text-brand-primary { color: ${selectedTheme[600]} !important; }\n`;
         css += `.bg-brand-primary { background-color: ${selectedTheme[600]} !important; }\n`;
+    }
+
+    // Top Navigation Bar, KTA Card, & Hero (FLAT WARNA TEMA MONOTONE - TANPA GRADIENT)
+    if (selectedTheme[600]) {
+        css += `.top-navbar-theme, nav.top-navbar-theme, header.top-navbar-theme { background: ${selectedTheme[600]} !important; background-color: ${selectedTheme[600]} !important; border-bottom: 1px solid rgba(255, 255, 255, 0.22) !important; color: #ffffff !important; }\n`;
+        css += `.kta-card { background: ${selectedTheme[600]} !important; background-color: ${selectedTheme[600]} !important; color: #ffffff !important; }\n`;
+        css += `.member-hero-banner { background: ${selectedTheme[600]} !important; background-color: ${selectedTheme[600]} !important; color: #ffffff !important; }\n`;
     }
 
     // Section Call To Action & Footer Komunitas (100% Mengikuti Tema Monotone Aktif)
@@ -354,16 +301,14 @@ function applyDynamicThemeColors(selectedTheme) {
         }
     });
 
-    // 3. Terapkan Bright / Dark Mode langsung pada saat init (mencegah kedipan)
-    const initialMode = getActiveColorMode();
-    applyColorMode(initialMode);
+    // 3. Terapkan Bright Mode permanen langsung pada saat init (mencegah kedipan dan dark mode)
+    enforceBrightMode();
 
     // 4. Suntikkan aturan CSS dinamis agar seluruh kelas text-orange-*, bg-orange-*, border-orange-* langsung berganti warna
     applyDynamicThemeColors(selectedTheme);
 
-    // 5. Hubungkan dengan Tailwind CSS Configuration (dibaca otomatis oleh CDN, tanpa key 'rgb*')
+    // 5. Hubungkan dengan Tailwind CSS Configuration (dibaca otomatis oleh CDN)
     const twConfig = {
-        darkMode: 'class',
         theme: {
             extend: {
                 colors: {
@@ -387,17 +332,42 @@ function applyDynamicThemeColors(selectedTheme) {
         } catch (e) { }
     }
 
-    // 6. Listener sinkronisasi tombol toggle saat DOM selesai dimuat / pertukaran HTMX
+    // 6. Listener sinkronisasi saat DOM selesai dimuat / pertukaran HTMX
     if (typeof document !== 'undefined') {
-        const syncButtons = function () {
-            updateToggleButtons(document.documentElement.classList.contains('dark'));
+        const syncState = function () {
+            enforceBrightMode();
             applyDynamicThemeColors(selectedTheme);
         };
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', syncButtons);
+            document.addEventListener('DOMContentLoaded', syncState);
         } else {
-            syncButtons();
+            syncState();
         }
-        document.addEventListener('htmx:afterSwap', syncButtons);
+        document.addEventListener('htmx:afterSwap', syncState);
     }
+
+    // 7. Ekspos fungsi global dinamis untuk live preview instan di panel admin
+    window.applyGimbalThemeDynamic = function(themeColor, siteWidth) {
+        if (siteWidth) {
+            document.documentElement.style.setProperty('--site-content-width', siteWidth);
+            window.GIMBAL_SERVER_WIDTH = siteWidth;
+        }
+        if (themeColor && GIMBAL_THEME_PRESETS[themeColor]) {
+            window.GIMBAL_SERVER_THEME = themeColor;
+            const targetTheme = GIMBAL_THEME_PRESETS[themeColor];
+            const root = document.documentElement;
+            const shadesList = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+            shadesList.forEach(function (shade) {
+                if (targetTheme[shade]) {
+                    root.style.setProperty('--brand-' + shade, targetTheme[shade]);
+                    root.style.setProperty('--orange-' + shade, targetTheme[shade]);
+                }
+                if (targetTheme['rgb' + shade]) {
+                    root.style.setProperty('--brand-' + shade + '-rgb', targetTheme['rgb' + shade]);
+                    root.style.setProperty('--orange-' + shade + '-rgb', targetTheme['rgb' + shade]);
+                }
+            });
+            applyDynamicThemeColors(targetTheme);
+        }
+    };
 })();

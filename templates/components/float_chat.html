@@ -1,0 +1,366 @@
+{% if current_user %}
+<!-- BOTTOM FLOATING CHAT WIDGET: BASECAMP (PUBLIK) & DIRECT MESSAGE (PRIVAT) -->
+<div id="gimbal-float-chat-root" class="select-none">
+
+    <!-- 1. FLOATING ACTION TRIGGER BUTTON (BOTTOM RIGHT) -->
+    <div class="fixed bottom-5 right-5 z-[60] flex items-center gap-2"
+         style="position: fixed !important; bottom: 1.25rem !important; right: 1.25rem !important; z-index: 9990 !important;">
+        <button type="button"
+                id="float-chat-trigger-btn"
+                onclick="window.toggleGimbalChat(event)"
+                class="relative w-14 h-14 rounded-full bg-orange-600 hover:bg-orange-700 text-white shadow-2xl flex items-center justify-center cursor-pointer transition transform hover:scale-105 active:scale-95 border-2 border-white focus:outline-none group"
+                title="Buka Obrolan GIMBAL (Basecamp & Private Chat)">
+            <i id="float-chat-icon" class="fas fa-comments text-xl transition duration-200"></i>
+            
+            {% if current_user %}
+            <!-- Real-time Unread Badge -->
+            <div id="float-chat-unread-badge"
+                 hx-get="/member/chat/unread-count"
+                 hx-trigger="load, every 12s"
+                 hx-swap="innerHTML"
+                 class="contents">
+            </div>
+            {% endif %}
+
+            <!-- Pulsing online ring -->
+            <span class="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+        </button>
+    </div>
+
+    <!-- 2. FLOATING CHAT WINDOW CONTAINER (EXPLICIT BOTTOM POSITIONING & ROCK-SOLID VANILLA CONTROL) -->
+    <div id="gimbal-chat-window"
+         style="display: none; position: fixed !important; bottom: 5.25rem !important; right: 1.25rem !important; z-index: 9995 !important; width: 385px; max-width: calc(100vw - 2.5rem); height: 530px; max-height: calc(100vh - 7rem);"
+         class="bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden text-slate-800">
+        
+        <!-- HEADER WIDGET -->
+        <div class="p-3.5 text-white flex flex-col gap-2.5 shadow-md flex-shrink-0" style="background: var(--brand-600, #ea580c) !important;">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <img src="/assets/logo.png" alt="Logo" class="w-6 h-6 object-contain filter drop-shadow">
+                    <div>
+                        <h3 class="text-xs font-black tracking-wide font-heading leading-tight">Obrolan GIMBAL</h3>
+                        <p class="text-[9px] text-white/90 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>Ruang Komunikasi Petualang</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-1">
+                    <button type="button"
+                            onclick="window.toggleGimbalChat(event, null, false)"
+                            class="w-7 h-7 rounded-lg hover:bg-white/20 text-white/90 hover:text-white flex items-center justify-center transition text-xs"
+                            title="Tutup Obrolan">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB SWITCHER: PUBLIK (BASECAMP) VS PRIVAT (DIRECT MESSAGE) -->
+            <div class="grid grid-cols-2 p-1 bg-black/20 rounded-xl gap-1 text-[11px] font-bold">
+                <button type="button"
+                        id="float-chat-tab-public-btn"
+                        onclick="window.switchGimbalChatTab('public', event)"
+                        class="py-1.5 px-2 rounded-lg transition flex items-center justify-center gap-1.5 bg-white text-orange-950 shadow-sm font-bold text-[11px]">
+                    <i class="fas fa-campground text-[10px]"></i>
+                    <span>Basecamp (Publik)</span>
+                </button>
+                
+                <button type="button"
+                        id="float-chat-tab-private-btn"
+                        onclick="window.switchGimbalChatTab('private', event)"
+                        class="py-1.5 px-2 rounded-lg transition flex items-center justify-center gap-1.5 text-white/80 hover:text-white hover:bg-white/10 font-bold text-[11px]">
+                    <i class="fas fa-user-lock text-[10px]"></i>
+                    <span>Pesan Pribadi</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB BODY 1: CHAT PUBLIK (BASECAMP BERSAMA) -->
+        <div id="float-tab-body-public"
+             style="display: flex;"
+             class="flex-1 flex-col min-h-0 bg-slate-50/50">
+            <!-- Info Bar -->
+            <div class="px-3.5 py-1.5 bg-orange-50/70 border-b border-orange-100 flex items-center justify-between text-[10px] text-orange-900 font-medium">
+                <span class="flex items-center gap-1">
+                    <i class="fas fa-bullhorn text-orange-600"></i> Obrolan Terbuka Seluruh Anggota
+                </span>
+                <span class="text-slate-400 font-mono">Gorontalo</span>
+            </div>
+
+            <!-- List Pesan Publik (Auto-refresh via HTMX polling) -->
+            <div id="float-public-chat-list"
+                 hx-get="/member/chat/messages?mode=public"
+                 hx-trigger="load, every 7s"
+                 hx-swap="innerHTML"
+                 class="flex-1 overflow-y-auto p-3 space-y-2 text-xs">
+                <div class="p-4 text-center text-slate-400 text-xs">
+                    <i class="fas fa-spinner fa-spin text-orange-500 mb-1"></i>
+                    <p>Memuat obrolan basecamp...</p>
+                </div>
+            </div>
+
+            {% if current_user %}
+            <!-- Input Form Pesan Publik (Logged in) -->
+            <form hx-post="/member/chat/send"
+                  hx-target="#float-public-chat-list"
+                  hx-swap="innerHTML"
+                  hx-on::after-request="this.reset(); var el = document.getElementById('float-public-chat-list'); if (el) { el.scrollTop = el.scrollHeight; }"
+                  class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-1.5 flex-shrink-0">
+                <input type="hidden" name="mode" value="public">
+                <input type="text" name="message" required placeholder="Tulis pesan ke basecamp..."
+                       maxlength="500"
+                       class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none bg-slate-50 text-slate-900 placeholder-slate-400">
+                <button type="submit"
+                        class="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold shadow-sm transition text-xs cursor-pointer flex-shrink-0">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+            {% else %}
+            <!-- Guest Banner (Not logged in) -->
+            <div class="p-3 bg-orange-50/90 border-t border-orange-200 text-center text-xs flex flex-col items-center gap-1 flex-shrink-0">
+                <p class="text-orange-950 font-semibold text-[11px]"><i class="fas fa-lock text-orange-600 mr-1"></i> Masuk untuk ikut mengobrol di Basecamp</p>
+                <a href="/login" hx-get="/login" hx-target="#main-content" hx-push-url="true"
+                   onclick="window.toggleGimbalChat(event, null, false)"
+                   class="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-[11px] shadow-xs transition mt-0.5">
+                    <i class="fas fa-sign-in-alt"></i> Masuk Sekarang
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- TAB BODY 2: CHAT PRIVAT (DIRECT MESSAGES 1-ON-1) -->
+        <div id="float-tab-body-private"
+             style="display: none;"
+             class="flex-1 flex-col min-h-0 bg-slate-50/50">
+            
+            {% if current_user %}
+            <!-- SUB-VIEW 2A: DAFTAR KONTAK ANGGOTA UNTUK CHAT -->
+            <div id="float-private-contacts-subview"
+                 style="display: flex;"
+                 class="flex-1 flex-col min-h-0">
+                <div class="px-3 py-2 bg-white border-b border-slate-200 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-1.5 text-slate-800 font-bold">
+                        <i class="fas fa-address-book text-orange-600"></i>
+                        <span>Pilih Rekan Anggota</span>
+                    </div>
+                    <button type="button"
+                            hx-get="/member/chat/contacts"
+                            hx-target="#float-private-contacts-list"
+                            hx-swap="innerHTML"
+                            class="text-[10px] text-orange-600 hover:text-orange-800 font-semibold flex items-center gap-1">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <!-- List Kontak (Search & Select) -->
+                <div id="float-private-contacts-list"
+                     hx-get="/member/chat/contacts"
+                     hx-trigger="load, every 15s"
+                     hx-swap="innerHTML"
+                     class="flex-1 overflow-y-auto divide-y divide-slate-100 p-1">
+                    <div class="p-6 text-center text-slate-400 text-xs">
+                        <i class="fas fa-spinner fa-spin text-orange-500 mb-1"></i>
+                        <p>Memuat daftar anggota...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-VIEW 2B: ROOM PERCAKAPAN 1-ON-1 DENGAN LAWAN BICARA -->
+            <div id="float-private-room-subview"
+                 style="display: none;"
+                 class="flex-1 flex-col min-h-0">
+                <!-- Sub-Header Lawan Bicara -->
+                <div class="px-3 py-2 bg-white border-b border-slate-200 flex items-center justify-between shadow-xs flex-shrink-0">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <button type="button"
+                                onclick="window.backToContactsList(event)"
+                                class="w-7 h-7 rounded-lg hover:bg-slate-100 text-slate-600 flex items-center justify-center transition text-xs flex-shrink-0"
+                                title="Kembali ke Daftar Anggota">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <img id="float-dm-contact-avatar"
+                             src="/static/pics/cartoon/avatar_sekjen.jpg"
+                             alt="Avatar"
+                             class="w-7 h-7 rounded-full object-cover border border-slate-200 flex-shrink-0">
+                        <div class="min-w-0">
+                            <p id="float-dm-contact-name" class="text-xs font-bold text-slate-900 truncate">Pilih Anggota</p>
+                            <p id="float-dm-contact-nra" class="text-[9px] text-slate-400 font-mono truncate">Anggota</p>
+                        </div>
+                    </div>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 flex-shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> DM
+                    </span>
+                </div>
+
+                <!-- List Pesan Privat 1-on-1 -->
+                <div id="float-private-chat-list"
+                     class="flex-1 overflow-y-auto p-3 space-y-2 text-xs">
+                    <div class="p-4 text-center text-slate-400 text-xs">
+                        <i class="fas fa-comments text-slate-300 text-lg mb-1"></i>
+                        <p>Membuka obrolan pribadi...</p>
+                    </div>
+                </div>
+
+                <!-- Input Form Pesan Privat -->
+                <form hx-post="/member/chat/send"
+                      hx-target="#float-private-chat-list"
+                      hx-swap="innerHTML"
+                      hx-on::after-request="this.reset(); var el = document.getElementById('float-private-chat-list'); if (el) { el.scrollTop = el.scrollHeight; }"
+                      class="p-2.5 bg-white border-t border-slate-200 flex items-center gap-1.5 flex-shrink-0">
+                    <input type="hidden" name="mode" value="private">
+                    <input type="hidden" id="float-dm-recipient-id" name="recipient_id" value="">
+                    <input type="text" name="message" required placeholder="Kirim pesan pribadi..."
+                           maxlength="500"
+                           class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none bg-slate-50 text-slate-900 placeholder-slate-400">
+                    <button type="submit"
+                            class="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold shadow-sm transition text-xs cursor-pointer flex-shrink-0">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+            {% else %}
+            <!-- Guest Locked Private Chat -->
+            <div class="flex-1 flex flex-col items-center justify-center p-6 text-center text-xs text-slate-500 space-y-2.5">
+                <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xl shadow-xs">
+                    <i class="fas fa-user-lock"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm">Pesan Pribadi Khusus Anggota</h4>
+                    <p class="text-[11px] text-slate-500 max-w-[240px] mt-1 leading-relaxed">
+                        Fitur obrolan langsung 1-on-1 antar anggota hanya tersedia setelah Anda masuk ke portal.
+                    </p>
+                </div>
+                <a href="/login" hx-get="/login" hx-target="#main-content" hx-push-url="true"
+                   onclick="window.toggleGimbalChat(event, null, false)"
+                   class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold text-xs shadow-sm transition inline-flex items-center gap-1.5 mt-2">
+                    <i class="fas fa-sign-in-alt"></i> Masuk Sekarang
+                </a>
+            </div>
+            {% endif %}
+
+        </div>
+
+    </div>
+</div>
+
+<!-- CLIENT JAVASCRIPT ENGINE (DETERMINISTIC, ZERO-CONFLICT VANILLA JS) -->
+<script>
+    (function () {
+        window.toggleGimbalChat = function (e, targetTab, forceOpen) {
+            if (e && typeof e.stopPropagation === 'function') {
+                e.stopPropagation();
+            }
+            var win = document.getElementById('gimbal-chat-window');
+            var icon = document.getElementById('float-chat-icon');
+            if (!win) return;
+
+            var isCurrentlyHidden = (win.style.display === 'none' || window.getComputedStyle(win).display === 'none');
+            var shouldOpen = (forceOpen !== undefined) ? !!forceOpen : isCurrentlyHidden;
+
+            if (shouldOpen) {
+                win.style.display = 'flex';
+                if (icon) {
+                    icon.className = 'fas fa-chevron-down text-lg transition duration-200';
+                }
+                setTimeout(function () {
+                    var pubList = document.getElementById('float-public-chat-list');
+                    if (pubList) pubList.scrollTop = pubList.scrollHeight;
+                }, 100);
+            } else {
+                win.style.display = 'none';
+                if (icon) {
+                    icon.className = 'fas fa-comments text-xl transition duration-200';
+                }
+            }
+
+            if (targetTab) {
+                window.switchGimbalChatTab(targetTab);
+            }
+        };
+
+        window.switchGimbalChatTab = function (tab, e) {
+            if (e && typeof e.stopPropagation === 'function') {
+                e.stopPropagation();
+            }
+            var publicBtn = document.getElementById('float-chat-tab-public-btn');
+            var privateBtn = document.getElementById('float-chat-tab-private-btn');
+            var publicBody = document.getElementById('float-tab-body-public');
+            var privateBody = document.getElementById('float-tab-body-private');
+
+            var activeClass = 'py-1.5 px-2 rounded-lg transition flex items-center justify-center gap-1.5 bg-white text-orange-950 shadow-sm font-bold text-[11px]';
+            var inactiveClass = 'py-1.5 px-2 rounded-lg transition flex items-center justify-center gap-1.5 text-white/80 hover:text-white hover:bg-white/10 font-bold text-[11px]';
+
+            if (tab === 'private') {
+                if (publicBody) publicBody.style.display = 'none';
+                if (privateBody) privateBody.style.display = 'flex';
+                if (publicBtn) publicBtn.className = inactiveClass;
+                if (privateBtn) privateBtn.className = activeClass;
+            } else {
+                if (privateBody) privateBody.style.display = 'none';
+                if (publicBody) publicBody.style.display = 'flex';
+                if (publicBtn) publicBtn.className = activeClass;
+                if (privateBtn) privateBtn.className = inactiveClass;
+            }
+        };
+
+        window.openDirectChat = function (id, name, nra, role, avatar) {
+            window.toggleGimbalChat(null, 'private', true);
+            window.switchGimbalChatTab('private');
+
+            var contactsView = document.getElementById('float-private-contacts-subview');
+            var roomView = document.getElementById('float-private-room-subview');
+            var nameEl = document.getElementById('float-dm-contact-name');
+            var nraEl = document.getElementById('float-dm-contact-nra');
+            var avatarEl = document.getElementById('float-dm-contact-avatar');
+            var recipientInput = document.getElementById('float-dm-recipient-id');
+
+            if (contactsView) contactsView.style.display = 'none';
+            if (roomView) roomView.style.display = 'flex';
+            if (nameEl) nameEl.textContent = name;
+            if (nraEl) nraEl.textContent = nra ? ('NRA ' + nra) : (role || 'Anggota');
+            if (avatarEl) avatarEl.src = avatar || '/static/pics/cartoon/avatar_sekjen.jpg';
+            if (recipientInput) recipientInput.value = id;
+
+            setTimeout(function () {
+                var target = document.getElementById('float-private-chat-list');
+                if (target && window.htmx) {
+                    window.htmx.ajax('GET', '/member/chat/messages?mode=private&recipient_id=' + id, {
+                        target: '#float-private-chat-list',
+                        swap: 'innerHTML'
+                    });
+                }
+            }, 80);
+        };
+
+        window.backToContactsList = function (e) {
+            if (e && typeof e.stopPropagation === 'function') {
+                e.stopPropagation();
+            }
+            var contactsView = document.getElementById('float-private-contacts-subview');
+            var roomView = document.getElementById('float-private-room-subview');
+
+            if (roomView) roomView.style.display = 'none';
+            if (contactsView) contactsView.style.display = 'flex';
+        };
+
+        // Dismiss float chat when clicking outside the chat root container
+        document.addEventListener('click', function (e) {
+            var win = document.getElementById('gimbal-chat-window');
+            var btn = document.getElementById('float-chat-trigger-btn');
+            if (!win || win.style.display === 'none') return;
+
+            // Check if click was inside chat window or trigger button
+            if (win.contains(e.target) || (btn && btn.contains(e.target))) {
+                return;
+            }
+            // Check if click was on any button designed to trigger chat
+            if (e.target.closest && e.target.closest('[onclick*="openDirectChat"], [onclick*="toggleGimbalChat"]')) {
+                return;
+            }
+            window.toggleGimbalChat(null, null, false);
+        });
+    })();
+</script>
+{% endif %}
+

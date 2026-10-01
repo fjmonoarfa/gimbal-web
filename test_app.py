@@ -1,7 +1,11 @@
 import os
 import unittest
 from app import app, db
-from models import User, Dues, DuesPayment, Document, GalleryItem, generate_next_nra
+from models import (
+    User, Dues, DuesPayment, Document, GalleryItem, Activity,
+    Post, PostComment, PostLike, ChatMessage, MapRepository, generate_next_nra,
+    SystemSetting, Position, PostMedia
+)
 
 class GimbalWebTestCase(unittest.TestCase):
     def setUp(self):
@@ -14,18 +18,36 @@ class GimbalWebTestCase(unittest.TestCase):
         self.app_context.pop()
 
     def test_01_landing_page(self):
+        # 1. Direct browser hit: returns Layer 1 (index.html) -> View Source shows ONLY index.html
         resp = self.client.get('/')
         self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'id="app-shell"', resp.data)
+        self.assertIn(b'hx-get="/"', resp.data)
+        self.assertNotIn(b'id="landing-layer"', resp.data)
         self.assertIn(b'KPAB GIMBAL', resp.data)
         self.assertIn(b'Generasi Indonesia Menyatu Bersama Alam', resp.data)
-        print(">>> Test 01: Landing page OK")
+
+        # 2. HTMX Load Trigger: returns Layer 2 (landing.html)
+        resp_htmx = self.client.get('/', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_htmx.status_code, 200)
+        self.assertIn(b'id="landing-layer"', resp_htmx.data)
+        self.assertNotIn(b'<!DOCTYPE', resp_htmx.data)
+        self.assertIn(b'hero-overlay', resp_htmx.data)
+        print(">>> Test 01: Landing page Dual-Layer HTMX (Layer 1 Shell & Layer 2 Content) OK")
 
     def test_02_verify_kta_public(self):
+        # 1. Direct browser hit: View Source shows ONLY index.html
         resp = self.client.get('/verify-kta/R-01-26')
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(b'R-01-26', resp.data)
-        self.assertIn(b'Keanggotaan Terverifikasi Sah', resp.data)
-        print(">>> Test 02: Public KTA Verification OK")
+        self.assertIn(b'id="app-shell"', resp.data)
+        self.assertIn(b'hx-get="/verify-kta/R-01-26"', resp.data)
+
+        # 2. HTMX load trigger: returns verified KTA content from modals.html
+        resp_htmx = self.client.get('/verify-kta/R-01-26', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_htmx.status_code, 200)
+        self.assertIn(b'R-01-26', resp_htmx.data)
+        self.assertIn(b'Keanggotaan Terverifikasi Sah', resp_htmx.data)
+        print(">>> Test 02: Public KTA Verification Multi-Layer OK")
 
     def test_03_dual_layer_rendering(self):
         # 3a. Direct hit with session: returns index.html (Layer 1)
@@ -129,12 +151,14 @@ class GimbalWebTestCase(unittest.TestCase):
         self.assertIn(b'Pin-down Foto Ekspedisi', resp.data)
 
         # 3. Create New Gallery Item
+        act = Activity.query.first()
+        act_id = str(act.id) if act else ''
         resp = self.client.post('/admin/gallery/create', data={
             'title': 'Puncak Gn. Rinjani 3726 MDPL',
             'caption': 'Tim GIMBAL mengibarkan panji organisasi di batas awan.',
             'category': 'Pendakian',
             'location': 'Lombok, NTB',
-            'activity_id': '7',
+            'activity_id': act_id,
             'is_pinned': '1',
             'image_url': '/static/pics/cartoon/hero.jpg'
         }, headers={'HX-Request': 'true'})
@@ -233,23 +257,28 @@ class GimbalWebTestCase(unittest.TestCase):
         print(">>> Test 08: Expedition Activity CRUD & Edit 100% OK")
 
     def test_09_login_page_and_stylish_auth(self):
-        # 1. Halaman Login Penuh
+        # 1. Direct browser hit: View Source shows ONLY index.html
         resp = self.client.get('/login')
         self.assertEqual(resp.status_code, 200)
-        self.assertIn(b'Akses Portal GIMBAL', resp.data)
-        self.assertIn(b'Gorontalo', resp.data)
-        self.assertIn(b'1-Klik Cepat', resp.data)
-        self.assertIn(b'Akun Google', resp.data)
-        self.assertIn(b'admin@gimbal.org', resp.data)
+        self.assertIn(b'id="app-shell"', resp.data)
+        self.assertIn(b'hx-get="/login"', resp.data)
 
-        # 2. Login manual email & password
+        # 2. HTMX Load Trigger: returns modal/page login content from modals.html
+        resp_htmx = self.client.get('/login', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_htmx.status_code, 200)
+        self.assertIn(b'Portal Akses KPAB GIMBAL', resp_htmx.data)
+        self.assertIn(b'Gorontalo', resp_htmx.data)
+        self.assertNotIn(b'1-Klik Cepat', resp_htmx.data)
+        self.assertIn(b'Akun Google', resp_htmx.data)
+
+        # 3. Login manual dengan superadmin fitra & password P4ssw0rd!?!
         resp_login = self.client.post('/auth/login', data={
-            'email': 'budi.pendaki@gmail.com',
-            'password': 'gimbal123'
+            'email': 'fitra',
+            'password': 'P4ssw0rd!?!'
         }, follow_redirects=False)
         self.assertEqual(resp_login.status_code, 302)
-        self.assertIn('/member/dashboard', resp_login.headers['Location'])
-        print(">>> Test 09: Stylish Simple Monotone Login Page & Auth OK")
+        self.assertIn('/admin/dashboard', resp_login.headers['Location'])
+        print(">>> Test 09: Clean Login Page & Superadmin fitra Auth OK")
 
     def test_10_google_profile_hub_modal(self):
         with self.client.session_transaction() as sess:
@@ -263,7 +292,7 @@ class GimbalWebTestCase(unittest.TestCase):
         self.assertIn(b'Biodata & Pribadi', resp.data)
         self.assertIn(b'Riwayat Medis & Darurat', resp.data)
         self.assertIn(b'Keamanan & Sandi', resp.data)
-        self.assertIn(b'Tampilan & Preferensi', resp.data)
+        self.assertIn(b'Afiliasi & Sesi', resp.data)
 
         # 2. Update Data Profil (Biodata, Medis, Kontak Darurat, Password) via Modal HTMX
         resp_update = self.client.post('/member/profile-modal/update', data={
@@ -297,7 +326,917 @@ class GimbalWebTestCase(unittest.TestCase):
         self.assertEqual(budi.address, 'Jl. Nani Wartabone No. 45, Kota Gorontalo')
         print(">>> Test 10: Google-Style Profile Hub Modal & Medical/Emergency persistence 100% OK")
 
+    def test_11_timeline_feed_and_social_features(self):
+        with self.client.session_transaction() as sess:
+            budi = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+            sess['user_id'] = budi.id
+
+        # 1. Buat postingan cerita baru di Lini Masa
+        import time
+        unique_mark = f"ekspedisi-{int(time.time()*1000)}"
+        resp_post = self.client.post('/member/post/create', data={
+            'content': f'Tim regu 1 bersiap susur tebing karst dan snorkeling konservasi di Teluk Tomini {unique_mark}.',
+            'location': 'Taman Laut Olele, Bone Bolango',
+            'image_url': 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_post.status_code, 200)
+
+        # Cek DB
+        new_p = Post.query.filter(Post.content.like(f"%{unique_mark}%")).first()
+        self.assertIsNotNone(new_p)
+        self.assertEqual(new_p.user_id, budi.id)
+        self.assertIn('Teluk Tomini', new_p.content)
+
+        # 2. Like postingan
+        resp_like = self.client.post(f'/member/post/like/{new_p.id}')
+        self.assertEqual(resp_like.status_code, 200)
+        self.assertIn(b'1 Salam Lestari', resp_like.data)
+        self.assertEqual(new_p.like_count, 1)
+
+        # 3. Tambah komentar
+        resp_comm = self.client.post(f'/member/post/comment/{new_p.id}', data={
+            'comment': 'Hati-hati arus bawah air dan bawa buoy penanda ya tim!'
+        })
+        self.assertEqual(resp_comm.status_code, 200)
+        self.assertIn(b'Hati-hati arus bawah air', resp_comm.data)
+        self.assertEqual(len(new_p.comments), 1)
+
+        # 4. Hapus postingan oleh pemiliknya sendiri (user itu sendiri)
+        resp_del = self.client.post(f'/member/post/delete/{new_p.id}')
+        self.assertEqual(resp_del.status_code, 200)
+        deleted_post = Post.query.filter_by(id=new_p.id).first()
+        self.assertIsNone(deleted_post)
+        print(">>> Test 11: Member Timeline Feed (Post, Like, Comment, Delete) 100% OK")
+
+    def test_12_basecamp_chat_and_admin_pin(self):
+        # 1. Obrolan Basecamp (Send & List)
+        with self.client.session_transaction() as sess:
+            budi = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+            sess['user_id'] = budi.id
+
+        resp_chat = self.client.post('/member/chat/send', data={
+            'message': 'Kamera aksi dan baterai cadangan sudah aman di dry bag!'
+        })
+        self.assertEqual(resp_chat.status_code, 200)
+        self.assertIn(b'dry bag', resp_chat.data)
+
+        # 2. Admin Pin Foto Postingan ke Galeri Utama
+        with self.client.session_transaction() as sess:
+            admin = User.query.filter_by(email='admin@gimbal.org').first()
+            sess['user_id'] = admin.id
+
+        post = Post.query.filter(Post.image_url.isnot(None)).first()
+        if not post:
+            post = Post(user_id=admin.id, content="Dokumentasi Puncak Tilongkabila", location="Puncak Gn. Tilongkabila", image_url="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b")
+            db.session.add(post)
+            db.session.commit()
+        self.assertIsNotNone(post)
+
+        resp_pin = self.client.post(f'/admin/post/pin-to-gallery/{post.id}')
+        self.assertEqual(resp_pin.status_code, 200)
+        self.assertIn(b'Terpin di Galeri Web', resp_pin.data)
+
+        # Cek GalleryItem di DB
+        gallery_entry = GalleryItem.query.filter_by(image_url=post.image_url).first()
+        self.assertIsNotNone(gallery_entry)
+        self.assertTrue(gallery_entry.is_pinned)
+        print(">>> Test 12: Basecamp Live Chat & Admin Pin-to-Gallery 100% OK")
+
+    def test_13_google_oauth_flow(self):
+        from app import login_or_register_google_user, GOOGLE_CLIENT_ID, GOOGLE_REDIRECT_URI
+
+        # 1. Inisiasi /auth/google-login
+        resp = self.client.get('/auth/google-login')
+        self.assertEqual(resp.status_code, 302)
+        redirect_target = resp.headers.get('Location', '')
+        self.assertTrue(redirect_target.startswith('https://accounts.google.com/o/oauth2/v2/auth'))
+        self.assertIn(GOOGLE_CLIENT_ID, redirect_target)
+        self.assertIn('redirect_uri=https%3A%2F%2Fwww.gimbal.my.id', redirect_target)
+
+        # Bersihkan data siti jika sudah ada dari run sebelumnya
+        existing_siti = User.query.filter_by(email='siti.pendaki@gmail.com').first()
+        if existing_siti:
+            DuesPayment.query.filter_by(user_id=existing_siti.id).delete()
+            db.session.delete(existing_siti)
+            db.session.commit()
+
+        # 2. Registrasi Calon Anggota Baru via Google SSO
+        new_google_info = {
+            'email': 'siti.pendaki@gmail.com',
+            'sub': 'google_sub_99887766',
+            'name': 'Siti Nurhaliza Pendaki',
+            'picture': 'https://lh3.googleusercontent.com/a/sample_avatar.jpg'
+        }
+        with app.test_request_context('/'):
+            reg_resp = login_or_register_google_user(new_google_info)
+            self.assertEqual(reg_resp.status_code, 302)
+            # Karena profil wajib belum terisi, harus diarahkan ke /member/complete-profile
+            self.assertEqual(reg_resp.location, '/member/complete-profile')
+
+        # Cek DB untuk user baru
+        siti = User.query.filter_by(email='siti.pendaki@gmail.com').first()
+        self.assertIsNotNone(siti)
+        self.assertEqual(siti.role, 'member')
+        self.assertEqual(siti.status, 'pending')
+        self.assertFalse(siti.is_profile_complete)
+
+        # 3. Pengisian Formulir Biodata Wajib Keanggotaan
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = siti.id
+
+        post_profile_resp = self.client.post('/member/complete-profile', data={
+            'name': 'Siti Nurhaliza Pendaki',
+            'phone': '081234567890',
+            'birth_place': 'Gorontalo',
+            'birth_date': '2000-05-12',
+            'blood_type': 'O',
+            'address': 'Jl. Pangeran Hidayat No. 45, Kota Gorontalo',
+            'medical_history': 'Tidak ada riwayat alergi',
+            'emergency_name': 'Ibu Aminah',
+            'emergency_relation': 'Ibu Kandung',
+            'emergency_phone': '081398765432'
+        })
+        self.assertEqual(post_profile_resp.status_code, 302)
+        self.assertEqual(post_profile_resp.location, '/member/onboarding-status')
+
+        db.session.refresh(siti)
+        self.assertTrue(siti.is_profile_complete)
+
+        # Calon pending dilarang masuk linimasa/dashboard sebelum disetujui admin
+        dash_blocked = self.client.get('/member/dashboard')
+        self.assertEqual(dash_blocked.status_code, 302)
+        self.assertEqual(dash_blocked.location, '/member/onboarding-status')
+
+        # 4. Calon Anggota Melakukan Pembayaran / Unggah Bukti Iuran Keanggotaan
+        pay_resp = self.client.post('/member/onboarding/pay', data={
+            'dues_id': '1',
+            'bank_name': 'Bank BRI',
+            'amount_paid': '15000',
+            'notes': 'Iuran Pokok Registrasi Siti'
+        })
+        self.assertEqual(pay_resp.status_code, 302)
+        self.assertEqual(pay_resp.location, '/member/onboarding-status')
+
+        db.session.refresh(siti)
+        self.assertIsNotNone(siti.latest_dues_payment)
+        self.assertEqual(siti.latest_dues_payment.status, 'pending')
+
+        # 5. Admin Memverifikasi Pembayaran & Menyetujui Calon Anggota
+        with self.client.session_transaction() as sess:
+            admin = User.query.filter_by(email='admin@gimbal.org').first()
+            sess['user_id'] = admin.id
+
+        appr_resp = self.client.post(f'/admin/member/approve/{siti.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(appr_resp.status_code, 200)
+
+        db.session.refresh(siti)
+        self.assertEqual(siti.status, 'active')
+        self.assertTrue(siti.is_active_member)
+        self.assertTrue(siti.is_dues_paid)
+
+        # 6. Setelah Disetujui & Lunas, Siti Berhak Masuk ke Dashboard & Linimasa Anggota
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = siti.id
+
+        dash_ok = self.client.get('/member/dashboard', headers={'HX-Request': 'true'})
+        self.assertEqual(dash_ok.status_code, 200)
+        self.assertIn(b'Siti Nurhaliza Pendaki', dash_ok.data)
+
+        # 7. Login User Existing via Google SSO (langsung ke dashboard)
+        existing_google_info = {
+            'email': 'budi.pendaki@gmail.com',
+            'sub': 'google_sub_budi_12345',
+            'name': 'Budi Pendaki Gorontalo',
+            'picture': 'https://lh3.googleusercontent.com/a/budi_avatar.jpg'
+        }
+        with app.test_request_context('/'):
+            login_resp = login_or_register_google_user(existing_google_info)
+            self.assertEqual(login_resp.status_code, 302)
+            self.assertEqual(login_resp.location, '/member/dashboard')
+
+        budi = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+        self.assertEqual(budi.google_id, 'google_sub_budi_12345')
+        print(">>> Test 13: Google OAuth Mandatory Onboarding, Dues & Admin Approval Flow 100% OK")
+
+    def test_14_superadmin_fitra_and_bypass_disabled(self):
+        """Uji akun superadmin fitra dengan kata sandi P4ssw0rd!?! dan nonaktifkan switch-role bypass"""
+        # 1. Bypass role switch dinonaktifkan
+        resp_switch = self.client.get('/auth/switch-role?email=admin@gimbal.org')
+        self.assertEqual(resp_switch.status_code, 302)
+        self.assertEqual(resp_switch.location, '/login')
+
+        # 2. Login gagal dengan kata sandi salah
+        resp_fail = self.client.post('/auth/login', data={
+            'email': 'fitra',
+            'password': 'wrong_password'
+        })
+        self.assertEqual(resp_fail.status_code, 302)
+        self.assertIn('error=Kata+sandi+salah', resp_fail.location)
+
+        # 3. Login sukses dengan username 'fitra' dan sandi 'P4ssw0rd!?!'
+        resp_ok = self.client.post('/auth/login', data={
+            'email': 'fitra',
+            'password': 'P4ssw0rd!?!'
+        })
+        self.assertEqual(resp_ok.status_code, 302)
+        self.assertEqual(resp_ok.location, '/admin/dashboard')
+
+        # Cek Superadmin di DB
+        fitra = User.query.filter_by(email='fitra@gimbal.org').first()
+        self.assertIsNotNone(fitra)
+        self.assertEqual(fitra.role, 'superadmin')
+        self.assertTrue(fitra.is_superadmin)
+        print(">>> Test 14: Superadmin fitra & Bypass Protection 100% OK")
+
+    def test_15_admin_settings_and_crud(self):
+        """Uji CRUD Admin Web, CRUD Member, Pengaturan Nominal Iuran & Midtrans"""
+        fitra = User.query.filter_by(email='fitra@gimbal.org').first()
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = fitra.id
+
+        # 1. Buka Admin Settings
+        resp_set = self.client.get('/admin/settings', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_set.status_code, 200)
+        self.assertIn(b'Konfigurasi Gateway Midtrans', resp_set.data)
+        self.assertIn(b'Rekening & Organisasi', resp_set.data)
+
+        # 2a. Update Dues: Disable iuran (is_active='0')
+        resp_dues_off = self.client.post('/admin/settings/dues', data={
+            'dues_title': 'Iuran Bulanan Demo',
+            'dues_amount': '15000',
+            'due_date': '2026-03-31',
+            'description': 'Iuran rutin bulanan Rp 15.000',
+            'is_active': '0'
+        })
+        self.assertEqual(resp_dues_off.status_code, 302)
+        db.session.expire_all()
+        dues_obj = Dues.query.filter_by(category='wajib').first()
+        self.assertFalse(dues_obj.is_active)
+        self.assertEqual(SystemSetting.get('dues_enabled'), 'false')
+
+        # 2a-1. Verify member dashboard & onboarding status when dues disabled
+        budi = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = budi.id
+        resp_dash_disabled = self.client.get('/member/dashboard', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_dash_disabled.status_code, 200)
+        self.assertIn(b'Bebas Iuran Kas', resp_dash_disabled.data)
+
+        # Onboarding status when dues disabled
+        cand = User.query.filter_by(email='calon.test.dues@gmail.com').first()
+        if not cand:
+            cand = User(name='Calon Test Dues', email='calon.test.dues@gmail.com', status='pending', phone='0811111111',
+                        birth_place='Gorontalo', birth_date='2000-01-01', blood_type='O', address='Jl. Baru',
+                        emergency_name='Darurat', emergency_relation='Kerabat', emergency_phone='0822222222')
+            db.session.add(cand)
+            db.session.commit()
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = cand.id
+        resp_onb_disabled = self.client.get('/member/onboarding-status', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_onb_disabled.status_code, 200)
+        self.assertIn(b'Bebas Iuran (Dinonaktifkan)', resp_onb_disabled.data)
+        self.assertIn(b'Kewajiban Iuran Keanggotaan Dibebaskan', resp_onb_disabled.data)
+
+        # 2b. Re-login as fitra and re-enable iuran (is_active='1')
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = fitra.id
+        resp_dues_on = self.client.post('/admin/settings/dues', data={
+            'dues_title': 'Iuran Bulanan Demo',
+            'dues_amount': '20000',
+            'due_date': '2026-03-31',
+            'description': 'Iuran rutin bulanan Rp 20.000',
+            'is_active': '1'
+        })
+        self.assertEqual(resp_dues_on.status_code, 302)
+        db.session.expire_all()
+        dues_obj = Dues.query.filter_by(category='wajib').first()
+        self.assertTrue(dues_obj.is_active)
+        self.assertEqual(dues_obj.amount, 20000.0)
+
+        # 2c. Dues CRUD (Create, Toggle, Edit, Delete)
+        resp_create_dues = self.client.post('/admin/dues/create', data={
+            'title': 'Iuran Ekspedisi Rinjani',
+            'category': 'kegiatan',
+            'amount': '85000',
+            'due_date': '2026-08-17',
+            'description': 'Logistik pendakian massal',
+            'is_active': '1'
+        }, headers={'Referer': 'http://localhost/admin/settings?tab=dues'})
+        self.assertEqual(resp_create_dues.status_code, 200)
+        rinjani = Dues.query.filter_by(title='Iuran Ekspedisi Rinjani').first()
+        self.assertIsNotNone(rinjani)
+        self.assertEqual(rinjani.amount, 85000.0)
+        self.assertTrue(rinjani.is_active)
+
+        # Toggle status
+        resp_toggle = self.client.post(f'/admin/dues/toggle-active/{rinjani.id}',
+                                      headers={'Referer': 'http://localhost/admin/settings?tab=dues'})
+        self.assertEqual(resp_toggle.status_code, 200)
+        db.session.refresh(rinjani)
+        self.assertFalse(rinjani.is_active)
+
+        # Edit dues
+        resp_edit_dues = self.client.post(f'/admin/dues/edit/{rinjani.id}', data={
+            'title': 'Iuran Ekspedisi Rinjani 2026',
+            'category': 'kegiatan',
+            'amount': '90000',
+            'due_date': '2026-08-20',
+            'description': 'Logistik & Simaksi Rinjani',
+            'is_active': '1'
+        }, headers={'Referer': 'http://localhost/admin/settings?tab=dues'})
+        self.assertEqual(resp_edit_dues.status_code, 200)
+        db.session.refresh(rinjani)
+        self.assertEqual(rinjani.title, 'Iuran Ekspedisi Rinjani 2026')
+        self.assertEqual(rinjani.amount, 90000.0)
+
+        # Delete dues
+        resp_del_dues = self.client.post(f'/admin/dues/delete/{rinjani.id}',
+                                        headers={'Referer': 'http://localhost/admin/settings?tab=dues'})
+        self.assertEqual(resp_del_dues.status_code, 200)
+        self.assertIsNone(Dues.query.filter_by(title='Iuran Ekspedisi Rinjani 2026').first())
+
+        # 3. Update Midtrans Configuration
+        resp_mid = self.client.post('/admin/settings/midtrans', data={
+            'midtrans_mode': 'sandbox',
+            'midtrans_client_key': 'SB-Mid-client-TESTKEY123',
+            'midtrans_server_key': 'SB-Mid-server-TESTKEY123',
+            'midtrans_merchant_id': 'TEST-MERCHANT'
+        })
+        self.assertEqual(resp_mid.status_code, 302)
+
+        # 4. Tambah Admin Baru
+        resp_new_admin = self.client.post('/admin/admins/create', data={
+            'name': 'Admin Humas Baru',
+            'email': 'humas@gimbal.org',
+            'role': 'admin',
+            'password': 'P4ssw0rdHumas!'
+        })
+        self.assertEqual(resp_new_admin.status_code, 302)
+        humas = User.query.filter_by(email='humas@gimbal.org').first()
+        self.assertIsNotNone(humas)
+        self.assertEqual(humas.role, 'admin')
+
+        # 5. Proteksi Superadmin fitra tidak boleh dihapus
+        resp_del_fitra = self.client.post(f'/admin/admins/delete/{fitra.id}')
+        self.assertEqual(resp_del_fitra.status_code, 400)
+        db.session.refresh(fitra)
+        self.assertEqual(fitra.role, 'superadmin')
+        print(">>> Test 15: Admin Settings, Midtrans Config & Admin/Member CRUD 100% OK")
+
+    def test_16_midtrans_payment_flow(self):
+        """Uji Integrasi Midtrans Snap & Webhook Notification"""
+        user = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = user.id
+
+        # 1. Request Snap Token
+        snap_resp = self.client.post('/member/payment/midtrans-snap', json={
+            'dues_id': '1'
+        })
+        self.assertEqual(snap_resp.status_code, 200)
+        snap_data = snap_resp.get_json()
+        self.assertEqual(snap_data['status'], 'success')
+        self.assertIn('snap_token', snap_data)
+        self.assertIn('order_id', snap_data)
+
+        order_id = snap_data['order_id']
+
+        # 2. Webhook Notification (Settlement / Lunas)
+        notif_resp = self.client.post('/payment/midtrans/notification', json={
+            'order_id': order_id,
+            'transaction_status': 'settlement',
+            'fraud_status': 'accept',
+            'payment_type': 'qris'
+        })
+        self.assertEqual(notif_resp.status_code, 200)
+        self.assertEqual(notif_resp.get_json()['status'], 'ok')
+
+        # Verifikasi record pembayaran terupdate di DB
+        payment = DuesPayment.query.filter_by(order_id=order_id).first()
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment.status, 'approved')
+        self.assertEqual(payment.transaction_status, 'settlement')
+        print(">>> Test 16: Midtrans Snap & Webhook Notification 100% OK")
+
+    def test_17_maps_api_integration(self):
+        """Uji Integrasi API Gimbal Maps: Cek Akses Tiering, Katalog Repo Peta & Download"""
+        import io
+
+        # 1. Cek Akses untuk Pengguna Tamu / Belum Terdaftar (Harus Free Tier)
+        resp_guest = self.client.post('/api/v1/maps/check-access', json={
+            'email': 'tamu.pendaki@gmail.com'
+        })
+        self.assertEqual(resp_guest.status_code, 200)
+        guest_data = resp_guest.get_json()
+        self.assertEqual(guest_data['tier'], 'free')
+        self.assertEqual(guest_data['limits']['max_maps'], 2)
+        self.assertFalse(guest_data['limits']['can_import_vector'])
+        self.assertEqual(guest_data['limits']['max_points'], 5)
+        self.assertEqual(guest_data['limits']['max_track_distance_km'], 1.0)
+        self.assertFalse(guest_data['limits']['can_access_repo'])
+
+        # 2. Cek Akses untuk Anggota Aktif & Lunas Iuran (Harus member_active Tier)
+        budi = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+        self.assertIsNotNone(budi)
+        resp_member = self.client.post('/api/v1/maps/check-access', json={
+            'email': budi.email
+        })
+        self.assertEqual(resp_member.status_code, 200)
+        member_data = resp_member.get_json()
+        self.assertEqual(member_data['tier'], 'member_active')
+        self.assertEqual(member_data['limits']['max_maps'], -1)
+        self.assertTrue(member_data['limits']['can_import_vector'])
+        self.assertEqual(member_data['limits']['max_points'], -1)
+        self.assertEqual(member_data['limits']['max_track_distance_km'], -1)
+        self.assertTrue(member_data['limits']['can_access_repo'])
+        self.assertEqual(member_data['user']['nra'], budi.nra)
+
+        # 3. Buat Data Dummy Repo Peta
+        maps_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'maps')
+        os.makedirs(maps_dir, exist_ok=True)
+        sample_gpx_path = os.path.join(maps_dir, 'tilongkabila_trail.gpx')
+        with open(sample_gpx_path, 'w', encoding='utf-8') as f:
+            f.write("<?xml version='1.0'?><gpx version='1.1'><trk><name>Jalur Tilongkabila</name></trk></gpx>")
+
+        repo_item = MapRepository(
+            title="Peta Jalur Pendakian Gn. Tilongkabila",
+            region="Gorontalo",
+            category="jalur_pendakian",
+            file_type="gpx",
+            file_path="/uploads/maps/tilongkabila_trail.gpx",
+            file_size_fmt="12.5 KB",
+            description="Jalur resmi via Pos 1 Desa Daenaa sampai Puncak Tilongkabila",
+            total_waypoints=14,
+            total_distance_km=18.4,
+            uploaded_by=budi.id
+        )
+        db.session.add(repo_item)
+        db.session.commit()
+
+        # 4. Ambil Katalog Repo Peta (/api/v1/maps/repo)
+        resp_repo = self.client.get('/api/v1/maps/repo')
+        self.assertEqual(resp_repo.status_code, 200)
+        repo_data = resp_repo.get_json()
+        self.assertEqual(repo_data['status'], 'success')
+        self.assertGreaterEqual(repo_data['total_count'], 1)
+        matched = [m for m in repo_data['maps'] if m['id'] == repo_item.id]
+        self.assertTrue(len(matched) > 0)
+        self.assertEqual(matched[0]['title'], "Peta Jalur Pendakian Gn. Tilongkabila")
+
+        # 5. Download Berkas Peta (/api/v1/maps/repo/download/<id>)
+        resp_dl = self.client.get(f"/api/v1/maps/repo/download/{repo_item.id}")
+        self.assertEqual(resp_dl.status_code, 200)
+        self.assertIn(b'Jalur Tilongkabila', resp_dl.data)
+        db.session.refresh(repo_item)
+        self.assertGreaterEqual(repo_item.downloads_count, 1)
+
+        # 6. Share Track Lintasan dari Gimbal Maps ke Web (/api/v1/maps/share-track)
+        gpx_payload = io.BytesIO(b"<?xml version='1.0'?><gpx><trk><name>Survey Danau Limboto</name></trk></gpx>")
+        resp_share = self.client.post('/api/v1/maps/share-track', data={
+            'email': budi.email,
+            'title': 'Rute Kayak Danau Limboto',
+            'location': 'Danau Limboto, Gorontalo',
+            'distance_km': '7.2',
+            'gpx_file': (gpx_payload, 'limboto_kayak.gpx')
+        })
+        self.assertEqual(resp_share.status_code, 200)
+        share_json = resp_share.get_json()
+        self.assertEqual(share_json['status'], 'success')
+
+        # Verifikasi masuk ke linimasa dan repo
+        new_repo = db.session.get(MapRepository, share_json['repo_id'])
+        self.assertIsNotNone(new_repo)
+        self.assertEqual(new_repo.title, 'Rute Kayak Danau Limboto')
+
+        new_post = Post.query.filter(Post.content.like('%Rute Kayak Danau Limboto%')).first()
+        self.assertIsNotNone(new_post)
+        print(">>> Test 17: Gimbal Maps API (Access Check, Repo Catalog, Download & Track Share) 100% OK")
+
+    def test_18_member_deletion_and_superadmin_settings(self):
+        """
+        Pengujian Fungsionalitas:
+        1. Flash message saat hapus user (proteksi superadmin & diri sendiri).
+        2. CRUD anggota dengan hak akses peran / role (superadmin, admin, member).
+        3. Simpan pengaturan rekening kas dan profil organisasi.
+        4. Simpan pengaturan warna tema sistem dan lebar halaman.
+        """
+        admin = User.query.filter_by(role='superadmin').first() or User.query.filter_by(role='admin').first()
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = admin.id
+
+        # Bersihkan data user uji jika sudah ada dari run sebelumnya
+        existing_test_user = User.query.filter_by(email='test_role_user@gimbal.org').first()
+        if existing_test_user:
+            db.session.delete(existing_test_user)
+            db.session.commit()
+
+        # 1. Buat anggota uji coba dengan role 'admin'
+        resp_create = self.client.post('/admin/member/create', data={
+            'name': 'Test Role User',
+            'email': 'test_role_user@gimbal.org',
+            'phone': '089988776655',
+            'status': 'active',
+            'role': 'admin',
+            'password': 'password123'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_create.status_code, 200)
+
+        created_user = User.query.filter_by(email='test_role_user@gimbal.org').first()
+        self.assertIsNotNone(created_user)
+        self.assertEqual(created_user.role, 'admin')
+
+        # 2. Edit anggota menjadi 'superadmin'
+        resp_edit = self.client.post(f'/admin/member/edit/{created_user.id}', data={
+            'name': 'Test Superadmin User',
+            'email': 'test_role_user@gimbal.org',
+            'phone': '089988776655',
+            'status': 'active',
+            'role': 'superadmin'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_edit.status_code, 200)
+
+        db.session.refresh(created_user)
+        self.assertEqual(created_user.role, 'superadmin')
+
+        # 3. Coba hapus superadmin: harus dicegah dengan flash error
+        resp_del_super = self.client.post(f'/admin/member/delete/{created_user.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_del_super.status_code, 200)
+        self.assertIn(b'Superadmin dilindungi', resp_del_super.data)
+        
+        # 4. Coba hapus akun diri sendiri: harus dicegah dengan flash error
+        resp_del_self = self.client.post(f'/admin/member/delete/{admin.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_del_self.status_code, 200)
+        self.assertIn(b'menghapus akun Anda sendiri', resp_del_self.data)
+
+        # 5. Turunkan role created_user menjadi member biasa, lalu hapus: harus sukses
+        created_user.role = 'member'
+        db.session.commit()
+
+        resp_del_ok = self.client.post(f'/admin/member/delete/{created_user.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_del_ok.status_code, 200)
+        self.assertIn(b'berhasil dihapus', resp_del_ok.data)
+        self.assertIsNone(User.query.filter_by(email='test_role_user@gimbal.org').first())
+
+        # 6. Simpan Pengaturan Rekening & Profil Organisasi
+        resp_org = self.client.post('/admin/settings/organization', data={
+            'bank_primary_name': 'Bank Mandiri Kas Pusat',
+            'bank_primary_number': '131-00-9999-8888',
+            'bank_primary_holder': 'BENDAHARA KPAB GIMBAL',
+            'bank_secondary_name': 'Bank BCA',
+            'bank_secondary_number': '593-019-9999',
+            'bank_secondary_holder': 'BENDAHARA KPAB GIMBAL',
+            'org_name': 'KPAB GIMBAL PUSAT',
+            'org_phone': '+62 811-2233-4455',
+            'org_email': 'info@gimbal.org',
+            'org_address': 'Jl. Danau Limboto No. 10 Gorontalo'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_org.status_code, 200)
+        self.assertIn(b'Pengaturan rekening kas dan identitas organisasi berhasil disimpan', resp_org.data)
+
+        # 7. Simpan Pengaturan Tema Warna & Lebar Konten
+        resp_theme = self.client.post('/admin/settings/theme', data={
+            'theme_color': 'emerald',
+            'site_width': '90%'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_theme.status_code, 200)
+        self.assertIn(b'Pengaturan skema warna tema dan tampilan berhasil diperbarui', resp_theme.data)
+        print(">>> Test 18: Member Deletion Flash Alerts, Role Management, Org Bank & Theme Settings 100% OK")
+
+    def test_19_position_crud_and_member_jabatan(self):
+        # 1. Login as Superadmin
+        admin = User.query.filter_by(email='admin@gimbal.org').first()
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = admin.id
+
+        # 2. Access Admin Settings - Struktur & Jabatan Tab
+        resp = self.client.get('/admin/settings?tab=positions', headers={'HX-Request': 'true'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b'Master Struktur & Jabatan Organisasi', resp.data)
+        self.assertIn(b'admin-panel-positions', resp.data)
+
+        # 3. Create Position Modal
+        resp_modal = self.client.get('/admin/positions/create-modal')
+        self.assertEqual(resp_modal.status_code, 200)
+        self.assertIn(b'modal-create-position', resp_modal.data)
+        self.assertIn(b'Tambah Jabatan Organisasi', resp_modal.data)
+
+        # 4. Create New Position via POST
+        pos_title = 'Kadiv Penjelajahan Rimba Unik'
+        resp_create = self.client.post('/admin/positions/create', data={
+            'name': pos_title,
+            'category': 'Divisi Teknis',
+            'order_index': '45',
+            'description': 'Bertanggung jawab atas ekspedisi jalur rimba perintis',
+            'is_active': '1'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_create.status_code, 200)
+        self.assertIn(b'berhasil ditambahkan', resp_create.data)
+
+        created_pos = Position.query.filter_by(name=pos_title).first()
+        self.assertIsNotNone(created_pos)
+        self.assertEqual(created_pos.category, 'Divisi Teknis')
+        self.assertEqual(created_pos.order_index, 45)
+
+        # 5. Member Edit Modal includes Jabatan dropdown and positions
+        member = User.query.filter(User.role == 'member').first()
+        resp_edit_modal = self.client.get(f'/admin/member/edit-modal/{member.id}')
+        self.assertEqual(resp_edit_modal.status_code, 200)
+        self.assertIn(b'Jabatan / Struktur Organisasi', resp_edit_modal.data)
+        self.assertIn(pos_title.encode('utf-8'), resp_edit_modal.data)
+
+        # 6. Assign Position to Member via Edit Member
+        resp_edit_member = self.client.post(f'/admin/member/edit/{member.id}', data={
+            'name': member.name,
+            'email': member.email,
+            'role': member.role,
+            'status': member.status,
+            'jabatan': pos_title,
+            'phone': member.phone or '08123456789'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_edit_member.status_code, 200)
+        
+        # Verify user model has updated jabatan
+        db.session.refresh(member)
+        self.assertEqual(member.jabatan, pos_title)
+        self.assertEqual(created_pos.member_count, 1)
+
+        # Member list renders the jabatan badge
+        resp_members = self.client.get('/admin/members', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_members.status_code, 200)
+        self.assertIn(pos_title.encode('utf-8'), resp_members.data)
+
+        # 7. Edit Position (Rename should cascade to member)
+        updated_title = 'Kadiv Ekspedisi Rimba Perintis'
+        resp_edit_pos = self.client.post(f'/admin/positions/edit/{created_pos.id}', data={
+            'name': updated_title,
+            'category': 'Divisi Teknis',
+            'order_index': '40',
+            'description': 'Deskripsi diperbarui',
+            'is_active': '1'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_edit_pos.status_code, 200)
+
+        db.session.refresh(member)
+        self.assertEqual(member.jabatan, updated_title)
+
+        # 8. Toggle Active Position
+        resp_toggle = self.client.post(f'/admin/positions/toggle-active/{created_pos.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_toggle.status_code, 200)
+        db.session.refresh(created_pos)
+        self.assertFalse(created_pos.is_active)
+
+        # 9. Delete Position (Safe deletion clears member.jabatan)
+        resp_del = self.client.post(f'/admin/positions/delete/{created_pos.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_del.status_code, 200)
+        self.assertIsNone(Position.query.get(created_pos.id))
+        db.session.refresh(member)
+        self.assertIn(member.jabatan, [None, ''])
+        print(">>> Test 19: Master Jabatan CRUD & Member Jabatan Integration 100% OK")
+
+    def test_20_float_chat_soft_deactivation_and_cloudflare_email(self):
+        """
+        Pengujian Fungsionalitas Modifikasi Baru:
+        1. Bottom Float Chat (Basecamp Publik & Private DM 1-on-1, Kontak & Unread Count)
+        2. Soft Deactivation Toggle (Pilihan Proper Nonaktifkan Akun Tanpa Merusak Cascades)
+        3. Users Last Login Terdata di Tabel Master Anggota & Login Hook
+        4. Cloudflare Email Forwarding API Helper & Konfigurasi Pengaturan Admin
+        """
+        from cloudflare_email import clean_username_for_alias
+        from datetime import datetime
+
+        admin = User.query.filter_by(role='superadmin').first() or User.query.filter_by(role='admin').first()
+        budi = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+        self.assertIsNotNone(budi)
+
+        # 1. Uji Helper Cloudflare Username Alias
+        alias_1 = clean_username_for_alias("fitra.pendaki+outdoor@gmail.com")
+        self.assertEqual(alias_1, "fitra_pendaki@gimbal.my.id")
+        alias_2 = clean_username_for_alias("budi-santoso@yahoo.co.id")
+        self.assertEqual(alias_2, "budi_santoso@gimbal.my.id")
+
+        # 2. Uji Bottom Float Chat Contacts & Direct Messaging
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = admin.id
+
+        # a. Fetch Contacts
+        resp_contacts = self.client.get('/member/chat/contacts', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_contacts.status_code, 200)
+        self.assertIn(b'Budi Santoso Petualang', resp_contacts.data)
+
+        # b. Kirim Private Message ke Budi
+        resp_send_dm = self.client.post('/member/chat/send', data={
+            'message': 'Halo Budi, koordinasi logistik ekspedisi akhir pekan ya!',
+            'mode': 'private',
+            'recipient_id': str(budi.id)
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_send_dm.status_code, 200)
+        self.assertIn(b'koordinasi logistik ekspedisi', resp_send_dm.data)
+
+        # c. Ambil Riwayat Chat Private antara Admin & Budi
+        resp_chat_hist = self.client.get(f'/member/chat/messages?mode=private&recipient_id={budi.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_chat_hist.status_code, 200)
+        self.assertIn(b'koordinasi logistik ekspedisi', resp_chat_hist.data)
+
+        # d. Ganti sesi ke Budi untuk cek unread count & pesan masuk
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = budi.id
+
+        resp_unread = self.client.get('/member/chat/unread-count', headers={'Accept': 'application/json'})
+        self.assertEqual(resp_unread.status_code, 200)
+        unread_data = resp_unread.get_json()
+        self.assertIn('total_unread', unread_data)
+        self.assertGreaterEqual(unread_data['total_unread'], 1)
+
+        # e. Uji rendering Bottom Float Chat di shell & guest safety
+        resp_shell = self.client.get('/', headers={'HX-Request': 'true', 'HX-Target': 'app-shell'})
+        self.assertEqual(resp_shell.status_code, 200)
+        self.assertIn(b'id="gimbal-float-chat-root"', resp_shell.data)
+        self.assertIn(b'id="float-chat-trigger-btn"', resp_shell.data)
+        self.assertIn(b'id="gimbal-chat-window"', resp_shell.data)
+        self.assertIn(b'window.toggleGimbalChat', resp_shell.data)
+        self.assertIn(b'bottom: 5.25rem !important;', resp_shell.data)
+
+        # f. Uji guest (unauthenticated) di landing page TIDAK menampilkan floating chat widget
+        with self.client.session_transaction() as sess:
+            sess.clear()
+        resp_landing_guest = self.client.get('/', headers={'HX-Request': 'true', 'HX-Target': 'app-shell'})
+        self.assertEqual(resp_landing_guest.status_code, 200)
+        self.assertNotIn(b'id="gimbal-float-chat-root"', resp_landing_guest.data)
+        self.assertNotIn(b'id="float-chat-trigger-btn"', resp_landing_guest.data)
+        self.assertNotIn(b'id="gimbal-chat-window"', resp_landing_guest.data)
+
+        # g. Uji guest (unauthenticated) unread-count kosong
+        resp_guest_unread = self.client.get('/member/chat/unread-count')
+        self.assertEqual(resp_guest_unread.status_code, 200)
+        self.assertEqual(resp_guest_unread.data.decode('utf-8').strip(), '')
+
+        # 3. Uji Soft Deactivation Toggle (Pilihan Proper Nonaktifkan Akun)
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = admin.id
+
+        # Nonaktifkan akun Budi
+        resp_toggle_off = self.client.post(f'/admin/member/toggle-status/{budi.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_toggle_off.status_code, 200)
+        db.session.refresh(budi)
+        self.assertEqual(budi.status, 'inactive')
+        self.assertIn(b'dinonaktifkan', resp_toggle_off.data)
+
+        # Aktifkan kembali akun Budi
+        resp_toggle_on = self.client.post(f'/admin/member/toggle-status/{budi.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_toggle_on.status_code, 200)
+        db.session.refresh(budi)
+        self.assertEqual(budi.status, 'active')
+        self.assertIn(b'diaktifkan kembali', resp_toggle_on.data)
+
+        # 4. Uji Pengaturan Cloudflare Email Forwarding di Admin Settings
+        resp_cf_settings = self.client.post('/admin/settings/cloudflare', data={
+            'cloudflare_enabled': '1',
+            'cloudflare_api_token': 'dummy_cf_api_token_12345',
+            'cloudflare_zone_id': 'dummy_zone_abcde12345',
+            'cloudflare_domain': 'gimbal.my.id'
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_cf_settings.status_code, 200)
+        self.assertIn(b'Konfigurasi Cloudflare Email', resp_cf_settings.data)
+
+        self.assertEqual(SystemSetting.get('cloudflare_enabled'), 'true')
+        self.assertEqual(SystemSetting.get('cloudflare_domain'), 'gimbal.my.id')
+
+        # 5. Uji Last Login & Rendering di Data Tabel Anggota
+        budi.password_hash = 'budi123'
+        db.session.commit()
+
+        # Login manual akun Budi
+        resp_login = self.client.post('/auth/login', data={
+            'email': 'budi.pendaki@gmail.com',
+            'password': 'budi123'
+        })
+        self.assertEqual(resp_login.status_code, 302)
+        db.session.refresh(budi)
+        self.assertIsNotNone(budi.last_login)
+
+        # Buka tabel anggota admin sebagai admin, periksa kolom 'Terakhir Masuk' & Cloudflare badge
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = admin.id
+
+        resp_members_table = self.client.get('/admin/members', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_members_table.status_code, 200)
+        self.assertIn(b'Terakhir Masuk', resp_members_table.data)
+        self.assertIn(b'gimbal.my.id', resp_members_table.data)
+        self.assertIn(b'Terdata', resp_members_table.data)
+
+        print(">>> Test 20: Float Chat (Public & Private DM), Soft Deactivation, Last Login & Cloudflare Email 100% OK")
+
+    def test_21_multimedia_post_and_expedition_documentation(self):
+        """
+        Menguji fitur:
+        1. Pembuatan postingan multi foto/video (PostMedia) yang terhubung ke agenda Ekspedisi (Activity)
+        2. Aggregasi galeri dokumentasi ekspedisi (Activity.documentation_media)
+        3. Endpoint modal dokumentasi ekspedisi (/member/activity/documentation/<id>)
+        4. Pin postingan multi-media ke galeri web (admin_pin_post_to_gallery)
+        5. Filterable Masonry Grid dan Infinite Marquee di Landing Page
+        """
+        import io
+        import time
+
+        with self.client.session_transaction() as sess:
+            budi = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+            sess['user_id'] = budi.id
+
+        # Pastikan ada activity (ekspedisi) aktif
+        act = Activity.query.first()
+        if not act:
+            act = Activity(
+                title="Ekspedisi Puncak Tilongkabila 2026",
+                description="Pendakian jalur rintis dan dokumentasi flora fauna",
+                activity_type="Pendakian",
+                location="Gunung Tilongkabila",
+                start_date="2026-10-10",
+                end_date="2026-10-14",
+                status="open"
+            )
+            db.session.add(act)
+            db.session.commit()
+
+        unique_mark = f"ekspedisi-multi-{int(time.time()*1000)}"
+
+        # 1. Buat postingan multi file (2 foto dan 1 video)
+        data = {
+            'content': f'Laporan visual regu lapangan jalur Tilongkabila {unique_mark}',
+            'location': 'Pos 3 Shelter Mata Air Tilongkabila',
+            'activity_id': str(act.id),
+            'media_files': [
+                (io.BytesIO(b'fake_photo_bytes_1'), 'shelter_pos3.jpg'),
+                (io.BytesIO(b'fake_photo_bytes_2'), 'puncak_kabut.png'),
+                (io.BytesIO(b'fake_video_bytes_1'), 'trekking_summit.mp4')
+            ]
+        }
+        resp = self.client.post('/member/post/create', data=data, content_type='multipart/form-data', headers={'HX-Request': 'true'})
+        self.assertEqual(resp.status_code, 200)
+
+        # Cek DB Post & PostMedia
+        post = Post.query.filter(Post.content.like(f"%{unique_mark}%")).first()
+        self.assertIsNotNone(post)
+        self.assertEqual(post.activity_id, act.id)
+        self.assertEqual(len(post.media), 3)
+        self.assertEqual(len(post.media_items), 3)
+
+        # Cek tipe media yang tersimpan
+        types = [m.media_type for m in post.media]
+        self.assertEqual(types.count('image'), 2)
+        self.assertEqual(types.count('video'), 1)
+
+        # 2. Cek agregasi dokumentasi pada Activity
+        doc_media = act.documentation_media
+        self.assertGreaterEqual(len(doc_media), 3)
+        doc_urls = [d['media_url'] for d in doc_media]
+        for m in post.media:
+            self.assertIn(m.media_url, doc_urls)
+
+        # 3. Uji endpoint modal dokumentasi ekspedisi
+        resp_doc_modal = self.client.get(f'/member/activity/documentation/{act.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_doc_modal.status_code, 200)
+        self.assertIn(b'Dokumentasi Ekspedisi', resp_doc_modal.data)
+        self.assertIn(b'activeFilter', resp_doc_modal.data)
+        self.assertIn(b'shelter_pos3', resp_doc_modal.data)
+
+        # 4. Uji Pin postingan multi-media ke Galeri Web
+        with self.client.session_transaction() as sess:
+            admin = User.query.filter_by(email='admin@gimbal.org').first()
+            sess['user_id'] = admin.id
+
+        resp_pin = self.client.post(f'/admin/post/pin-to-gallery/{post.id}')
+        self.assertEqual(resp_pin.status_code, 200)
+        self.assertIn(b'Foto Terpin di Galeri Web', resp_pin.data)
+
+        # Seluruh media postingan (3 media) harus berhasil masuk ke GalleryItem
+        all_pinned = GalleryItem.query.filter_by(post_id=post.id).all()
+        self.assertEqual(len(all_pinned), 3)
+
+        for m in post.media_items:
+            g_item = GalleryItem.query.filter_by(image_url=m.media_url).first()
+            self.assertIsNotNone(g_item)
+            self.assertEqual(g_item.post_id, post.id)
+            self.assertEqual(g_item.activity_id, act.id)
+            self.assertIsNotNone(g_item.album_json)
+
+        # 5. Uji Landing Page: Penghapusan Rolling Marquee & Integrasi Dinamis Divisi Operasional Database
+        resp_landing = self.client.get('/', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_landing.status_code, 200)
+        self.assertNotIn(b'animate-marquee-infinite', resp_landing.data)
+        self.assertIn(b'Galeri Jejak Petualangan', resp_landing.data)
+        self.assertIn(b'openSingleLightbox', resp_landing.data)
+        self.assertIn(b'data-album', resp_landing.data)
+        self.assertIn(b'3 Foto', resp_landing.data)
+        self.assertIn(b'Divisi Operasional GIMBAL', resp_landing.data)
+        self.assertIn(b'Gunung Hutan', resp_landing.data)
+        self.assertIn(b'Panjat Tebing', resp_landing.data)
+        self.assertIn(b'Susur Gua', resp_landing.data)
+
+        print(">>> Test 21: Multi-media Post, Expedition Documentation Album & Animated Gallery 100% OK")
+
 if __name__ == '__main__':
     unittest.main()
+
+
 
 

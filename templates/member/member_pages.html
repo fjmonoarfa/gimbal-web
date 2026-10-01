@@ -8,7 +8,7 @@
     <!-- WELCOME / STATUS HERO BANNER -->
     {% if user.status == 'pending' %}
         <!-- Kondisi PENDING: Calon Anggota Menunggu Verifikasi -->
-        <div class="bg-gradient-to-r from-orange-600 via-orange-700 to-stone-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div class="member-hero-banner bg-orange-600 rounded-lg p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
             <div class="absolute -right-10 -bottom-10 opacity-10 text-white text-9xl pointer-events-none">
                 <i class="fas fa-hiking"></i>
             </div>
@@ -22,7 +22,7 @@
                 </p>
 
                 <!-- Stepper Pendaftaran -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-black/20 p-4 rounded-2xl border border-white/10 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-black/20 p-4 rounded-lg border border-white/10 text-xs">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold">
                             <i class="fas fa-check"></i>
@@ -35,7 +35,7 @@
                     <button type="button"
                             hx-get="/member/profile-modal?tab=medis" 
                             hx-target="#modal-container"
-                            class="flex items-center gap-3 text-left p-1.5 -m-1.5 rounded-xl hover:bg-white/10 transition cursor-pointer">
+                            class="flex items-center gap-3 text-left p-1.5 -m-1.5 rounded-lg hover:bg-white/10 transition cursor-pointer">
                         <div class="w-8 h-8 rounded-full {% if user.phone and user.emergency_phone %}bg-orange-500 text-white{% else %}bg-amber-400 text-amber-950 animate-bounce{% endif %} flex items-center justify-center font-bold">
                             {% if user.phone and user.emergency_phone %}<i class="fas fa-check"></i>{% else %}2{% endif %}
                         </div>
@@ -62,14 +62,14 @@
                     <button type="button" 
                             hx-get="/member/profile-modal?tab=medis" 
                             hx-target="#modal-container" 
-                            class="px-4 py-2 bg-white text-stone-900 hover:bg-orange-50 font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+                            class="px-4 py-2 bg-white text-stone-900 hover:bg-orange-50 font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5">
                         <i class="fas fa-heartbeat text-rose-500"></i>
                         <span>Lengkapi Data Medis & Kontak Darurat</span>
                     </button>
                     <button type="button" 
                             hx-get="/member/profile-modal?tab=keamanan" 
                             hx-target="#modal-container" 
-                            class="px-4 py-2 bg-white/15 hover:bg-white/25 text-white font-medium text-xs rounded-xl border border-white/20 transition flex items-center gap-1.5">
+                            class="px-4 py-2 bg-white/15 hover:bg-white/25 text-white font-medium text-xs rounded-lg border border-white/20 transition flex items-center gap-1.5">
                         <i class="fas fa-key text-amber-300"></i>
                         <span>Atur Kata Sandi / PIN</span>
                     </button>
@@ -79,241 +79,670 @@
 
     {% else %}
         <!-- Kondisi ACTIVE: Anggota Resmi GIMBAL -->
-        <div class="bg-gradient-to-r from-orange-950 via-stone-900 to-orange-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-orange-800/40">
+        <div class="member-hero-banner bg-orange-600 rounded-lg p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
             <div class="absolute -right-6 -bottom-10 opacity-10 text-orange-200 text-9xl pointer-events-none">
                 <i class="fas fa-mountain"></i>
             </div>
-            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div class="space-y-2">
-                    <div class="flex items-center gap-2">
-                        <span class="px-3 py-1 bg-orange-700/60 rounded-full text-xs font-bold text-orange-200 border border-orange-500/30">
-                            <i class="fas fa-id-badge mr-1"></i> Anggota Resmi GIMBAL
-                        </span>
-                        <span class="px-3 py-1 bg-orange-500 text-white rounded-full text-xs font-black tracking-wider font-mono shadow-sm">
-                            {{ user.nra }}
-                        </span>
-                    </div>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold font-heading text-white">Salam Lestari, {{ user.name }}!</h1>
-                    <p class="text-orange-200 text-xs sm:text-sm max-w-xl">
-                        Selamat datang di portal anggota. Pantau status iuran kas, agenda ekspedisi, dan bawa selalu KTA Digital Anda saat berpetualang di alam bebas.
-                    </p>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-3">
-                    <a href="/member/kta" 
-                       class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl shadow-lg transition transform hover:-translate-y-0.5 flex items-center gap-2"
-                       hx-get="/member/kta" hx-target="#main-content" hx-push-url="true">
-                        <i class="fas fa-id-card"></i>
-                        <span>Lihat KTA Digital</span>
-                    </a>
-                    <a href="/member/iuran" 
-                       class="px-5 py-2.5 bg-orange-800/80 hover:bg-orange-700 text-white font-semibold text-xs rounded-xl border border-orange-600/50 shadow-sm transition flex items-center gap-2"
-                       hx-get="/member/iuran" hx-target="#main-content" hx-push-url="true">
-                        <i class="fas fa-coins text-orange-300"></i>
-                        <span>Iuran Kas Saya</span>
-                    </a>
-                    <button type="button"
-                            hx-get="/member/profile-modal" 
-                            hx-target="#modal-container"
-                            class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-xl border border-white/20 transition flex items-center gap-2"
-                            title="Buka Pusat Akun & Profil Google-Style">
-                        <i class="fas fa-user-circle text-orange-300"></i>
-                        <span>Akun Saya</span>
-                    </button>
-                </div>
+            <div class="relative z-10 max-w-2xl space-y-2">
+                <h1 class="text-2xl sm:text-3xl font-extrabold font-heading text-white">Salam Lestari, {{ user.name }}!</h1>
+                <p class="text-orange-200 text-xs sm:text-sm">
+                    Selamat datang di portal anggota. Pantau status iuran kas, agenda ekspedisi, dan bawa selalu KTA Digital Anda saat berpetualang di alam bebas.
+                </p>
             </div>
         </div>
     {% endif %}
 
-    <!-- 4 RINGKASAN METRIK KARTU -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Kartu 1: Status Anggota & NRA -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold text-slate-500">Nomor Registrasi (NRA)</span>
-                <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
-                    <i class="fas fa-id-card"></i>
-                </div>
-            </div>
-            <p class="text-xl font-black font-mono text-slate-900">{{ user.nra or 'Dalam Proses' }}</p>
-            <p class="text-xs text-slate-500 mt-1">
-                Gol. Darah: <strong class="text-orange-600">{{ user.blood_type or '-' }}</strong>
-            </p>
-        </div>
+    <!-- TATA LETAK 3 KOLOM: LINI MASA PETUALANG GIMBAL (COMMUNITY FEED & BASECAMP CHAT) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- Kartu 2: Status Iuran Terakhir -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold text-slate-500">Iuran Bulan Ini</span>
-                <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
-                    <i class="fas fa-wallet"></i>
-                </div>
-            </div>
-            {% if data.unpaid_count and data.unpaid_count > 0 %}
-                <p class="text-xl font-black text-rose-600">{{ data.unpaid_count }} Belum Bayar</p>
-                <p class="text-xs text-rose-500 mt-1 flex items-center gap-1">
-                    <i class="fas fa-exclamation-circle"></i> Perlu unggah bukti transfer
-                </p>
-            {% else %}
-                <p class="text-xl font-black text-orange-600">Lunas</p>
-                <p class="text-xs text-orange-600 mt-1 flex items-center gap-1">
-                    <i class="fas fa-check-circle"></i> Tertib iuran kas
-                </p>
-            {% endif %}
-        </div>
-
-        <!-- Kartu 3: Kontak Darurat -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold text-slate-500">Safety & Emergency</span>
-                <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
-                    <i class="fas fa-first-aid"></i>
-                </div>
-            </div>
-            <p class="text-sm font-bold text-slate-900 truncate">{{ user.emergency_name or 'Belum Diisi' }}</p>
-            <p class="text-xs text-slate-500 mt-1 font-mono truncate">
-                {{ user.emergency_phone or 'Perbarui profil darurat' }}
-            </p>
-        </div>
-
-        <!-- Kartu 4: Ekspedisi / Kegiatan Aktif -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold text-slate-500">Agenda Ekspedisi</span>
-                <div class="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
-                    <i class="fas fa-compass"></i>
-                </div>
-            </div>
-            <p class="text-xl font-black text-slate-900">{{ data.open_activities|length }} Terbuka</p>
-            <p class="text-xs text-orange-600 mt-1 font-medium">Siap untuk petualangan</p>
-        </div>
-    </div>
-
-    <!-- 2 KOLOM: AGENDA EKSPEDISI & PREVIEW DATA / KTA -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <!-- Kolom Kiri (2 Span): Agenda Ekspedisi GIMBAL -->
-        <div class="lg:col-span-2 space-y-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-900 font-heading">Agenda Ekspedisi & Kegiatan</h2>
-                    <p class="text-xs text-slate-500">Daftar trip resmi dan kegiatan konservasi KPAB GIMBAL</p>
-                </div>
-            </div>
-
-            <div class="space-y-3">
-                {% for act in data.open_activities %}
-                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between hover:border-orange-300 transition">
-                    <div class="flex items-center gap-4">
-                        <img src="{{ act.image_url or 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=300&q=80' }}" 
-                             alt="{{ act.title }}" class="w-16 h-16 rounded-xl object-cover shadow-sm flex-shrink-0">
+        <!-- ============================================================== -->
+        <!-- KOLOM KIRI (3 SPAN): IDENTITAS PETUALANG, STATUS IURAN & MEDIS -->
+        <!-- ============================================================== -->
+        <div class="lg:col-span-3 space-y-4">
+            
+            <!-- 1. KARTU IDENTITAS KTA MINI -->
+            {% if user.status == 'active' %}
+            <div class="kta-card rounded-lg p-5 text-white shadow-xl relative overflow-hidden border border-orange-700/50">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <img src="/assets/logo.png" alt="Logo" class="w-7 h-7 object-contain">
                         <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-orange-100 text-orange-800">
-                                    {{ act.difficulty }}
-                                </span>
-                                <span class="text-xs text-slate-400"><i class="far fa-calendar-alt mr-1"></i> {{ act.activity_date }}</span>
-                            </div>
-                            <h3 class="text-sm font-bold text-slate-900">{{ act.title }}</h3>
-                            <p class="text-xs text-slate-500 line-clamp-1"><i class="fas fa-map-marker-alt text-orange-600 mr-1"></i> {{ act.location }}</p>
+                            <p class="text-xs font-black tracking-wider font-heading">KPAB GIMBAL</p>
+                            <p class="text-[8px] text-orange-300">GORONTALO</p>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 bg-orange-500 text-white font-black text-[10px] rounded font-mono shadow-sm">
+                        {{ user.nra }}
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-3 mb-3">
+                    <img src="{{ user.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}" 
+                         alt="{{ user.name }}" class="w-12 h-12 rounded-lg object-cover border-2 border-orange-400 shadow-md">
+                    <div class="overflow-hidden">
+                        <h3 class="text-xs font-bold text-white truncate">{{ user.name }}</h3>
+                        <p class="text-[10px] text-orange-200">Gol. Darah: <strong class="text-white">{{ user.blood_type or 'O' }}</strong></p>
+                        <p class="text-[10px] text-slate-300 truncate">{{ user.address or 'Provinsi Gorontalo' }}</p>
+                    </div>
+                </div>
+
+                <div class="pt-2.5 border-t border-orange-700/40 flex items-center justify-between text-[11px]">
+                    <span class="text-orange-300 font-medium">Anggota Aktif</span>
+                    <a href="/member/kta" 
+                       class="text-orange-200 hover:text-white font-bold underline decoration-orange-400"
+                       hx-get="/member/kta" hx-target="#main-content" hx-push-url="true">
+                        Buka KTA &rarr;
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <!-- Kartu Status Calon Anggota -->
+            <div class="bg-white p-4 rounded-lg border border-amber-200 shadow-sm space-y-2">
+                <div class="flex items-center gap-2 text-amber-700 font-bold text-xs">
+                    <i class="fas fa-clock text-amber-500"></i>
+                    <span>Status Pendaftaran</span>
+                </div>
+                <p class="text-xs text-stone-600 leading-relaxed">
+                    Nomor anggota resmi <strong class="font-mono text-amber-800">R-nn-YY</strong> akan aktif saat disetujui pengurus.
+                </p>
+                <button type="button" 
+                        hx-get="/member/profile-modal?tab=medis" 
+                        hx-target="#modal-container"
+                        class="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded-lg text-xs transition flex items-center justify-center gap-1.5">
+                    <i class="fas fa-heartbeat text-rose-500"></i> Lengkapi Form Medis
+                </button>
+            </div>
+            {% endif %}
+
+            <!-- 2. STATUS IURAN KAS CEPAT -->
+            <div class="bg-white p-4 rounded-lg border border-slate-200/80 shadow-sm space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500">Status Iuran Kas</span>
+                    <i class="fas fa-wallet text-orange-600 text-xs"></i>
+                </div>
+                {% if not data.dues_enabled %}
+                    <p class="text-base font-black text-emerald-600 flex items-center gap-1.5">
+                        <i class="fas fa-check-circle"></i> Bebas Iuran Kas
+                    </p>
+                    <p class="text-[11px] text-slate-500">Penagihan iuran kas sedang dinonaktifkan oleh organisasi</p>
+                {% elif data.unpaid_count and data.unpaid_count > 0 %}
+                    <p class="text-base font-black text-rose-600">{{ data.unpaid_count }} Tagihan Menunggu</p>
+                    <a href="/member/iuran" 
+                       class="block w-full py-2 px-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-center text-xs shadow-sm transition"
+                       hx-get="/member/iuran" hx-target="#main-content" hx-push-url="true">
+                        Konfirmasi Iuran Sekarang
+                    </a>
+                {% else %}
+                    <p class="text-base font-black text-emerald-600 flex items-center gap-1.5">
+                        <i class="fas fa-check-circle"></i> Tertib Kas Lunas
+                    </p>
+                    <p class="text-[11px] text-slate-500">Terima kasih atas kontribusi aktif Anda</p>
+                {% endif %}
+            </div>
+
+            <!-- 3. PINTASAN PUSAT AKUN GOOGLE-STYLE -->
+            <div class="bg-white p-4 rounded-lg border border-slate-200/80 shadow-sm space-y-2.5">
+                <span class="text-xs font-semibold text-slate-500 block">Pusat Akun & Keselamatan</span>
+                <button type="button" 
+                        hx-get="/member/profile-modal" 
+                        hx-target="#modal-container"
+                        class="w-full py-2 px-3 bg-stone-50 hover:bg-orange-50 border border-slate-200 hover:border-orange-300 text-stone-800 font-bold rounded-lg text-xs transition flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-user-circle text-orange-600"></i>
+                        <span>Kelola Profil Akun</span>
+                    </span>
+                    <i class="fas fa-chevron-right text-[10px] text-stone-400"></i>
+                </button>
+
+                <div class="space-y-1 text-xs">
+                    <button type="button" 
+                            hx-get="/member/profile-modal?tab=medis" 
+                            hx-target="#modal-container"
+                            class="w-full text-left px-2 py-1.5 rounded-lg text-slate-600 hover:text-orange-600 hover:bg-orange-50/50 transition flex items-center justify-between">
+                        <span><i class="fas fa-heartbeat text-rose-500 mr-1.5"></i> Riwayat Medis</span>
+                        <span class="text-[10px] text-slate-400 font-mono">{{ user.blood_type or '-' }}</span>
+                    </button>
+                    <button type="button" 
+                            hx-get="/member/profile-modal?tab=keamanan" 
+                            hx-target="#modal-container"
+                            class="w-full text-left px-2 py-1.5 rounded-lg text-slate-600 hover:text-orange-600 hover:bg-orange-50/50 transition flex items-center justify-between">
+                        <span><i class="fas fa-key text-amber-500 mr-1.5"></i> Ganti Password/PIN</span>
+                        <i class="fas fa-angle-right text-[10px] text-slate-400"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. PINTASAN ARSIP DOKUMEN -->
+            <div class="bg-white p-4 rounded-lg border border-slate-200/80 shadow-sm">
+                <a href="/member/documents" 
+                   class="flex items-center justify-between text-xs font-bold text-slate-700 hover:text-orange-600 transition"
+                   hx-get="/member/documents" hx-target="#main-content" hx-push-url="true">
+                    <span class="flex items-center gap-2">
+                        <i class="fas fa-book-open text-orange-600"></i>
+                        <span>Arsip AD/ART & SOP Rimba</span>
+                    </span>
+                    <i class="fas fa-arrow-right text-[10px] text-slate-400"></i>
+                </a>
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================== -->
+        <!-- KOLOM TENGAH (6 SPAN): LINI MASA PETUALANG (POST & FEED)       -->
+        <!-- ============================================================== -->
+        <div class="lg:col-span-6 space-y-5">
+            
+            <!-- KOTAK BUAT POSTINGAN BARU (STORY / ADVENTURE CREATOR) -->
+            <div class="bg-white rounded-lg p-5 border border-slate-200/80 shadow-sm space-y-4"
+                 x-data="{ 
+                     showPhotoInput: false, 
+                     locationText: '', 
+                     activityId: '',
+                     selectedFiles: [],
+                     handleFiles(e) {
+                         this.selectedFiles = [];
+                         const files = e.target.files;
+                         for (let i = 0; i < files.length; i++) {
+                             const f = files[i];
+                             const isVideo = f.type.startsWith('video') || f.name.match(/\.(mp4|webm|mov|mkv)$/i);
+                             const previewUrl = URL.createObjectURL(f);
+                             this.selectedFiles.push({
+                                 name: f.name,
+                                 size: (f.size / (1024 * 1024)).toFixed(1) + ' MB',
+                                 isVideo: isVideo,
+                                 url: previewUrl
+                             });
+                         }
+                     }
+                 }">
+                
+                <div class="flex items-center gap-3">
+                    <img src="{{ user.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}" 
+                         alt="{{ user.name }}" class="w-10 h-10 rounded-full object-cover border border-orange-500 shadow-sm">
+                    <div>
+                        <h2 class="text-xs font-black text-slate-900 leading-tight">Lini Masa Petualang GIMBAL</h2>
+                        <p class="text-[11px] text-slate-400">Bagikan kabar jalur, update cuaca, dan dokumentasi ekspedisi</p>
+                    </div>
+                </div>
+
+                <form hx-post="/member/post/create" 
+                      hx-target="#main-content"
+                      hx-encoding="multipart/form-data"
+                      class="space-y-3">
+                    
+                    <textarea name="content" rows="3" required
+                              placeholder="Salam Lestari, {{ user.name }}! Ceritakan kabar jalur, pengalaman pendakian, atau update logistik trip..."
+                              class="w-full p-3.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none resize-none bg-stone-50/50"></textarea>
+
+                    <!-- Baris Pilihan Ekspedisi & Lokasi -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <!-- Tautkan ke Ekspedisi (Dokumentasi Resmi) -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-semibold text-slate-500 flex items-center gap-1 flex-shrink-0">
+                                <i class="fas fa-mountain text-orange-600"></i> Ekspedisi:
+                            </span>
+                            <select name="activity_id" x-model="activityId"
+                                    class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                                <option value="">-- Postingan Bebas --</option>
+                                {% for act in (data.all_activities or data.open_activities) %}
+                                <option value="{{ act.id }}">{{ act.title }} ({{ act.location }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Baris Lokasi Lapangan -->
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-semibold text-slate-500 flex items-center gap-1 flex-shrink-0">
+                                <i class="fas fa-map-marker-alt text-orange-600"></i> Lokasi:
+                            </span>
+                            <input type="text" name="location" x-model="locationText" placeholder="Contoh: Puncak Gn. Tilongkabila"
+                                   class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
                         </div>
                     </div>
 
-                    <div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2">
-                        <span class="text-xs text-slate-500">Kuota: <strong class="text-slate-800">{{ act.quota }} orang</strong></span>
-                        <button class="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-xl shadow-sm transition"
-                                hx-post="/member/activity/join/{{ act.id }}" hx-swap="none"
-                                onclick="alert('Pendaftaran trip berhasil dicatat! Tim ekspedisi akan menghubungi WhatsApp Anda.')">
-                            Ikut Ekspedisi
+                    <!-- Preset Tag Lokasi Populer Gorontalo -->
+                    <div class="flex flex-wrap gap-1.5 pt-0.5">
+                        <button type="button" @click="locationText = 'Puncak Gn. Tilongkabila, Gorontalo'"
+                                class="px-2.5 py-1 rounded-lg bg-orange-50 text-orange-800 text-[10px] font-bold hover:bg-orange-100 transition cursor-pointer">
+                            ⛰️ Tilongkabila
+                        </button>
+                        <button type="button" @click="locationText = 'Hutan Konservasi Nantu, Gorontalo'"
+                                class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-[10px] font-bold hover:bg-emerald-100 transition cursor-pointer">
+                            🌳 Hutan Nantu
+                        </button>
+                        <button type="button" @click="locationText = 'Taman Laut Olele, Bone Bolango'"
+                                class="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-800 text-[10px] font-bold hover:bg-sky-100 transition cursor-pointer">
+                            🌊 Laut Olele
+                        </button>
+                        <button type="button" @click="locationText = 'Danau Limboto, Gorontalo'"
+                                class="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-700 text-[10px] font-bold hover:bg-stone-200 transition cursor-pointer">
+                            🛶 Danau Limboto
                         </button>
                     </div>
-                </div>
-                {% else %}
-                <div class="p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 text-sm">
-                    <i class="fas fa-campground text-3xl mb-2 text-slate-300"></i>
-                    <p>Belum ada agenda ekspedisi aktif saat ini.</p>
-                </div>
-                {% endfor %}
+
+                    <!-- Opsi Lampiran Multi Foto / Video (File / URL) -->
+                    <div x-show="showPhotoInput" x-transition class="p-3.5 bg-stone-50 rounded-lg border border-stone-200 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="block font-bold text-slate-800 text-[11px] flex items-center gap-1.5">
+                                <i class="fas fa-photo-video text-orange-600"></i> Lampirkan Multi Foto & Video Dokumentasi
+                            </label>
+                            <span class="text-[10px] text-slate-400">Pilih beberapa foto/video sekaligus (JPG, PNG, WEBP, MP4)</span>
+                        </div>
+                        
+                        <input type="file" name="media_files" accept="image/*,video/*" multiple
+                               @change="handleFiles($event)"
+                               class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-100 file:text-orange-800 hover:file:bg-orange-200 cursor-pointer">
+
+                        <!-- Live Preview Berkas Pilihan -->
+                        <template x-if="selectedFiles.length > 0">
+                            <div class="space-y-1.5 pt-1">
+                                <p class="text-[10px] font-semibold text-slate-600 flex items-center gap-1">
+                                    <i class="fas fa-check-circle text-emerald-600"></i>
+                                    <span x-text="selectedFiles.length + ' berkas media siap diunggah:'"></span>
+                                </p>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="(f, idx) in selectedFiles" :key="idx">
+                                        <div class="relative w-16 h-16 rounded-lg overflow-hidden border border-orange-300 shadow-sm bg-black group">
+                                            <template x-if="f.isVideo">
+                                                <div class="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-orange-400 p-1 text-center">
+                                                    <i class="fas fa-video text-sm mb-0.5"></i>
+                                                    <span class="text-[8px] font-mono text-slate-300" x-text="f.size"></span>
+                                                </div>
+                                            </template>
+                                            <template x-if="!f.isVideo">
+                                                <img :src="f.url" class="w-full h-full object-cover">
+                                            </template>
+                                            <span class="absolute top-0.5 right-0.5 px-1 bg-black/70 text-[8px] font-bold text-white rounded" x-text="idx + 1"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div class="pt-1 border-t border-stone-200">
+                            <label class="block text-[10px] text-slate-500 mb-1">Atau cantumkan tautan URL foto/video eksternal:</label>
+                            <input type="url" name="image_url" placeholder="https://..."
+                                   class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono bg-white focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-between border-t border-slate-100">
+                        <button type="button" @click="showPhotoInput = !showPhotoInput"
+                                :class="showPhotoInput ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                                class="px-3.5 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5 transition cursor-pointer">
+                            <i class="fas fa-photo-video text-orange-600"></i>
+                            <span x-text="showPhotoInput ? 'Tutup Lampiran' : 'Lampirkan Foto / Video'"></span>
+                        </button>
+
+                        <button type="submit"
+                                class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-md transition flex items-center gap-1.5 cursor-pointer">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Bagikan Postingan</span>
+                        </button>
+                    </div>
+                </form>
             </div>
-        </div>
 
-        <!-- Kolom Kanan (1 Span): KTA Mini / Data Pribadi -->
-        <div class="space-y-4">
-            <h2 class="text-lg font-bold text-slate-900 font-heading">Identitas Keanggotaan</h2>
-
-            {% if user.status == 'active' %}
-                <!-- Mini Card KTA Preview -->
-                <div class="kta-card rounded-2xl p-5 text-white shadow-xl relative overflow-hidden border border-orange-700/50">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-2">
-                            <img src="/assets/logo.png" alt="Logo" class="w-8 h-8 object-contain">
+            <!-- STREAM KARTU POSTINGAN LINI MASA (FEED) -->
+            <div class="space-y-4">
+                {% for post in data.posts %}
+                <!-- Post Card -->
+                <div id="post-card-{{ post.id }}" class="bg-white rounded-lg p-5 border border-slate-200/80 shadow-sm space-y-3.5 transition hover:border-orange-300">
+                    
+                    <!-- Post Header: Avatar, Name, Role, Location, Activity Badge, Action Buttons -->
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <img src="{{ post.user.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}" 
+                                 alt="{{ post.user.name }}" class="w-10 h-10 rounded-full object-cover border border-orange-500 shadow-sm flex-shrink-0">
                             <div>
-                                <p class="text-xs font-extrabold tracking-wider font-heading">KPAB GIMBAL</p>
-                                <p class="text-[9px] text-orange-300">INDONESIA</p>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-xs font-black text-slate-900 leading-none">{{ post.user.name }}</h3>
+                                    {% if post.user.is_admin %}
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-600 text-white">Admin</span>
+                                    {% elif post.user.nra %}
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800">{{ post.user.nra }}</span>
+                                    {% else %}
+                                        <span class="px-2 py-0.5 rounded-full text-[9px] font-medium bg-amber-100 text-amber-800">Calon Anggota</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-slate-500">
+                                    <span>{{ post.created_at.strftime('%d %b %Y • %H:%M') }}</span>
+                                    {% if post.location %}
+                                    <span>&bull;</span>
+                                    <span class="text-orange-700 font-semibold flex items-center gap-1">
+                                        <i class="fas fa-map-marker-alt text-orange-600 text-[10px]"></i> {{ post.location }}
+                                    </span>
+                                    {% endif %}
+                                    {% if post.activity %}
+                                    <span>&bull;</span>
+                                    <a href="javascript:void(0)"
+                                       hx-get="/member/activity/documentation/{{ post.activity.id }}"
+                                       hx-target="#modal-container"
+                                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200 hover:bg-orange-200 transition cursor-pointer"
+                                       title="Klik untuk membuka album dokumentasi ekspedisi ini">
+                                        <i class="fas fa-mountain text-orange-600 text-[9px]"></i> {{ post.activity.title }}
+                                    </a>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
-                        <span class="px-2 py-0.5 bg-orange-500 text-white font-black text-[10px] rounded font-mono shadow-sm">
-                            {{ user.nra }}
+
+                        <!-- Action Group: Pin ke Galeri (Admin) & Hapus Postingan (Pemilik/Admin) -->
+                        <div class="flex items-center gap-1.5">
+                            {% set has_media = (post.media_items and post.media_items|length > 0) or post.image_url %}
+                            {% if user and user.is_admin and has_media %}
+                                {% set pinned_gallery = post.gallery_items.filter_by(is_pinned=True).all() if post.gallery_items else [] %}
+                                {% if pinned_gallery and pinned_gallery|length > 0 %}
+                                <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full flex items-center gap-1 shadow-sm" title="Foto postingan ini sudah tampil di Galeri Landing Page">
+                                    <i class="fas fa-check-circle text-emerald-600"></i>
+                                    <span>{{ pinned_gallery|length }} Foto Terpin di Galeri</span>
+                                </span>
+                                {% else %}
+                                <button type="button" 
+                                        hx-post="/admin/post/pin-to-gallery/{{ post.id }}" 
+                                        hx-swap="outerHTML"
+                                        class="px-2.5 py-1 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-800 text-[10px] font-bold rounded-lg transition flex items-center gap-1 shadow-sm cursor-pointer"
+                                        title="Pin seluruh foto ekspedisi anggota ini ke Galeri Web Publik">
+                                    <i class="fas fa-thumbtack text-orange-600"></i>
+                                    {% if post.media_items and post.media_items|length > 1 %}
+                                    <span>Pin {{ post.media_items|length }} Foto ke Galeri</span>
+                                    {% else %}
+                                    <span>Pin ke Galeri</span>
+                                    {% endif %}
+                                </button>
+                                {% endif %}
+                            {% endif %}
+
+                            {% if user and (user.id == post.user_id or user.is_admin) %}
+                            <button type="button" 
+                                    hx-post="/member/post/delete/{{ post.id }}" 
+                                    hx-target="#post-card-{{ post.id }}" 
+                                    hx-swap="outerHTML swap:300ms"
+                                    hx-confirm="Apakah Anda yakin ingin menghapus postingan ini?"
+                                    class="px-2.5 py-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 border border-transparent hover:border-rose-200 cursor-pointer"
+                                    title="Hapus postingan ini">
+                                <i class="fas fa-trash-alt text-[10px]"></i>
+                                <span>Hapus</span>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Post Body: Teks Cerita -->
+                    <div class="text-xs text-slate-800 font-normal leading-relaxed whitespace-pre-line">
+                        {{ post.content }}
+                    </div>
+
+                    <!-- DYNAMIC MOSAIC GRID: Multi Foto & Video Dokumentasi -->
+                    {% set m_list = post.media_items %}
+                    {% set m_count = m_list|length %}
+                    {% if m_count > 0 %}
+                        {% set media_json = [] %}
+                        {% for m in m_list %}
+                            {% set _ = media_json.append({'media_url': m.media_url, 'media_type': m.media_type, 'caption': (post.content[:150] or 'Dokumentasi Ekspedisi'), 'location': (post.location or (post.activity.title if post.activity else 'KPAB GIMBAL'))}) %}
+                        {% endfor %}
+
+                        {% if m_count == 1 %}
+                            {% set single_m = m_list[0] %}
+                            {% if single_m.media_type == 'video' %}
+                            <div class="rounded-lg overflow-hidden border border-slate-200 bg-black max-h-[420px] shadow-sm">
+                                <video src="{{ single_m.media_url }}" controls playsinline preload="metadata" class="w-full max-h-[420px] object-contain"></video>
+                            </div>
+                            {% else %}
+                            <div class="rounded-lg overflow-hidden border border-slate-200 bg-stone-100 max-h-[420px] cursor-pointer group shadow-sm"
+                                 onclick='window.openMediaLightbox({{ media_json|tojson|safe }}, 0)'>
+                                <img src="{{ single_m.media_url }}" alt="Dokumentasi {{ post.location or 'Ekspedisi' }}" 
+                                     class="w-full h-auto max-h-[420px] object-cover group-hover:scale-[1.01] transition duration-300">
+                            </div>
+                            {% endif %}
+
+                        {% elif m_count == 2 %}
+                            <div class="grid grid-cols-2 gap-1.5 rounded-lg overflow-hidden border border-slate-200 bg-slate-900 shadow-sm">
+                                {% for m in m_list %}
+                                <div class="relative aspect-[4/3] bg-black cursor-pointer group overflow-hidden"
+                                     onclick='window.openMediaLightbox({{ media_json|tojson|safe }}, {{ loop.index0 }})'>
+                                    {% if m.media_type == 'video' %}
+                                    <video src="{{ m.media_url }}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition duration-300"></video>
+                                    <div class="absolute inset-0 flex items-center justify-center bg-black/25">
+                                        <span class="w-9 h-9 rounded-full bg-orange-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition"><i class="fas fa-play text-xs pl-0.5"></i></span>
+                                    </div>
+                                    {% else %}
+                                    <img src="{{ m.media_url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                        {% elif m_count == 3 %}
+                            <div class="grid grid-cols-2 gap-1.5 rounded-lg overflow-hidden border border-slate-200 bg-slate-900 shadow-sm max-h-[380px]">
+                                <!-- Left Tall Item -->
+                                <div class="relative h-full min-h-[220px] bg-black cursor-pointer group overflow-hidden"
+                                     onclick='window.openMediaLightbox({{ media_json|tojson|safe }}, 0)'>
+                                    {% set m0 = m_list[0] %}
+                                    {% if m0.media_type == 'video' %}
+                                    <video src="{{ m0.media_url }}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition duration-300"></video>
+                                    <div class="absolute inset-0 flex items-center justify-center bg-black/25">
+                                        <span class="w-9 h-9 rounded-full bg-orange-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition"><i class="fas fa-play text-xs pl-0.5"></i></span>
+                                    </div>
+                                    {% else %}
+                                    <img src="{{ m0.media_url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                    {% endif %}
+                                </div>
+                                <!-- Right 2 Stacked Items -->
+                                <div class="grid grid-rows-2 gap-1.5 h-full">
+                                    {% for m in m_list[1:3] %}
+                                    <div class="relative aspect-[4/3] bg-black cursor-pointer group overflow-hidden"
+                                         onclick='window.openMediaLightbox({{ media_json|tojson|safe }}, {{ loop.index }})'>
+                                        {% if m.media_type == 'video' %}
+                                        <video src="{{ m.media_url }}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition duration-300"></video>
+                                        <div class="absolute inset-0 flex items-center justify-center bg-black/25">
+                                            <span class="w-8 h-8 rounded-full bg-orange-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition"><i class="fas fa-play text-[10px] pl-0.5"></i></span>
+                                        </div>
+                                        {% else %}
+                                        <img src="{{ m.media_url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                        {% else %}
+                            <!-- 4+ Media: 2x2 Grid with +N Badge on the 4th item -->
+                            <div class="grid grid-cols-2 gap-1.5 rounded-lg overflow-hidden border border-slate-200 bg-slate-900 shadow-sm">
+                                {% for m in m_list[:4] %}
+                                {% set is_fourth_slot = loop.index0 == 3 and m_count > 4 %}
+                                <div class="relative aspect-square bg-black cursor-pointer group overflow-hidden"
+                                     onclick='window.openMediaLightbox({{ media_json|tojson|safe }}, {{ loop.index0 }})'>
+                                    {% if m.media_type == 'video' %}
+                                    <video src="{{ m.media_url }}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition duration-300"></video>
+                                    <div class="absolute inset-0 flex items-center justify-center bg-black/25">
+                                        <span class="w-8 h-8 rounded-full bg-orange-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition"><i class="fas fa-play text-[10px] pl-0.5"></i></span>
+                                    </div>
+                                    {% else %}
+                                    <img src="{{ m.media_url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                    {% endif %}
+
+                                    {% if is_fourth_slot %}
+                                    <div class="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center text-white p-2 text-center group-hover:bg-slate-950/65 transition">
+                                        <span class="text-xl sm:text-2xl font-black font-heading text-white">+{{ m_count - 3 }}</span>
+                                        <span class="text-[10px] uppercase tracking-wider font-bold text-orange-300">Lihat Semua</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <!-- Post Action Bar: Like & Comments -->
+                    <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <!-- Tombol Like Reaktif -->
+                            {% set is_liked = user and post.is_liked_by(user.id) %}
+                            <button type="button" 
+                                    hx-post="/member/post/like/{{ post.id }}" 
+                                    hx-target="#post-like-btn-{{ post.id }}" 
+                                    hx-swap="outerHTML"
+                                    id="post-like-btn-{{ post.id }}"
+                                    class="px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 border transition cursor-pointer {% if is_liked %}text-orange-600 font-bold bg-orange-50 border-orange-200{% else %}text-stone-600 hover:text-orange-600 hover:bg-stone-50 border-stone-200{% endif %}">
+                                <i class="fas fa-fire {% if is_liked %}text-orange-600{% else %}text-stone-400{% endif %}"></i>
+                                <span>{{ post.like_count }} Salam Lestari</span>
+                            </button>
+                        </div>
+
+                        <span class="text-[11px] text-slate-500">
+                            {{ post.comments|length }} Komentar
                         </span>
                     </div>
 
-                    <div class="flex items-center gap-3 mb-4">
-                        <img src="{{ user.avatar or 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80' }}" 
-                             alt="Foto" class="w-14 h-14 rounded-xl object-cover border-2 border-orange-400 shadow-md">
-                        <div>
-                            <h3 class="text-sm font-bold text-white">{{ user.name }}</h3>
-                            <p class="text-[11px] text-orange-200">Golongan Darah: <strong>{{ user.blood_type or 'O' }}</strong></p>
-                            <p class="text-[10px] text-slate-300">Bergabung: {{ user.approved_at.strftime('%d/%m/%Y') if user.approved_at else '2026' }}</p>
+                    <!-- Post Comment Section -->
+                    <div id="post-comments-{{ post.id }}" class="pt-2 border-t border-slate-100/80 space-y-2">
+                        <!-- Comment Thread List -->
+                        <div class="space-y-2">
+                            {% for c in post.comments %}
+                            <div class="flex items-start gap-2.5 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                <img src="{{ c.user.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}" 
+                                     alt="{{ c.user.name }}" class="w-6 h-6 rounded-full object-cover border border-orange-400 flex-shrink-0 mt-0.5">
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-slate-900 text-[11px]">{{ c.user.name }}</span>
+                                        <span class="text-[9px] text-slate-400">{{ c.created_at.strftime('%H:%M') }}</span>
+                                    </div>
+                                    <p class="text-slate-700 text-xs mt-0.5 leading-snug">{{ c.content }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Form Input Komentar -->
+                        <form hx-post="/member/post/comment/{{ post.id }}" 
+                              hx-target="#post-comments-{{ post.id }}"
+                              hx-swap="outerHTML"
+                              class="flex items-center gap-2 pt-1">
+                            <input type="text" name="comment" required placeholder="Tulis komentar atau tanggapan..."
+                                   class="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white text-slate-900 placeholder-slate-400">
+                            <button type="submit"
+                                    class="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition cursor-pointer">
+                                <i class="fas fa-reply"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                </div>
+                {% else %}
+                <div class="p-10 text-center bg-white rounded-lg border border-slate-200 text-slate-500 space-y-2">
+                    <i class="fas fa-stream text-3xl text-slate-300"></i>
+                    <p class="text-xs font-medium">Belum ada cerita di lini masa. Jadilah yang pertama membagikan kabar petualangan!</p>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+
+
+        <!-- ============================================================== -->
+        <!-- KOLOM KANAN (3 SPAN): AGENDA TRIP GORONTALO                    -->
+        <!-- ============================================================== -->
+        <div class="lg:col-span-3 space-y-5">
+            
+            <!-- 1. AGENDA TRIP TERBUKA DI GORONTALO -->
+            <div class="bg-white rounded-lg p-5 border border-slate-200/80 shadow-sm space-y-3">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <h2 class="text-xs font-black text-slate-900 uppercase tracking-wider">Ekspedisi Terbuka</h2>
+                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-orange-100 text-orange-800">{{ data.open_activities|length }} Trip</span>
+                </div>
+
+                <div class="space-y-3">
+                    {% for act in data.open_activities %}
+                    <div class="p-3 bg-stone-50/70 rounded-lg border border-slate-200 space-y-2 hover:border-orange-300 transition">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-orange-600 text-white uppercase">{{ act.difficulty }}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">{{ act.activity_date }}</span>
+                        </div>
+                        <h3 class="text-xs font-bold text-slate-900 leading-snug">{{ act.title }}</h3>
+                        <p class="text-[11px] text-slate-600"><i class="fas fa-map-marker-alt text-orange-600 mr-1"></i> {{ act.location }}</p>
+                        
+                        <div class="pt-2 flex items-center justify-between border-t border-slate-200/60">
+                            <span class="text-[10px] text-slate-400">Kuota: <strong class="text-slate-800">{{ act.quota }}</strong></span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button"
+                                        hx-get="/member/activity/documentation/{{ act.id }}"
+                                        hx-target="#modal-container"
+                                        class="px-2.5 py-1 bg-stone-100 hover:bg-orange-50 border border-stone-200 hover:border-orange-300 text-stone-700 font-bold text-[10px] rounded-lg transition cursor-pointer flex items-center gap-1"
+                                        title="Buka album foto & video ekspedisi ini">
+                                    <i class="fas fa-camera text-orange-600"></i>
+                                    <span>Dokumentasi</span>
+                                </button>
+                                <button class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px] rounded-lg transition cursor-pointer"
+                                        hx-post="/member/activity/join/{{ act.id }}" hx-swap="none"
+                                        onclick="alert('Pendaftaran trip berhasil dicatat! Tim ekspedisi akan menghubungi WhatsApp Anda.')">
+                                    Ikut Trip
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="pt-3 border-t border-orange-700/40 flex items-center justify-between">
-                        <span class="text-[10px] text-orange-300">Status: <strong class="text-orange-200">ANGGOTA AKTIF</strong></span>
-                        <a href="/member/kta" 
-                           class="text-xs text-orange-300 hover:text-white font-bold underline decoration-orange-400"
-                           hx-get="/member/kta" hx-target="#main-content" hx-push-url="true">
-                            Buka KTA Penuh &rarr;
-                        </a>
-                    </div>
-                </div>
-            {% else %}
-                <div class="bg-orange-50 rounded-2xl p-5 border border-orange-200 text-orange-950 text-xs space-y-3">
-                    <div class="flex items-center gap-2 font-bold text-orange-900">
-                        <i class="fas fa-info-circle text-orange-600 text-sm"></i>
-                        <span>Penerbitan KTA Digital</span>
-                    </div>
-                    <p class="leading-relaxed">
-                        KTA Digital Anda beserta nomor unik format <strong>R-nn-YY</strong> akan muncul di sini segera setelah pengurus menyetujui formulir pendaftaran Anda.
-                    </p>
-                    <a href="/member/profile" 
-                       class="inline-block px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition"
-                       hx-get="/member/profile" hx-target="#main-content" hx-push-url="true">
-                        Periksa Kelengkapan Biodata
-                    </a>
-                </div>
-            {% endif %}
-
-            <!-- Kotak Safety Ringkas -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Kontak Darurat Terdaftar</h3>
-                <div class="text-xs space-y-1 text-slate-700">
-                    <p><span class="text-slate-400">Nama:</span> <strong>{{ user.emergency_name or '-' }}</strong></p>
-                    <p><span class="text-slate-400">Hubungan:</span> {{ user.emergency_relation or '-' }}</p>
-                    <p><span class="text-slate-400">No. Telp Darurat:</span> <strong class="text-orange-600 font-mono">{{ user.emergency_phone or '-' }}</strong></p>
-                    <p><span class="text-slate-400">Catatan Medis:</span> {{ user.medical_history or 'Tidak ada catatan alergi khusus' }}</p>
-                </div>
-                <div class="pt-2">
-                    <a href="/member/profile" class="text-xs font-semibold text-orange-600 hover:underline"
-                       hx-get="/member/profile" hx-target="#main-content" hx-push-url="true">
-                        Edit Data Medis & Darurat &rarr;
-                    </a>
+                    {% else %}
+                    <p class="text-xs text-slate-400 text-center py-2">Belum ada agenda ekspedisi terbuka.</p>
+                    {% endfor %}
                 </div>
             </div>
+
         </div>
 
     </div>
 
 </div>
+{% endmacro %}
+
+
+<!-- HELPER MACRO: RENDER POST COMMENTS -->
+{% macro render_post_comments(post, current_user) %}
+<div id="post-comments-{{ post.id }}" class="pt-2 border-t border-slate-100/80 space-y-2">
+    <div class="space-y-2">
+        {% for c in post.comments %}
+        <div class="flex items-start gap-2.5 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+            <img src="{{ c.user.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}" 
+                 alt="{{ c.user.name }}" class="w-6 h-6 rounded-full object-cover border border-orange-400 flex-shrink-0 mt-0.5">
+            <div class="flex-1">
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-900 text-[11px]">{{ c.user.name }}</span>
+                    <span class="text-[9px] text-slate-400">{{ c.created_at.strftime('%H:%M') }}</span>
+                </div>
+                <p class="text-slate-700 text-xs mt-0.5 leading-snug">{{ c.content }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <form hx-post="/member/post/comment/{{ post.id }}" 
+          hx-target="#post-comments-{{ post.id }}"
+          hx-swap="outerHTML"
+          class="flex items-center gap-2 pt-1">
+        <input type="text" name="comment" required placeholder="Tulis komentar atau tanggapan..."
+               class="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white text-slate-900 placeholder-slate-400">
+        <button type="submit"
+                class="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition cursor-pointer">
+            <i class="fas fa-reply"></i>
+        </button>
+    </form>
+</div>
+{% endmacro %}
+
+
+<!-- HELPER MACRO: RENDER CHAT MESSAGES -->
+{% macro render_chat_messages(chats, current_user) %}
+{% for chat in chats %}
+<div class="p-2.5 rounded-lg {% if chat.user_id == current_user.id %}bg-orange-50 border border-orange-200/80 ml-3{% else %}bg-slate-50 border border-slate-200 mr-3{% endif %}">
+    <div class="flex items-center justify-between gap-1 mb-1">
+        <span class="font-bold text-[11px] {% if chat.user_id == current_user.id %}text-orange-900{% else %}text-slate-900{% endif %} truncate">
+            {{ chat.user.name }}
+        </span>
+        <span class="text-[9px] text-slate-400 font-mono">{{ chat.created_at.strftime('%H:%M') }}</span>
+    </div>
+    <p class="text-slate-800 text-xs leading-relaxed break-words">{{ chat.message }}</p>
+</div>
+{% endfor %}
 {% endmacro %}
 
 
@@ -327,13 +756,13 @@
             <h1 class="text-2xl font-black text-slate-900 font-heading">Kartu Tanda Anggota (KTA) Digital</h1>
             <p class="text-xs text-slate-500">Identitas resmi petualang Generasi Indonesia Menyatu Bersama Alam (GIMBAL)</p>
         </div>
-        <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
+        <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5">
             <i class="fas fa-print"></i> Cetak / Simpan PDF
         </button>
     </div>
 
     <!-- FISIK KTA DIGITAL (PREVIEW INTERAKTIF) -->
-    <div id="kta-card-print" class="kta-card rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border border-orange-600/40">
+    <div id="kta-card-print" class="kta-card rounded-lg p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border border-orange-600/40">
         <!-- Watermark Background -->
         <div class="absolute right-4 -bottom-10 opacity-10 pointer-events-none">
             <img src="/assets/logo.png" alt="Logo Watermark" class="w-72 h-72 object-contain filter grayscale invert">
@@ -362,7 +791,7 @@
             <div class="flex flex-col items-center text-center">
                 <img src="{{ user.avatar or 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80' }}" 
                      alt="Foto Anggota" 
-                     class="w-32 h-40 object-cover rounded-2xl border-2 border-orange-400 shadow-xl bg-stone-800">
+                     class="w-32 h-40 object-cover rounded-lg border-2 border-orange-400 shadow-xl bg-stone-800">
                 <span class="mt-2 text-[10px] text-orange-300 font-bold uppercase tracking-wider">
                     Anggota Biasa
                 </span>
@@ -405,7 +834,7 @@
             <div class="flex items-center gap-3">
                 <!-- QR Code Validasi -->
                 {% if data.qr_base64 %}
-                <img src="data:image/png;base64,{{ data.qr_base64 }}" alt="QR Validasi KTA" class="w-16 h-16 bg-white p-1 rounded-xl shadow-md">
+                <img src="data:image/png;base64,{{ data.qr_base64 }}" alt="QR Validasi KTA" class="w-16 h-16 bg-white p-1 rounded-lg shadow-md">
                 {% endif %}
                 <div>
                     <p class="text-[10px] font-bold text-orange-300 uppercase">QR Code Validasi Lapangan</p>
@@ -420,7 +849,7 @@
     </div>
 
     <!-- TAUTAN VALIDASI PUBLIK -->
-    <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between text-xs">
+    <div class="p-4 bg-white rounded-lg border border-slate-200 shadow-sm flex items-center justify-between text-xs">
         <div>
             <p class="font-bold text-slate-800">Tautan Verifikasi Keabsahan:</p>
             <p class="text-slate-500 font-mono text-[11px] truncate max-w-md">/verify-kta/{{ user.nra }}</p>
@@ -445,18 +874,65 @@
             <p class="text-xs text-slate-500">Kewajiban iuran bulanan dan transparansi keuangan kas GIMBAL</p>
         </div>
         <div class="flex items-center gap-2">
-            <span class="px-3 py-1 bg-orange-50 text-orange-800 border border-orange-200 text-xs font-bold rounded-xl">
+            <span class="px-3 py-1 bg-orange-50 text-orange-800 border border-orange-200 text-xs font-bold rounded-lg">
                 <i class="fas fa-shield-alt mr-1"></i> Rekening Resmi: Mandiri 131-00-1829-3321 a.n GIMBAL
             </span>
         </div>
     </div>
+
+    <!-- GOOGLE PAY ACTIVE SUBSCRIPTION BANNER -->
+    {% if user.has_active_google_subscription %}
+    <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex flex-col sm:flex-row items-center justify-between gap-4 text-emerald-900 shadow-sm animate-fade-in">
+        <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xl shrink-0 shadow">
+                <i class="fab fa-google-pay"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h3 class="font-black text-sm text-emerald-950 font-heading">Langganan Google Pay Aktif</h3>
+                    <span class="px-2 py-0.5 bg-emerald-200 text-emerald-800 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                        Auto-Renewing
+                    </span>
+                </div>
+                <p class="text-xs text-emerald-800 mt-0.5">
+                    Iuran keanggotaan dan akses fitur navigasi <b>GIMBAL Maps</b> aktif hingga <b>{{ user.subscription_expiry.strftime('%d %B %Y') }}</b> (Tersisa {{ user.subscription_days_remaining }} hari).
+                </p>
+                {% if user.google_order_id %}
+                <p class="text-[10px] text-emerald-700/80 font-mono mt-0.5">
+                    Order ID: {{ user.google_order_id }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="text-right shrink-0">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-md shadow-sm">
+                <i class="fas fa-check-circle"></i> Iuran Lunas Otomatis
+            </span>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- BANNER JIKA IURAN DINONAKTIFKAN -->
+    {% if not data.dues_enabled %}
+    <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3.5 text-emerald-900 shadow-sm animate-fade-in">
+        <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <i class="fas fa-gift text-lg"></i>
+        </div>
+        <div>
+            <h3 class="font-extrabold text-sm text-emerald-950 font-heading">Kewajiban Iuran Dinonaktifkan (Bebas Iuran Kas)</h3>
+            <p class="text-xs text-emerald-800 mt-0.5">
+                Pengurus organisasi saat ini membebaskan seluruh kewajiban pembayaran iuran kas. Anggota tidak memiliki tagihan tertunggak.
+            </p>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- TAGIHAN AKTIF -->
     <div class="space-y-3">
         <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Tagihan Iuran Aktif</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {% for d in data.active_dues %}
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-orange-300 transition">
+            <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between hover:border-orange-300 transition">
                 <div class="space-y-1 mb-4">
                     <div class="flex items-center justify-between">
                         <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-orange-100 text-orange-800 uppercase">
@@ -472,7 +948,7 @@
                     <span class="text-lg font-black font-mono text-orange-700">
                         Rp {{ "{:,.0f}".format(d.amount).replace(',', '.') }}
                     </span>
-                    <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5"
+                    <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5"
                             hx-get="/member/iuran/pay-modal/{{ d.id }}" hx-target="#modal-container">
                         <i class="fas fa-upload text-xs"></i>
                         <span>Unggah Bukti Bayar</span>
@@ -480,15 +956,21 @@
                 </div>
             </div>
             {% else %}
-            <div class="col-span-2 p-6 text-center bg-white rounded-2xl border border-slate-200 text-slate-500 text-xs">
-                Tidak ada tagihan iuran baru saat ini. Terima kasih telah tertib berkontribusi!
+            <div class="col-span-2 p-8 text-center bg-white rounded-lg border border-slate-200 text-slate-500 text-xs">
+                {% if not data.dues_enabled %}
+                    <i class="fas fa-shield-alt text-2xl text-emerald-500 mb-2 block"></i>
+                    Sistem penagihan iuran saat ini sedang dinonaktifkan oleh organisasi. Seluruh anggota bebas kewajiban iuran kas.
+                {% else %}
+                    <i class="fas fa-check-circle text-2xl text-emerald-500 mb-2 block"></i>
+                    Tidak ada tagihan iuran baru saat ini. Terima kasih telah tertib berkontribusi!
+                {% endif %}
             </div>
             {% endfor %}
         </div>
     </div>
 
     <!-- RIWAYAT PEMBAYARAN IURAN -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 class="text-sm font-bold text-slate-800 font-heading">Riwayat Pembayaran & Bukti Transfer</h2>
         </div>
@@ -561,7 +1043,7 @@
     <!-- GRID DOKUMEN -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
         {% for doc in data.documents %}
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition">
             <div class="space-y-2 mb-4">
                 <div class="flex items-center justify-between">
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-orange-100 text-orange-800">
@@ -576,13 +1058,13 @@
             <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
                 <span class="text-[10px] text-slate-400">Format: <strong>PDF</strong></span>
                 <a href="{{ doc.file_path }}" target="_blank" download
-                   class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5">
+                   class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5">
                     <i class="fas fa-file-pdf"></i> Unduh Dokumen
                 </a>
             </div>
         </div>
         {% else %}
-        <div class="col-span-3 p-8 text-center bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs">
+        <div class="col-span-3 p-8 text-center bg-white rounded-lg border border-slate-200 text-slate-400 text-xs">
             Belum ada dokumen yang dipublikasikan oleh pengurus.
         </div>
         {% endfor %}
@@ -602,7 +1084,7 @@
         <p class="text-xs text-slate-500">Pastikan data kontak darurat dan informasi kesehatan selalu mutakhir sebelum mengikuti trip</p>
     </div>
 
-    <form hx-post="/member/profile" hx-target="#main-content" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+    <form hx-post="/member/profile" hx-target="#main-content" class="bg-white p-6 sm:p-8 rounded-lg border border-slate-200 shadow-sm space-y-6">
         
         <!-- BAGIAN 1: IDENTITAS UTAMA (AKUN GOOGLE) -->
         <div>
@@ -613,32 +1095,32 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap</label>
                     <input type="text" name="name" value="{{ user.name }}" required
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Email Google (Read-only)</label>
                     <input type="email" value="{{ user.email }}" readonly
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium text-slate-500 focus:outline-none">
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-medium text-slate-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor WhatsApp Aktif</label>
                     <input type="tel" name="phone" value="{{ user.phone or '' }}" placeholder="08xxxxxxxxxx" required
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none font-mono">
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none font-mono">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Tempat & Tanggal Lahir</label>
                     <div class="grid grid-cols-2 gap-2">
                         <input type="text" name="birth_place" value="{{ user.birth_place or '' }}" placeholder="Kota Lahir"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
                         <input type="date" name="birth_date" value="{{ user.birth_date or '' }}"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
                     </div>
                 </div>
             </div>
             <div class="mt-4">
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Domisili Lengkap</label>
                 <textarea name="address" rows="2" placeholder="Nama Jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten"
-                          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ user.address or '' }}</textarea>
+                          class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ user.address or '' }}</textarea>
             </div>
         </div>
 
@@ -650,7 +1132,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Golongan Darah</label>
-                    <select name="blood_type" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                    <select name="blood_type" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
                         <option value="O" {% if user.blood_type == 'O' %}selected{% endif %}>O</option>
                         <option value="A" {% if user.blood_type == 'A' %}selected{% endif %}>A</option>
                         <option value="B" {% if user.blood_type == 'B' %}selected{% endif %}>B</option>
@@ -660,7 +1142,7 @@
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Riwayat Penyakit / Alergi Obat / Cedera</label>
                     <input type="text" name="medical_history" value="{{ user.medical_history or '' }}" placeholder="Contoh: Asma ringan, alergi dingin, pernah dislokasi bahu"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
                 </div>
             </div>
         </div>
@@ -674,30 +1156,161 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Kontak Darurat</label>
                     <input type="text" name="emergency_name" value="{{ user.emergency_name or '' }}" placeholder="Nama Ayah/Ibu/Pasangan" required
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Hubungan</label>
                     <input type="text" name="emergency_relation" value="{{ user.emergency_relation or '' }}" placeholder="Orang Tua / Pasangan / Kakak" required
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Telepon Darurat</label>
                     <input type="tel" name="emergency_phone" value="{{ user.emergency_phone or '' }}" placeholder="08xxxxxxxxxx" required
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none font-mono">
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none font-mono">
                 </div>
             </div>
         </div>
 
         <!-- TOMBOL SIMPAN -->
         <div class="pt-4 border-t border-slate-100 flex justify-end">
-            <button type="submit" class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-2">
+            <button type="submit" class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-md transition flex items-center gap-2">
                 <i class="fas fa-save"></i>
                 <span>Simpan Perubahan Data</span>
             </button>
         </div>
 
     </form>
+
+</div>
+{% endmacro %}
+
+
+<!-- ============================================================================== -->
+<!-- REPO PETA EKSPEDISI GIMBAL (GEODATA INTERNAL KHUSUS ANGGOTA) -->
+<!-- ============================================================================== -->
+{% macro member_repo_maps(data) %}
+<div class="space-y-6">
+
+    <!-- Header Section -->
+    <div class="member-hero-banner bg-orange-600 rounded-lg p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+        <div class="absolute -right-8 -bottom-8 opacity-10 pointer-events-none">
+            <i class="fas fa-map-marked-alt text-9xl"></i>
+        </div>
+        <div class="relative z-10 max-w-2xl space-y-2">
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-mono font-bold tracking-wide uppercase border border-white/20">
+                    <i class="fas fa-satellite mr-1"></i> Geodata Ekspedisi
+                </span>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/80 text-white text-[10px] font-bold">
+                    <i class="fas fa-check-circle mr-1"></i> Khusus Anggota Aktif
+                </span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold font-heading">Pustaka Geodata & Repo Peta GIMBAL</h1>
+            <p class="text-xs sm:text-sm text-white/90 leading-relaxed">
+                Koleksi resmi berkas peta offline (MBTiles), rute pendakian presisi (GPX/KML), dan peta zonasi konservasi alam. Seluruh berkas otomatis terintegrasi dan dapat diunduh langsung dari aplikasi mobile <b>Gimbal Maps</b> di lapangan.
+            </p>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-lg border border-slate-200 shadow-sm text-xs">
+        <div class="flex flex-wrap items-center gap-1.5">
+            <a href="/member/repo-maps" hx-get="/member/repo-maps" hx-target="#main-content" hx-push-url="true"
+               class="px-3 py-1.5 rounded-lg font-bold transition {% if not data.selected_category %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                Semua Format
+            </a>
+            <a href="/member/repo-maps?category=jalur_pendakian" hx-get="/member/repo-maps?category=jalur_pendakian" hx-target="#main-content" hx-push-url="true"
+               class="px-3 py-1.5 rounded-lg font-bold transition {% if data.selected_category == 'jalur_pendakian' %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                ⛰️ Jalur Pendakian
+            </a>
+            <a href="/member/repo-maps?category=topografi" hx-get="/member/repo-maps?category=topografi" hx-target="#main-content" hx-push-url="true"
+               class="px-3 py-1.5 rounded-lg font-bold transition {% if data.selected_category == 'topografi' %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                🗺️ Topografi Offline (MBTiles)
+            </a>
+            <a href="/member/repo-maps?category=cagar_alam" hx-get="/member/repo-maps?category=cagar_alam" hx-target="#main-content" hx-push-url="true"
+               class="px-3 py-1.5 rounded-lg font-bold transition {% if data.selected_category == 'cagar_alam' %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                🌳 Konservasi & Cagar Alam
+            </a>
+        </div>
+        <div class="text-[11px] text-slate-400 font-mono">
+            Total Peta: <b>{{ data.maps|length }}</b>
+        </div>
+    </div>
+
+    <!-- Maps Grid -->
+    {% if data.maps %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {% for m in data.maps %}
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition group">
+            <div class="p-5 flex-1 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase
+                        {% if m.file_type == 'mbtiles' %}bg-purple-100 text-purple-800
+                        {% elif m.file_type == 'gpx' %}bg-emerald-100 text-emerald-800
+                        {% elif m.file_type == 'geojson' %}bg-sky-100 text-sky-800
+                        {% else %}bg-orange-100 text-orange-800{% endif %}">
+                        .{{ m.file_type|upper }}
+                    </span>
+                    <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+                        <i class="fas fa-map-marker-alt text-orange-500"></i> {{ m.region }}
+                    </span>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-sm text-slate-900 group-hover:text-orange-600 transition leading-snug">
+                        {{ m.title }}
+                    </h3>
+                    {% if m.description %}
+                    <p class="text-xs text-slate-500 mt-1 line-clamp-2">{{ m.description }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Stats Lintasan -->
+                <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center text-slate-600">
+                    <div class="p-2 rounded-lg bg-slate-50">
+                        <p class="text-[9px] uppercase font-bold text-slate-400">Ukuran</p>
+                        <p class="text-xs font-bold font-mono text-slate-800">{{ m.file_size_fmt }}</p>
+                    </div>
+                    <div class="p-2 rounded-lg bg-slate-50">
+                        <p class="text-[9px] uppercase font-bold text-slate-400">Jarak</p>
+                        <p class="text-xs font-bold font-mono text-slate-800">
+                            {% if m.total_distance_km and m.total_distance_km > 0 %}{{ m.total_distance_km }} km{% else %}-{% endif %}
+                        </p>
+                    </div>
+                    <div class="p-2 rounded-lg bg-slate-50">
+                        <p class="text-[9px] uppercase font-bold text-slate-400">Titik / POI</p>
+                        <p class="text-xs font-bold font-mono text-slate-800">
+                            {% if m.total_waypoints and m.total_waypoints > 0 %}{{ m.total_waypoints }} titik{% else %}-{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="px-5 py-3.5 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[10px] text-slate-400">
+                    <i class="fas fa-download mr-1"></i> {{ m.downloads_count or 0 }} kali diunduh
+                </span>
+                <a href="/api/v1/maps/repo/download/{{ m.id }}"
+                   class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5">
+                    <i class="fas fa-download text-[11px]"></i>
+                    <span>Unduh Peta</span>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-lg border border-slate-200 p-12 text-center space-y-3">
+        <div class="w-16 h-16 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center mx-auto text-2xl">
+            <i class="fas fa-map-marked-alt"></i>
+        </div>
+        <h3 class="font-bold text-sm text-slate-800 font-heading">Belum Ada Berkas Peta</h3>
+        <p class="text-xs text-slate-500 max-w-md mx-auto">
+            Arsip peta ekspedisi belum diunggah oleh pengurus. Anggota juga dapat membagikan rute hasil rekam jejak langsung dari aplikasi <b>Gimbal Maps</b>.
+        </p>
+    </div>
+    {% endif %}
 
 </div>
 {% endmacro %}

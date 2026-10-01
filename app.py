@@ -1,25 +1,37 @@
 import os
-import io
-import csv
 import json
 import base64
-import qrcode
 from datetime import datetime
-from functools import wraps
 from flask import (
-    Flask, render_template, render_template_string, request,
-    redirect, url_for, session, send_from_directory, make_response,
-    jsonify, Response, abort
+    Flask, render_template, request,
+    redirect, session, send_from_directory,
+    jsonify
 )
-from werkzeug.utils import secure_filename
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from models import (
-    db, User, Dues, DuesPayment, Document, Activity,
-    ActivityParticipant, GalleryItem, generate_next_nra
+    db, User, Dues, DuesPayment, Activity,
+    GalleryItem, SystemSetting, Position, ChatMessage
 )
+from cloudflare_email import sync_cloudflare_email_routing, clean_username_for_alias
+from helpers import (
+    get_current_user, login_required, admin_required,
+    check_member_access, render_gimbal_page,
+    render_gimbal_template, render_gimbal_modal
+)
+
+# ========== FLASK APP & CORE CONFIGURATION =======================================
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'gimbal-adventure-secret-key-2026')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///gimbal.db'
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///gimbal.db')
+if database_url.startswith('mysql://'):
+    database_url = database_url.replace('mysql://', 'mysql+pymysql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
@@ -27,45 +39,304 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'proofs'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'docs'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'gallery'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'posts'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'avatars'), exist_ok=True)
 
 db.init_app(app)
 
-# Google OAuth Config
+# Flask-Minify Optimization (HTML, CSS, Inline JS Compression)
+try:
+    from flask_minify import Minify
+    Minify(app=app, html=True, js=True, cssless=True, fail_safe=True)
+except ImportError:
+    pass
+
+@app.after_request
+def apply_htmx_cache_headers(response):
+    """
+    Menjamin browser (terutama Chrome) tidak menggunakan cache fragment HTMX
+    saat user menekan Ctrl+U (View Page Source).
+    Dengan Vary: HX-Request, browser selalu membedakan request biasa vs HTMX.
+    """
+    response.headers['Vary'] = 'HX-Request, HX-Target'
+    if request.headers.get('HX-Request'):
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
+# ========== DATABASE INITIALIZATION & MIGRATIONS =================================
+
+def init_database_and_defaults():
+    """Inisialisasi tabel, migrasi kolom baru, superadmin fitra, dan pengaturan bawaan"""
+    with app.app_context():
+        db.create_all()
+        engine = db.engine
+        try:
+            with engine.connect() as conn:
+                for col, col_type in [
+                    ('order_id', 'VARCHAR(64)'),
+                    ('snap_token', 'VARCHAR(255)'),
+                    ('payment_type', 'VARCHAR(32)'),
+                    ('transaction_status', 'VARCHAR(32)')
+                ]:
+                    try:
+                        conn.execute(db.text(f"ALTER TABLE dues_payments ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception:
+                        pass
+                
+                # Migrasi kolom tabel users
+                user_cols = [
+                    ('jabatan', 'VARCHAR(100)'),
+                    ('last_login', 'DATETIME'),
+                    ('gimbal_alias_email', 'VARCHAR(128)'),
+                    ('cloudflare_rule_id', 'VARCHAR(64)'),
+                    ('cloudflare_status', "VARCHAR(32) DEFAULT 'pending'")
+                ]
+                for col, col_type in user_cols:
+                    try:
+                        conn.execute(db.text(f"ALTER TABLE users ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception:
+                        pass
+
+                # Migrasi kolom tabel chat_messages (Private Direct Message)
+                chat_cols = [
+                    ('recipient_id', 'INTEGER'),
+                    ('is_read', 'BOOLEAN DEFAULT 0')
+                ]
+                for col, col_type in chat_cols:
+                    try:
+                        conn.execute(db.text(f"ALTER TABLE chat_messages ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception:
+                        pass
+
+                # Migrasi kolom tabel posts (Tautan ke Agenda Ekspedisi)
+                post_cols = [
+                    ('activity_id', 'INTEGER')
+                ]
+                for col, col_type in post_cols:
+                    try:
+                        conn.execute(db.text(f"ALTER TABLE posts ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception:
+                        pass
+
+                # Migrasi kolom tabel gallery_items (Tautan ke Postingan Lini Masa)
+                gallery_cols = [
+                    ('post_id', 'INTEGER')
+                ]
+                for col, col_type in gallery_cols:
+                    try:
+                        conn.execute(db.text(f"ALTER TABLE gallery_items ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception:
+                        pass
+        except Exception as e:
+            app.logger.warning(f"Column migration check note: {e}")
+
+        # Pastikan Master Jabatan Organisasi terinisialisasi
+        if Position.query.count() == 0:
+            default_positions = [
+                ('Ketua Umum', 'Pengurus Harian', 1, 'Memimpin jalannya roda organisasi dan bertanggung jawab penuh secara internal & eksternal.'),
+                ('Wakil Ketua Umum', 'Pengurus Harian', 2, 'Mendampingi Ketua Umum dan mengoordinasikan bidang internal & eksternal.'),
+                ('Sekretaris Jenderal', 'Pengurus Harian', 3, 'Bertanggung jawab atas administrasi, kesekretariatan, dan persuratan resmi.'),
+                ('Bendahara Umum', 'Pengurus Harian', 4, 'Mengelola sirkulasi keuangan, pembukuan kas, dan verifikasi iuran organisasi.'),
+                ('Kepala Divisi Gunung Hutan', 'Divisi Operasional', 5, 'Mengoordinasikan ekspedisi, navigasi darat, jungle survival, dan pendakian gunung.'),
+                ('Kepala Divisi Panjat Tebing', 'Divisi Operasional', 6, 'Mengoordinasikan pelatihan rock climbing, vertical rescue, dan wall climbing.'),
+                ('Kepala Divisi Susur Gua (Caving)', 'Divisi Operasional', 7, 'Mengoordinasikan eksplorasi speleologi, pemetaan gua, dan single rope technique.'),
+                ('Kepala Divisi Arung Jeram (Rafting)', 'Divisi Operasional', 8, 'Mengoordinasikan river running, keselamatan jeram, dan arung sungai.'),
+                ('Kepala Divisi Konservasi & LH', 'Divisi Operasional', 9, 'Mengoordinasikan aksi pelestarian alam, reboisasi, dan advokasi lingkungan hidup.'),
+                ('Kepala Divisi Humas & Publikasi', 'Divisi Pendukung', 10, 'Mengelola komunikasi media, publikasi kegiatan, dokumentasi, dan relasi mitra.'),
+                ('Kepala Divisi Logistik & Alat', 'Divisi Pendukung', 11, 'Mengelola inventaris perlengkapan outdoor, perawatan alat, dan sarana organisasi.'),
+                ('Dewan Penasehat Organisasi', 'Dewan Kehormatan', 12, 'Memberikan arahan, pertimbangan, dan pengawasan strategis bagi pengurus.'),
+                ('Anggota Penuh (Reguler)', 'Keanggotaan', 13, 'Anggota resmi ber-NRA yang telah menyelesaikan seluruh tahapan pendidikan dasar.'),
+                ('Anggota Muda', 'Keanggotaan', 14, 'Calon anggota yang sedang menempuh masa bimbingan dan pemantapan.')
+            ]
+            for name, cat, order, desc in default_positions:
+                p = Position(name=name, category=cat, order_index=order, description=desc, is_active=True)
+                db.session.add(p)
+            db.session.commit()
+
+        # Pastikan Superadmin 'fitra' ada dengan password 'P4ssw0rd!?!'
+        fitra = User.query.filter((User.email == 'fitra@gimbal.org') | (db.func.lower(User.name) == 'fitra')).first()
+        if not fitra:
+            fitra = User(
+                email='fitra@gimbal.org',
+                name='Fitra',
+                role='superadmin',
+                jabatan='Sekretaris Jenderal',
+                status='active',
+                nra='R-00-98',
+                phone='08114300001',
+                birth_place='Gorontalo',
+                birth_date='1985-05-15',
+                blood_type='O',
+                address='Basecamp KPAB GIMBAL Gorontalo',
+                medical_history='Tidak Ada',
+                emergency_name='Sekretariat GIMBAL',
+                emergency_relation='Organisasi',
+                emergency_phone='08114300000',
+                avatar='/static/pics/cartoon/avatar_sekjen.jpg',
+                password_hash='P4ssw0rd!?!'
+            )
+            db.session.add(fitra)
+            db.session.commit()
+        else:
+            fitra.role = 'superadmin'
+            fitra.password_hash = 'P4ssw0rd!?!'
+            fitra.status = 'active'
+            if not fitra.jabatan:
+                fitra.jabatan = 'Sekretaris Jenderal'
+            db.session.commit()
+
+        # Pastikan akun kepengurusan bawaan memiliki jabatan jika belum disetel
+        admin_user = User.query.filter_by(email='admin@gimbal.org').first()
+        if admin_user and not admin_user.jabatan:
+            admin_user.jabatan = 'Ketua Umum'
+            db.session.commit()
+
+        budi_user = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+        if budi_user and not budi_user.jabatan:
+            budi_user.jabatan = 'Bendahara Umum'
+            db.session.commit()
+
+        # Inisialisasi pengaturan sistem jika belum ada
+        if not SystemSetting.query.filter_by(key='monthly_dues_amount').first():
+            SystemSetting.set('monthly_dues_amount', '15000')
+        if not SystemSetting.query.filter_by(key='midtrans_is_production').first():
+            SystemSetting.set('midtrans_is_production', 'false')
+        if not SystemSetting.query.filter_by(key='midtrans_client_key').first():
+            SystemSetting.set('midtrans_client_key', 'SB-Mid-client-demo12345678')
+        if not SystemSetting.query.filter_by(key='midtrans_server_key').first():
+            SystemSetting.set('midtrans_server_key', 'SB-Mid-server-demo12345678')
+        if not SystemSetting.query.filter_by(key='midtrans_merchant_id').first():
+            SystemSetting.set('midtrans_merchant_id', 'G123456789')
+
+        # Rekening resmi organisasi bawaan
+        if not SystemSetting.query.filter_by(key='bank_primary_name').first():
+            SystemSetting.set('bank_primary_name', 'Bank Mandiri')
+        if not SystemSetting.query.filter_by(key='bank_primary_number').first():
+            SystemSetting.set('bank_primary_number', '131-00-1829-3321')
+        if not SystemSetting.query.filter_by(key='bank_primary_holder').first():
+            SystemSetting.set('bank_primary_holder', 'KPAB GIMBAL KAS PUSAT')
+        if not SystemSetting.query.filter_by(key='bank_secondary_name').first():
+            SystemSetting.set('bank_secondary_name', 'Bank BCA')
+        if not SystemSetting.query.filter_by(key='bank_secondary_number').first():
+            SystemSetting.set('bank_secondary_number', '593-019-4821')
+        if not SystemSetting.query.filter_by(key='bank_secondary_holder').first():
+            SystemSetting.set('bank_secondary_holder', 'KPAB GIMBAL KAS PUSAT')
+
+        # Profil organisasi & tema bawaan
+        if not SystemSetting.query.filter_by(key='theme_color').first():
+            SystemSetting.set('theme_color', 'orange')
+        if not SystemSetting.query.filter_by(key='site_width').first():
+            SystemSetting.set('site_width', '85%')
+        if not SystemSetting.query.filter_by(key='org_name').first():
+            SystemSetting.set('org_name', 'KPAB GIMBAL Provinsi Gorontalo')
+        if not SystemSetting.query.filter_by(key='org_phone').first():
+            SystemSetting.set('org_phone', '+62 812-3456-7890')
+        if not SystemSetting.query.filter_by(key='org_email').first():
+            SystemSetting.set('org_email', 'sekretariat@gimbal.org')
+        if not SystemSetting.query.filter_by(key='org_address').first():
+            SystemSetting.set('org_address', 'Jl. Pangeran Hidayat No. 45, Kota Gorontalo')
+
+        # Pengaturan Cloudflare Email Routing (@gimbal.my.id)
+        if not SystemSetting.query.filter_by(key='cloudflare_enabled').first():
+            SystemSetting.set('cloudflare_enabled', 'false', 'Aktifkan otomatisasi Cloudflare Email Routing API')
+        if not SystemSetting.query.filter_by(key='cloudflare_api_token').first():
+            SystemSetting.set('cloudflare_api_token', '', 'API Token Cloudflare dengan izin Zone.Email Routing')
+        if not SystemSetting.query.filter_by(key='cloudflare_zone_id').first():
+            SystemSetting.set('cloudflare_zone_id', '', 'Zone ID domain gimbal.my.id di Cloudflare')
+        if not SystemSetting.query.filter_by(key='cloudflare_domain').first():
+            SystemSetting.set('cloudflare_domain', 'gimbal.my.id', 'Domain organisasi untuk email forwarding')
+
+        # Sinkronkan tarif iuran bulanan default jika belum ada master iuran sama sekali
+        if Dues.query.count() == 0:
+            d = Dues(
+                title='Iuran Bulanan Anggota',
+                amount=float(SystemSetting.get('monthly_dues_amount', '15000')),
+                category='wajib',
+                description='Iuran kas rutin bulanan keanggotaan KPAB GIMBAL Gorontalo',
+                is_active=True
+            )
+            db.session.add(d)
+            db.session.commit()
+
+try:
+    init_database_and_defaults()
+except Exception as _e:
+    print(f"Warning on init_database_and_defaults: {_e}")
+
+
+@app.context_processor
+def inject_global_settings():
+    """Menyediakan variabel pengaturan tema, rekening, dan organisasi ke seluruh template Jinja2"""
+    try:
+        return {
+            'server_theme_color': SystemSetting.get('theme_color', 'orange'),
+            'server_site_width': SystemSetting.get('site_width', '85%'),
+            'bank_primary_name': SystemSetting.get('bank_primary_name', 'Bank Mandiri'),
+            'bank_primary_number': SystemSetting.get('bank_primary_number', '131-00-1829-3321'),
+            'bank_primary_holder': SystemSetting.get('bank_primary_holder', 'KPAB GIMBAL KAS PUSAT'),
+            'bank_secondary_name': SystemSetting.get('bank_secondary_name', 'Bank BCA'),
+            'bank_secondary_number': SystemSetting.get('bank_secondary_number', '593-019-4821'),
+            'bank_secondary_holder': SystemSetting.get('bank_secondary_holder', 'KPAB GIMBAL KAS PUSAT'),
+            'org_name': SystemSetting.get('org_name', 'KPAB GIMBAL Provinsi Gorontalo'),
+            'org_phone': SystemSetting.get('org_phone', '+62 812-3456-7890'),
+            'org_email': SystemSetting.get('org_email', 'sekretariat@gimbal.org'),
+            'org_address': SystemSetting.get('org_address', 'Jl. Pangeran Hidayat No. 45, Kota Gorontalo'),
+            'app_tagline': SystemSetting.get('app_tagline', 'Generasi Indonesia Menyatu Bersama Alam'),
+            'payment_instructions': SystemSetting.get('payment_instructions', 'Silakan transfer tepat sejumlah tarif iuran, lalu simpan dan lampirkan bukti transfer.')
+        }
+    except Exception:
+        return {
+            'server_theme_color': 'orange',
+            'server_site_width': '85%',
+            'bank_primary_name': 'Bank Mandiri',
+            'bank_primary_number': '131-00-1829-3321',
+            'bank_primary_holder': 'KPAB GIMBAL KAS PUSAT',
+            'bank_secondary_name': 'Bank BCA',
+            'bank_secondary_number': '593-019-4821',
+            'bank_secondary_holder': 'KPAB GIMBAL KAS PUSAT',
+            'org_name': 'KPAB GIMBAL Provinsi Gorontalo',
+            'org_phone': '+62 812-3456-7890',
+            'org_email': 'sekretariat@gimbal.org',
+            'org_address': 'Jl. Pangeran Hidayat No. 45, Kota Gorontalo',
+            'app_tagline': 'Generasi Indonesia Menyatu Bersama Alam',
+            'payment_instructions': 'Silakan transfer tepat sejumlah tarif iuran, lalu simpan dan lampirkan bukti transfer.'
+        }
+
+
+# ========== GOOGLE OAUTH CONFIGURATION ===========================================
+
+import glob
+GOOGLE_OAUTH_FILE = None
+_client_secret_files = glob.glob(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'client_secret*.json'))
+if _client_secret_files:
+    GOOGLE_OAUTH_FILE = _client_secret_files[0]
+
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '')
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+GOOGLE_REDIRECT_URI = os.environ.get('GOOGLE_REDIRECT_URI', 'https://www.gimbal.my.id')
+
+if GOOGLE_OAUTH_FILE and os.path.exists(GOOGLE_OAUTH_FILE):
+    try:
+        with open(GOOGLE_OAUTH_FILE, 'r', encoding='utf-8') as _f:
+            _oauth_data = json.load(_f)
+            _web_cfg = _oauth_data.get('web', {})
+            GOOGLE_CLIENT_ID = _web_cfg.get('client_id', GOOGLE_CLIENT_ID)
+            GOOGLE_CLIENT_SECRET = _web_cfg.get('client_secret', GOOGLE_CLIENT_SECRET)
+            _redirects = _web_cfg.get('redirect_uris', [])
+            if _redirects:
+                GOOGLE_REDIRECT_URI = _redirects[0]
+    except Exception:
+        pass
 
 
-# ========== HELPERS & CONTEXT ====================================================
-
-def get_current_user():
-    """Mengambil user aktif dari session, atau default dev user jika belum login."""
-    user_id = session.get('user_id')
-    if user_id:
-        return db.session.get(User, user_id)
-    return None
-
-def login_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        user = get_current_user()
-        if not user:
-            # Jika belum login, redirect ke halaman login / dev login
-            if request.headers.get('HX-Request'):
-                return "<script>window.location.href = '/';</script>"
-            return redirect('/')
-        return f(*args, **kwargs)
-    return decorated
-
-def admin_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        user = get_current_user()
-        if not user or not user.is_admin:
-            if request.headers.get('HX-Request'):
-                return "<div class='p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-bold'>Akses Ditolak: Hanya Pengurus Admin.</div>"
-            return redirect('/member/dashboard')
-        return f(*args, **kwargs)
-    return decorated
+# ========== CONTEXT PROCESSOR ====================================================
 
 @app.context_processor
 def inject_global():
@@ -76,54 +347,9 @@ def inject_global():
     return {
         'current_user': user,
         'pending_count': pending_count,
+        'google_client_id': GOOGLE_CLIENT_ID,
         'now_str': datetime.now().strftime('%d %B %Y %H:%M WIB')
     }
-
-
-# ========== DUAL-LAYER HTMX RENDER ENGINE ========================================
-
-def render_gimbal_page(macro_file, macro_name, data_context, active_page=None, alert_msg=None):
-    """
-    Dual-Layer Rendering Engine (Identik dengan arsitektur Koperasi STU):
-    1. Direct browser hit: Return Layer 1 (index.html) with shell_url pointing to this URL.
-    2. HTMX targeting #app-shell: Return Layer 2 (shell.html) containing the active page macro.
-    3. Normal HTMX targeting #main-content: Return only the active macro fragment.
-    """
-    user = get_current_user()
-    pending_count = User.query.filter_by(status='pending').count() if (user and user.is_admin) else 0
-
-    data_context.update({
-        'user': user,
-        'current_user': user,
-        'pending_count': pending_count,
-        'active_page': active_page or macro_name
-    })
-
-    # HTMX Request
-    if request.headers.get('HX-Request'):
-        tmpl = f"{{% import '{macro_file}' as pages %}}{{{{ pages.{macro_name}(data) }}}}"
-        macro_html = render_template_string(tmpl, data=data_context, current_user=user)
-
-        # Jika menargetkan outer app-shell
-        if request.headers.get('HX-Target') == 'app-shell':
-            resp = make_response(render_template(
-                'shell.html',
-                active_page=active_page or macro_name,
-                active_macro_content=macro_html,
-                current_user=user,
-                pending_count=pending_count,
-                alert_msg=alert_msg
-            ))
-            resp.headers['X-Active-Page'] = active_page or macro_name
-            return resp
-
-        # Normal HTMX targeting #main-content
-        resp = make_response(macro_html)
-        resp.headers['X-Active-Page'] = active_page or macro_name
-        return resp
-
-    # Direct browser GET: return Layer 1 outer shell frame pointing to this URL
-    return render_template('index.html', shell_url=request.full_path)
 
 
 # ========== STATIC & ASSET ROUTES ================================================
@@ -145,21 +371,137 @@ def serve_uploads(filename):
 
 @app.route('/')
 def landing():
-    """Halaman publik utama GIMBAL"""
-    user = get_current_user()
+    """
+    Halaman publik utama GIMBAL:
+    Multi-Layer HTMX Architecture
+    """
+    code = request.args.get('code')
+    if code:
+        return process_google_oauth(code, redirect_uri=GOOGLE_REDIRECT_URI)
+
     activities = Activity.query.filter_by(is_open=True).order_by(Activity.created_at.desc()).limit(6).all()
-    # Prioritaskan foto pin-down ekspedisi di landing page utama
-    gallery_items = GalleryItem.query.filter_by(is_pinned=True).order_by(GalleryItem.id.desc()).limit(8).all()
-    if not gallery_items:
-        gallery_items = GalleryItem.query.order_by(GalleryItem.id.desc()).limit(8).all()
+    gallery_items = GalleryItem.query.filter_by(is_pinned=True).order_by(GalleryItem.id.desc()).limit(24).all()
+    if len(gallery_items) < 8:
+        additional = GalleryItem.query.order_by(GalleryItem.id.desc()).limit(24).all()
+        seen_ids = {g.id for g in gallery_items}
+        for g in additional:
+            if g.id not in seen_ids:
+                gallery_items.append(g)
+
+    # Ekstrak kategori unik untuk filter tab galeri
+    gallery_categories = []
+    for g in gallery_items:
+        if g.category and g.category not in gallery_categories:
+            gallery_categories.append(g.category)
+
     active_members_count = User.query.filter_by(status='active').count()
 
-    return render_template(
+    # Dewan Pengurus Inti dari Database (Position & User)
+    board_positions = Position.query.filter_by(is_active=True, category='Pengurus Harian').order_by(Position.order_index.asc()).all()
+    if not board_positions:
+        board_positions = Position.query.filter_by(is_active=True).order_by(Position.order_index.asc()).limit(4).all()
+
+    board_members = []
+    for pos in board_positions:
+        member = User.query.filter_by(jabatan=pos.name, status='active').first()
+        default_avatar = '/static/pics/cartoon/avatar_kadiv.jpg'
+        pos_lower = pos.name.lower()
+        if 'ketua' in pos_lower:
+            default_avatar = '/static/pics/cartoon/avatar_ketua.jpg'
+        elif 'sekretaris' in pos_lower:
+            default_avatar = '/static/pics/cartoon/avatar_sekjen.jpg'
+        elif 'bendahara' in pos_lower:
+            default_avatar = '/static/pics/cartoon/avatar_bendahara.jpg'
+
+        board_members.append({
+            'position_name': pos.name,
+            'category': pos.category,
+            'description': pos.description or 'Amanah Kepengurusan Organisasi KPAB GIMBAL',
+            'order_index': pos.order_index,
+            'member_name': member.name if member else None,
+            'member_nra': member.nra if member else None,
+            'avatar': (member.avatar if (member and member.avatar) else default_avatar),
+            'is_assigned': bool(member)
+        })
+
+    # Divisi Operasional Lapangan dari Database (Position & User)
+    op_positions = Position.query.filter_by(is_active=True, category='Divisi Operasional').order_by(Position.order_index.asc()).all()
+    if not op_positions:
+        op_positions = Position.query.filter(Position.name.ilike('%divisi%')).order_by(Position.order_index.asc()).all()
+
+    operational_divisions = []
+    for pos in op_positions:
+        member = User.query.filter_by(jabatan=pos.name, status='active').first()
+        pos_lower = pos.name.lower()
+
+        # Pemetaan gambar kartun, tag, badge, highlight spesialisasi & icon
+        img = '/static/pics/cartoon/divisi_mountaineer.jpg'
+        tag = 'Mountaineering'
+        badge_color = 'bg-orange-700'
+        feature_highlight = 'Latihan Rutin & Navigasi Darat'
+        icon = 'fas fa-mountain'
+        clean_name = pos.name.replace('Kepala Divisi ', '').replace('Divisi ', '').strip()
+
+        if any(k in pos_lower for k in ['panjat', 'tebing', 'climbing', 'rock']):
+            img = '/static/pics/cartoon/divisi_climbing.jpg'
+            tag = 'Rock Climbing'
+            badge_color = 'bg-orange-600'
+            feature_highlight = 'Sertifikasi Alat & Vertical Rescue'
+            icon = 'fas fa-mountain-sun'
+        elif any(k in pos_lower for k in ['gua', 'caving', 'speleo']):
+            img = '/static/pics/cartoon/divisi_caving.jpg'
+            tag = 'Speleology'
+            badge_color = 'bg-orange-800'
+            feature_highlight = 'Single Rope Technique & Pemetaan Gua'
+            icon = 'fas fa-dungeon'
+        elif any(k in pos_lower for k in ['arung', 'jeram', 'rafting', 'sungai', 'river', 'water']):
+            img = '/static/pics/cartoon/divisi_conservation.jpg'
+            tag = 'River Running'
+            badge_color = 'bg-sky-700'
+            feature_highlight = 'River Rescue & Keselamatan Jeram'
+            icon = 'fas fa-water'
+        elif any(k in pos_lower for k in ['konservasi', 'lingkungan', 'lh', 'sar', 'alam', 'ecology']):
+            img = '/static/pics/cartoon/divisi_conservation.jpg'
+            tag = 'Ecology & SAR'
+            badge_color = 'bg-amber-600'
+            feature_highlight = 'Konservasi Alam & Tanggap Bencana'
+            icon = 'fas fa-tree'
+        elif any(k in pos_lower for k in ['gunung', 'hutan', 'mountaineer']):
+            img = '/static/pics/cartoon/divisi_mountaineer.jpg'
+            tag = 'Mountaineering'
+            badge_color = 'bg-orange-700'
+            feature_highlight = 'Navigasi Darat & Jungle Survival'
+            icon = 'fas fa-mountain'
+
+        operational_divisions.append({
+            'id': pos.id,
+            'name': pos.name,
+            'clean_name': clean_name,
+            'description': pos.description or 'Setiap anggota dibekali keahlian teknis sesuai minat penjelajahan alam bebas.',
+            'category': pos.category,
+            'order_index': pos.order_index,
+            'tag': tag,
+            'badge_color': badge_color,
+            'image': img,
+            'icon': icon,
+            'feature_highlight': feature_highlight,
+            'member_name': member.name if member else None,
+            'member_nra': member.nra if member else None,
+            'avatar': (member.avatar if (member and member.avatar) else None),
+            'is_assigned': bool(member)
+        })
+
+    return render_gimbal_template(
         'landing.html',
-        current_user=user,
-        activities=activities,
-        gallery_items=gallery_items,
-        active_members_count=active_members_count
+        context={
+            'activities': activities,
+            'gallery_items': gallery_items,
+            'gallery_categories': gallery_categories,
+            'active_members_count': active_members_count,
+            'board_members': board_members,
+            'operational_divisions': operational_divisions
+        },
+        active_page='landing'
     )
 
 @app.route('/app-shell')
@@ -167,155 +509,285 @@ def app_shell():
     """Layer 2 Application Shell provider jika app-shell di-load langsung"""
     user = get_current_user()
     if not user:
-        # Default dev user jika session kosong saat testing
-        user = User.query.filter_by(email='admin@gimbal.org').first()
-        if user:
-            session['user_id'] = user.id
-
-    if user and user.is_admin:
+        return redirect('/')
+    if user.is_admin:
         return redirect('/admin/dashboard')
+    if not user.is_profile_complete:
+        return redirect('/member/complete-profile')
+    if user.status != 'active':
+        return redirect('/member/onboarding-status')
     return redirect('/member/dashboard')
 
 @app.route('/verify-kta/<nra>')
 def verify_kta(nra):
     """Halaman publik verifikasi keabsahan KTA digital (hasil scan QR)"""
     member = User.query.filter_by(nra=nra).first()
-    return render_template('verify_kta.html', member=member, nra_queried=nra)
+    now_str = datetime.now().strftime('%d/%m/%Y %H:%M WIB')
+    return render_gimbal_modal(
+        'verify_kta',
+        context={
+            'member': member,
+            'nra_queried': nra,
+            'now_str': now_str
+        },
+        active_page='verify_kta'
+    )
 
 
-# ========== AUTH & DEV SWITCHER ==================================================
+# ========== AUTHENTICATION & GOOGLE SSO ==========================================
+
+def login_or_register_google_user(user_info):
+    """Mendaftarkan anggota baru atau login user berdasarkan profil Google OAuth resmi"""
+    email = user_info.get('email', '').strip().lower()
+    google_id = str(user_info.get('id') or user_info.get('sub', '')).strip()
+    name = user_info.get('name') or user_info.get('given_name') or email.split('@')[0].replace('.', ' ').title()
+    picture = user_info.get('picture')
+
+    if not email:
+        return redirect("/login?error=Email+Google+tidak+ditemukan")
+
+    user = None
+    if google_id:
+        user = User.query.filter((User.google_id == google_id) | (User.email == email)).first()
+    else:
+        user = User.query.filter_by(email=email).first()
+
+    if not user:
+        user = User(
+            google_id=google_id or None,
+            email=email,
+            name=name,
+            role='member',
+            status='pending',
+            avatar=picture or '/static/pics/cartoon/avatar_sekjen.jpg',
+            password_hash='google_sso_authenticated'
+        )
+        db.session.add(user)
+        db.session.commit()
+    else:
+        if google_id and not user.google_id:
+            user.google_id = google_id
+        if picture and (not user.avatar or 'lh3.googleusercontent.com' in user.avatar or user.avatar.startswith('/static/')):
+            user.avatar = picture
+        db.session.commit()
+
+    # Perbarui waktu terakhir masuk (Last Login) & Sinkronisasi Email Forwarding Cloudflare
+    user.last_login = datetime.utcnow()
+    try:
+        sync_cloudflare_email_routing(user)
+    except Exception as _e_cf:
+        app.logger.warning(f"Cloudflare sync note: {_e_cf}")
+    db.session.commit()
+
+    session['user_id'] = user.id
+    if user.is_admin:
+        return redirect('/admin/dashboard')
+    if not user.is_profile_complete:
+        return redirect('/member/complete-profile')
+    if user.status != 'active':
+        return redirect('/member/onboarding-status')
+    return redirect('/member/dashboard')
+
+
+def process_google_oauth(code, redirect_uri):
+    """Menukarkan authorization code dengan access token & profil Google"""
+    import requests
+    token_url = "https://oauth2.googleapis.com/token"
+    token_payload = {
+        'code': code,
+        'client_id': GOOGLE_CLIENT_ID,
+        'client_secret': GOOGLE_CLIENT_SECRET,
+        'redirect_uri': redirect_uri,
+        'grant_type': 'authorization_code'
+    }
+
+    try:
+        token_resp = requests.post(token_url, data=token_payload, timeout=12)
+        if token_resp.status_code != 200:
+            alt_uri = redirect_uri[:-1] if redirect_uri.endswith('/') else (redirect_uri + '/')
+            token_payload['redirect_uri'] = alt_uri
+            token_resp2 = requests.post(token_url, data=token_payload, timeout=10)
+            if token_resp2.status_code == 200:
+                token_resp = token_resp2
+            else:
+                return redirect(f"/login?error=Otentikasi+Google+gagal+({token_resp.status_code})")
+
+        token_data = token_resp.json()
+        access_token = token_data.get('access_token')
+        if not access_token:
+            return redirect("/login?error=Token+Google+tidak+valid")
+
+        userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+        userinfo_resp = requests.get(
+            userinfo_url,
+            headers={'Authorization': f'Bearer {access_token}'},
+            timeout=10
+        )
+        if userinfo_resp.status_code != 200:
+            return redirect("/login?error=Gagal+mengambil+profil+Google")
+
+        user_info = userinfo_resp.json()
+        return login_or_register_google_user(user_info)
+    except Exception as e:
+        app.logger.error(f"Google OAuth Exception: {e}")
+        return redirect("/login?error=Koneksi+Google+gagal")
+
 
 @app.route('/auth/google-login')
 def google_login():
-    """
-    Google OAuth 2.0 Handler.
-    Jika credentials belum dikonfigurasi di environment, beri fallback ramah ke dev login.
-    """
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-        # Mode pengembangan: otomatis redirect ke pemilih akun simulasi
-        return redirect('/auth/switch-role?email=calon.petualang@gmail.com')
-    
-    redirect_uri = url_for('google_callback', _external=True)
-    google_auth_url = (
-        f"https://accounts.google.com/o/oauth2/v2/auth?"
-        f"client_id={GOOGLE_CLIENT_ID}&response_type=code&scope=openid%20email%20profile&"
-        f"redirect_uri={redirect_uri}&prompt=select_account"
-    )
+    """Inisiasi Login / Pendaftaran Akun Google OAuth 2.0"""
+    from urllib.parse import urlencode
+    redirect_uri = GOOGLE_REDIRECT_URI
+
+    state = base64.urlsafe_b64encode(os.urandom(16)).decode('utf-8')
+    session['oauth_state'] = state
+
+    params = {
+        'client_id': GOOGLE_CLIENT_ID,
+        'response_type': 'code',
+        'scope': 'openid email profile',
+        'redirect_uri': redirect_uri,
+        'prompt': 'select_account',
+        'state': state
+    }
+    google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
     return redirect(google_auth_url)
+
 
 @app.route('/auth/google/callback')
 def google_callback():
     code = request.args.get('code')
     if not code:
         return redirect('/')
-    # Code token exchange can be executed with requests
-    return redirect('/member/dashboard')
+    return process_google_oauth(code, redirect_uri=GOOGLE_REDIRECT_URI)
+
+
+@app.route('/auth/google/credential', methods=['POST'])
+def google_credential_callback():
+    """Callback untuk Google One Tap / Google Identity Services button"""
+    credential = request.form.get('credential') or (request.json.get('credential') if request.is_json else None)
+    if not credential:
+        return redirect('/login?error=Kredensial+Google+kosong')
+
+    try:
+        import requests
+        verify_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
+        verify_resp = requests.get(verify_url, timeout=10)
+        if verify_resp.status_code != 200:
+            return redirect("/login?error=Kredensial+Google+tidak+valid")
+
+        user_info = verify_resp.json()
+        if user_info.get('aud') != GOOGLE_CLIENT_ID:
+            return redirect("/login?error=Kredensial+Google+tidak+cocok")
+
+        return login_or_register_google_user(user_info)
+    except Exception as e:
+        app.logger.error(f"Google Credential Verification Error: {e}")
+        return redirect("/login?error=Gagal+verifikasi+Google")
+
 
 @app.route('/auth/switch-role')
 def switch_role():
-    """
-    Developer / Tester role switcher:
-    Memungkinkan tester/owner langsung login sebagai Admin, Anggota Aktif, atau Calon Pendaftar
-    """
-    email = request.args.get('email', 'admin@gimbal.org')
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        user = User.query.first()
-    
-    if user:
-        session['user_id'] = user.id
-        if user.is_admin:
-            return redirect('/admin/dashboard')
-        return redirect('/member/dashboard')
-    return redirect('/')
+    """Bypass dev role switcher telah dinonaktifkan permanen demi keamanan"""
+    return redirect('/login')
+
 
 @app.route('/login')
 def login_page():
     """Halaman login & pendaftaran resmi KPAB GIMBAL Provinsi Gorontalo"""
     user = get_current_user()
     if user:
-        return redirect('/admin/dashboard' if user.is_admin else '/member/dashboard')
-    return render_template('login.html')
+        if user.is_admin:
+            return redirect('/admin/dashboard')
+        if not user.is_profile_complete:
+            return redirect('/member/complete-profile')
+        if user.status != 'active':
+            return redirect('/member/onboarding-status')
+        return redirect('/member/dashboard')
+    error_msg = request.args.get('error')
+    return render_gimbal_modal(
+        'login',
+        context={'google_client_id': GOOGLE_CLIENT_ID, 'error_msg': error_msg},
+        active_page='login'
+    )
+
+
+@app.route('/auth/modal-login')
+def modal_login():
+    """Endpoint untuk membuka modal login via popup modal-container"""
+    user = get_current_user()
+    if user:
+        if user.is_admin:
+            return redirect('/admin/dashboard')
+        return redirect('/member/dashboard')
+    error_msg = request.args.get('error')
+    return render_gimbal_modal(
+        'login',
+        context={'google_client_id': GOOGLE_CLIENT_ID, 'error_msg': error_msg},
+        active_page='login'
+    )
+
 
 @app.route('/auth/login', methods=['POST'])
 def auth_login():
-    """Login manual email & password (mendukung mode pendaftaran & dev)"""
-    email = request.form.get('email', '').strip().lower()
+    """Login manual email/username & password"""
+    identifier = request.form.get('email', '').strip()
     password = request.form.get('password', '').strip()
     
-    user = User.query.filter_by(email=email).first()
+    if not identifier:
+        return redirect('/login?error=Username+atau+email+harus+diisi')
+
+    ident_lower = identifier.lower()
+    user = None
+    if '@' in ident_lower:
+        user = User.query.filter_by(email=ident_lower).first()
+    else:
+        if ident_lower == 'fitra':
+            user = User.query.filter((User.email == 'fitra@gimbal.org') | (db.func.lower(User.name) == 'fitra')).first()
+        else:
+            user = User.query.filter(db.func.lower(User.name) == ident_lower).first()
+            if not user:
+                user = User.query.filter_by(email=f"{ident_lower}@gimbal.org").first()
+
     if not user:
-        if '@' in email:
-            name = email.split('@')[0].replace('.', ' ').title()
+        if '@' in ident_lower:
+            if not password:
+                return redirect('/login?error=Kata+sandi+harus+diisi+untuk+pendaftaran+baru')
+            name = ident_lower.split('@')[0].replace('.', ' ').title()
             user = User(
-                email=email,
+                email=ident_lower,
                 name=name,
                 role='member',
                 status='pending',
-                password_hash=password or 'gimbal123',
-                avatar='/static/pics/cartoon/avatar_sekjen.jpg',
-                address='Provinsi Gorontalo'
+                password_hash=password,
+                avatar='/static/pics/cartoon/avatar_sekjen.jpg'
             )
             db.session.add(user)
             db.session.commit()
         else:
-            return redirect('/login?error=Email tidak valid')
-            
+            return redirect('/login?error=Akun+tidak+ditemukan')
+
+    # Verifikasi Kata Sandi
+    if user.password_hash and user.password_hash != password:
+        return redirect('/login?error=Kata+sandi+salah')
+        
+    # Perbarui waktu terakhir masuk (Last Login) & Sinkronisasi Email Forwarding Cloudflare
+    user.last_login = datetime.utcnow()
+    try:
+        sync_cloudflare_email_routing(user)
+    except Exception as _e_cf:
+        app.logger.warning(f"Cloudflare sync note: {_e_cf}")
+    db.session.commit()
+
     session['user_id'] = user.id
     if user.is_admin:
         return redirect('/admin/dashboard')
+    if not user.is_profile_complete:
+        return redirect('/member/complete-profile')
+    if user.status != 'active':
+        return redirect('/member/onboarding-status')
     return redirect('/member/dashboard')
 
-@app.route('/member/profile-modal')
-@login_required
-def member_profile_modal():
-    """Pusat Akun Anggota (Google Account Style Hub)"""
-    user = get_current_user()
-    initial_tab = request.args.get('tab', 'biodata')
-    return render_template('components/modals.html', modal_type='profile_hub', user=user, initial_tab=initial_tab)
-
-@app.route('/member/profile-modal/update', methods=['POST'])
-@login_required
-def member_profile_modal_update():
-    """Simpan perubahan profil anggota dari Google Account Hub Modal"""
-    user = get_current_user()
-    active_tab = request.form.get('active_tab', 'biodata')
-    
-    # 1. Biodata Pribadi
-    if 'name' in request.form:
-        user.name = request.form.get('name', user.name).strip()
-    if 'phone' in request.form:
-        user.phone = request.form.get('phone', user.phone).strip()
-    if 'birth_place' in request.form:
-        user.birth_place = request.form.get('birth_place', user.birth_place).strip()
-    if 'birth_date' in request.form:
-        user.birth_date = request.form.get('birth_date', user.birth_date).strip()
-    if 'address' in request.form:
-        user.address = request.form.get('address', user.address).strip()
-        
-    # 2. Riwayat Medis & Kontak Darurat (Keselamatan Alam Bebas)
-    if 'blood_type' in request.form:
-        user.blood_type = request.form.get('blood_type', user.blood_type).strip()
-    if 'medical_history' in request.form:
-        user.medical_history = request.form.get('medical_history', user.medical_history).strip()
-    if 'emergency_name' in request.form:
-        user.emergency_name = request.form.get('emergency_name', user.emergency_name).strip()
-    if 'emergency_relation' in request.form:
-        user.emergency_relation = request.form.get('emergency_relation', user.emergency_relation).strip()
-    if 'emergency_phone' in request.form:
-        user.emergency_phone = request.form.get('emergency_phone', user.emergency_phone).strip()
-        
-    # 3. Keamanan Akun & Sandi
-    new_password = request.form.get('new_password', '').strip()
-    confirm_password = request.form.get('confirm_password', '').strip()
-    if new_password:
-        if new_password == confirm_password:
-            user.password_hash = new_password
-        else:
-            return render_template('components/modals.html', modal_type='profile_hub', user=user, initial_tab=active_tab, error_msg='Konfirmasi kata sandi baru tidak cocok!')
-
-    db.session.commit()
-    return render_template('components/modals.html', modal_type='profile_hub', user=user, initial_tab=active_tab, saved_success=True)
 
 @app.route('/auth/logout')
 def logout():
@@ -323,654 +795,19 @@ def logout():
     return redirect('/')
 
 
-# ========== MEMBER PORTAL ROUTES =================================================
-
-@app.route('/member/dashboard')
-@login_required
-def member_dashboard():
-    user = get_current_user()
-    open_activities = Activity.query.filter_by(is_open=True).order_by(Activity.created_at.desc()).limit(4).all()
-    
-    # Hitung tagihan yang belum dibayar
-    paid_dues_ids = [p.dues_id for p in DuesPayment.query.filter_by(user_id=user.id, status='approved').all()]
-    unpaid_count = Dues.query.filter(Dues.id.notin_(paid_dues_ids)).count() if paid_dues_ids else Dues.query.count()
-
-    data = {
-        'user': user,
-        'open_activities': open_activities,
-        'unpaid_count': unpaid_count
-    }
-    return render_gimbal_page('member/member_pages.html', 'member_dashboard', data, active_page='member_dashboard')
-
-@app.route('/member/kta')
-@login_required
-def member_kta():
-    user = get_current_user()
-    if user.status != 'active' or not user.nra:
-        return redirect('/member/dashboard')
-
-    # Generate QR Code base64
-    qr_img = qrcode.make(f"{request.host_url}verify-kta/{user.nra}")
-    buf = io.BytesIO()
-    qr_img.save(buf, format='PNG')
-    qr_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
-
-    data = {
-        'user': user,
-        'qr_base64': qr_base64
-    }
-    return render_gimbal_page('member/member_pages.html', 'member_kta', data, active_page='member_kta')
-
-@app.route('/member/iuran')
-@login_required
-def member_iuran():
-    user = get_current_user()
-    active_dues = Dues.query.filter_by(is_active=True).all()
-    my_payments = DuesPayment.query.filter_by(user_id=user.id).order_by(DuesPayment.id.desc()).all()
-
-    data = {
-        'user': user,
-        'active_dues': active_dues,
-        'my_payments': my_payments
-    }
-    return render_gimbal_page('member/member_pages.html', 'member_iuran', data, active_page='member_iuran')
-
-@app.route('/member/iuran/pay-modal/<int:dues_id>')
-@login_required
-def member_iuran_modal(dues_id):
-    dues = Dues.query.get_or_404(dues_id)
-    return render_template('components/modals.html', modal_type='pay_dues', dues=dues)
-
-@app.route('/member/iuran/pay/<int:dues_id>', methods=['POST'])
-@login_required
-def member_iuran_pay(dues_id):
-    user = get_current_user()
-    dues = Dues.query.get_or_404(dues_id)
-    
-    bank_name = request.form.get('bank_name', 'Transfer Bank')
-    amount_paid = float(request.form.get('amount_paid', dues.amount))
-    notes = request.form.get('notes', '')
-    
-    # Upload proof file
-    proof_file = request.files.get('proof_file')
-    proof_filename = 'sample_proof.jpg'
-    if proof_file and proof_file.filename:
-        safe_name = f"proof_{user.id}_{int(datetime.now().timestamp())}_{secure_filename(proof_file.filename)}"
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'proofs', safe_name)
-        proof_file.save(save_path)
-        proof_filename = f"/uploads/proofs/{safe_name}"
-    else:
-        proof_filename = '/static/pics/sample_proof.jpg'
-
-    payment = DuesPayment(
-        dues_id=dues.id,
-        user_id=user.id,
-        amount_paid=amount_paid,
-        bank_name=bank_name,
-        proof_image=proof_filename,
-        notes=notes,
-        status='pending'
-    )
-    db.session.add(payment)
-    db.session.commit()
-
-    return member_iuran()
-
-@app.route('/member/documents')
-@login_required
-def member_documents():
-    docs = Document.query.filter_by(is_public_to_members=True).order_by(Document.created_at.desc()).all()
-    data = {'documents': docs}
-    return render_gimbal_page('member/member_pages.html', 'member_documents', data, active_page='member_documents')
-
-@app.route('/member/profile', methods=['GET', 'POST'])
-@login_required
-def member_profile():
-    user = get_current_user()
-    if request.method == 'POST':
-        user.name = request.form.get('name', user.name)
-        user.phone = request.form.get('phone', user.phone)
-        user.birth_place = request.form.get('birth_place', user.birth_place)
-        user.birth_date = request.form.get('birth_date', user.birth_date)
-        user.address = request.form.get('address', user.address)
-        user.blood_type = request.form.get('blood_type', user.blood_type)
-        user.medical_history = request.form.get('medical_history', user.medical_history)
-        user.emergency_name = request.form.get('emergency_name', user.emergency_name)
-        user.emergency_relation = request.form.get('emergency_relation', user.emergency_relation)
-        user.emergency_phone = request.form.get('emergency_phone', user.emergency_phone)
-        db.session.commit()
-
-    data = {'user': user}
-    return render_gimbal_page('member/member_pages.html', 'member_profile', data, active_page='member_profile')
-
-@app.route('/member/activity/join/<int:activity_id>', methods=['POST'])
-@login_required
-def member_activity_join(activity_id):
-    user = get_current_user()
-    act = Activity.query.get_or_404(activity_id)
-    existing = ActivityParticipant.query.filter_by(activity_id=act.id, user_id=user.id).first()
-    if not existing:
-        part = ActivityParticipant(activity_id=act.id, user_id=user.id, status='registered')
-        db.session.add(part)
-        db.session.commit()
-    return "<div class='text-xs text-emerald-600 font-bold'>Terdaftar!</div>"
-
-
-# ========== ADMIN BACKEND ROUTES =================================================
-
-@app.route('/admin/dashboard')
-@login_required
-@admin_required
-def admin_dashboard():
-    pending_members = User.query.filter_by(status='pending').order_by(User.id.desc()).all()
-    active_count = User.query.filter_by(status='active').count()
-    doc_count = Document.query.count()
-    
-    # Kas masuk dari payments approved
-    approved_payments = DuesPayment.query.filter_by(status='approved').all()
-    total_cash = sum(p.amount_paid for p in approved_payments)
-    
-    pending_payments = DuesPayment.query.filter_by(status='pending').order_by(DuesPayment.id.desc()).all()
-
-    current_year_2digit = int(datetime.now().strftime('%y'))
-    
-    data = {
-        'pending_members': pending_members,
-        'pending_count': len(pending_members),
-        'active_count': active_count,
-        'total_cash': total_cash,
-        'doc_count': doc_count,
-        'pending_payments': pending_payments,
-        'pending_payments_count': len(pending_payments),
-        'current_year_2digit': current_year_2digit
-    }
-    return render_gimbal_page('admin/admin_pages.html', 'admin_dashboard', data, active_page='admin_dashboard')
-
-@app.route('/admin/approvals')
-@login_required
-@admin_required
-def admin_approvals():
-    pending_members = User.query.filter_by(status='pending').order_by(User.id.desc()).all()
-    current_year_2digit = int(datetime.now().strftime('%y'))
-    
-    from sqlalchemy import func
-    max_seq = db.session.query(func.max(User.nra_sequence)).filter(User.nra_year == current_year_2digit).scalar() or 0
-    next_seq_preview = f"{(max_seq + 1):02d}"
-
-    data = {
-        'pending_members': pending_members,
-        'current_year_2digit': current_year_2digit,
-        'next_seq_preview': next_seq_preview
-    }
-    return render_gimbal_page('admin/admin_pages.html', 'admin_approvals', data, active_page='admin_approvals')
-
-@app.route('/admin/member/approve/<int:user_id>', methods=['POST'])
-@login_required
-@admin_required
-def admin_approve_member(user_id):
-    """
-    Logika Kesepakatan Approval:
-    - nn: nomor urut persetujuan admin pada tahun YY berjalan
-    - Reset ulang dari awal (01) di setiap tahun baru
-    - Terbitkan nomor resmi R-nn-YY
-    """
-    user = User.query.get_or_404(user_id)
-    admin = get_current_user()
-
-    if user.status != 'active':
-        nra_code, year_2digit, seq_num = generate_next_nra()
-        user.nra = nra_code
-        user.nra_year = year_2digit
-        user.nra_sequence = seq_num
-        user.status = 'active'
-        user.approved_by = admin.id
-        user.approved_at = datetime.utcnow()
-        db.session.commit()
-
-    return admin_approvals()
-
-@app.route('/admin/member/reject/<int:user_id>', methods=['POST'])
-@login_required
-@admin_required
-def admin_reject_member(user_id):
-    user = User.query.get_or_404(user_id)
-    user.status = 'rejected'
-    db.session.commit()
-    return admin_approvals()
-
-@app.route('/admin/members')
-@login_required
-@admin_required
-def admin_members():
-    q = request.args.get('q', '').strip()
-    status_filter = request.args.get('status', '').strip()
-    
-    query = User.query
-    if status_filter:
-        query = query.filter_by(status=status_filter)
-    if q:
-        query = query.filter(
-            (User.name.ilike(f'%{q}%')) | 
-            (User.nra.ilike(f'%{q}%')) | 
-            (User.phone.ilike(f'%{q}%'))
-        )
-    
-    members = query.order_by(User.id.desc()).all()
-    data = {'members': members, 'q': q, 'status_filter': status_filter}
-    return render_gimbal_page('admin/admin_pages.html', 'admin_members', data, active_page='admin_members')
-
-@app.route('/admin/members/export-csv')
-@login_required
-@admin_required
-def admin_export_csv():
-    """Ekspor seluruh data anggota ke format CSV"""
-    members = User.query.order_by(User.id.asc()).all()
-    
-    si = io.StringIO()
-    cw = csv.writer(si)
-    cw.writerow(['ID', 'NRA', 'Nama Lengkap', 'Email', 'No. WhatsApp', 'Gol. Darah', 'Status', 'Kontak Darurat', 'Hubungan', 'No. Telp Darurat', 'Tgl Bergabung'])
-    
-    for m in members:
-        cw.writerow([
-            m.id,
-            m.nra or '',
-            m.name,
-            m.email,
-            m.phone or '',
-            m.blood_type or '',
-            m.status,
-            m.emergency_name or '',
-            m.emergency_relation or '',
-            m.emergency_phone or '',
-            m.created_at.strftime('%Y-%m-%d') if m.created_at else ''
-        ])
-    
-    response = make_response(si.getvalue())
-    response.headers['Content-Disposition'] = f"attachment; filename=gimbal_members_{datetime.now().strftime('%Y%m%d')}.csv"
-    response.headers['Content-type'] = 'text/csv; charset=utf-8'
-    return response
-
-@app.route('/admin/dues')
-@login_required
-@admin_required
-def admin_dues():
-    payments = DuesPayment.query.order_by(DuesPayment.id.desc()).all()
-    all_dues = Dues.query.order_by(Dues.id.desc()).all()
-    data = {'payments': payments, 'all_dues': all_dues}
-    return render_gimbal_page('admin/admin_pages.html', 'admin_dues', data, active_page='admin_dues')
-
-@app.route('/admin/dues/create-modal')
-@login_required
-@admin_required
-def admin_create_dues_modal():
-    return render_template('components/modals.html', modal_type='create_dues')
-
-@app.route('/admin/dues/create', methods=['POST'])
-@login_required
-@admin_required
-def admin_create_dues():
-    title = request.form.get('title')
-    amount = float(request.form.get('amount', 25000))
-    category = request.form.get('category', 'wajib')
-    due_date = request.form.get('due_date', '')
-    description = request.form.get('description', '')
-
-    new_dues = Dues(
-        title=title,
-        amount=amount,
-        category=category,
-        due_date=due_date,
-        description=description,
-        is_active=True
-    )
-    db.session.add(new_dues)
-    db.session.commit()
-    return admin_dues()
-
-@app.route('/admin/dues/verify/<int:payment_id>', methods=['POST'])
-@login_required
-@admin_required
-def admin_verify_dues(payment_id):
-    pay = DuesPayment.query.get_or_404(payment_id)
-    status = request.args.get('status', 'approved')
-    admin = get_current_user()
-    
-    pay.status = status
-    pay.verified_by = admin.id
-    pay.verified_at = datetime.utcnow()
-    db.session.commit()
-    return admin_dues()
-
-@app.route('/admin/documents')
-@login_required
-@admin_required
-def admin_documents():
-    docs = Document.query.order_by(Document.created_at.desc()).all()
-    data = {'documents': docs}
-    return render_gimbal_page('admin/admin_pages.html', 'admin_documents', data, active_page='admin_documents')
-
-@app.route('/admin/documents/create-modal')
-@login_required
-@admin_required
-def admin_create_doc_modal():
-    return render_template('components/modals.html', modal_type='create_document')
-
-@app.route('/admin/documents/create', methods=['POST'])
-@login_required
-@admin_required
-def admin_create_doc():
-    admin = get_current_user()
-    title = request.form.get('title')
-    category = request.form.get('category', 'ad_art')
-    description = request.form.get('description', '')
-    is_public = bool(request.form.get('is_public_to_members', 1))
-
-    doc_file = request.files.get('doc_file')
-    file_path = '/static/docs/ad_art_gimbal.pdf'
-    file_size_fmt = '1.8 MB'
-
-    if doc_file and doc_file.filename:
-        filename = f"doc_{int(datetime.now().timestamp())}_{secure_filename(doc_file.filename)}"
-        full_path = os.path.join(app.config['UPLOAD_FOLDER'], 'docs', filename)
-        doc_file.save(full_path)
-        file_path = f"/uploads/docs/{filename}"
-        file_size_fmt = f"{round(os.path.getsize(full_path) / (1024 * 1024), 1)} MB"
-
-    new_doc = Document(
-        title=title,
-        category=category,
-        description=description,
-        file_path=file_path,
-        file_size_fmt=file_size_fmt,
-        is_public_to_members=is_public,
-        uploaded_by=admin.id
-    )
-    db.session.add(new_doc)
-    db.session.commit()
-    return admin_documents()
-
-@app.route('/admin/documents/delete/<int:doc_id>', methods=['POST'])
-@login_required
-@admin_required
-def admin_delete_doc(doc_id):
-    doc = Document.query.get_or_404(doc_id)
-    db.session.delete(doc)
-    db.session.commit()
-    return admin_documents()
-
-@app.route('/admin/activities')
-@login_required
-@admin_required
-def admin_activities():
-    acts = Activity.query.order_by(Activity.created_at.desc()).all()
-    data = {'activities': acts}
-    return render_gimbal_page('admin/admin_pages.html', 'admin_activities', data, active_page='admin_activities')
-
-@app.route('/admin/activity/create-modal')
-@login_required
-@admin_required
-def admin_create_activity_modal():
-    return render_template('components/modals.html', modal_type='create_activity')
-
-@app.route('/admin/activity/create', methods=['POST'])
-@login_required
-@admin_required
-def admin_create_activity():
-    title = request.form.get('title', '').strip()
-    location = request.form.get('location', '').strip()
-    activity_date = request.form.get('activity_date', '').strip()
-    difficulty = request.form.get('difficulty', 'Menengah')
-    try:
-        quota = int(request.form.get('quota', 20))
-    except (ValueError, TypeError):
-        quota = 20
-    description = request.form.get('description', '').strip()
-
-    image_file = request.files.get('image_file')
-    image_url_input = request.form.get('image_url', '').strip()
-    image_url = '/static/pics/cartoon/hero.jpg'
-    if image_file and image_file.filename:
-        safe_name = f"act_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'gallery', safe_name)
-        image_file.save(save_path)
-        image_url = f"/uploads/gallery/{safe_name}"
-    elif image_url_input:
-        image_url = image_url_input
-
-    new_act = Activity(
-        title=title or 'Ekspedisi Rimba GIMBAL',
-        location=location or 'Nusantara',
-        activity_date=activity_date or 'Jadwal Menyusul',
-        difficulty=difficulty,
-        quota=quota,
-        image_url=image_url,
-        description=description,
-        is_open=True
-    )
-    db.session.add(new_act)
-    db.session.commit()
-    return admin_activities()
-
-@app.route('/admin/activity/edit-modal/<int:act_id>')
-@login_required
-@admin_required
-def admin_edit_activity_modal(act_id):
-    act = Activity.query.get_or_404(act_id)
-    return render_template('components/modals.html', modal_type='edit_activity', activity=act)
-
-@app.route('/admin/activity/edit/<int:act_id>', methods=['POST'])
-@login_required
-@admin_required
-def admin_edit_activity(act_id):
-    act = Activity.query.get_or_404(act_id)
-    title = request.form.get('title', '').strip()
-    if title:
-        act.title = title
-    act.location = request.form.get('location', act.location).strip()
-    act.activity_date = request.form.get('activity_date', act.activity_date).strip()
-    act.difficulty = request.form.get('difficulty', act.difficulty)
-    try:
-        act.quota = int(request.form.get('quota', act.quota))
-    except (ValueError, TypeError):
-        pass
-    act.description = request.form.get('description', act.description).strip()
-    act.is_open = bool(request.form.get('is_open'))
-    
-    image_file = request.files.get('image_file')
-    image_url_input = request.form.get('image_url', '').strip()
-    if image_file and image_file.filename:
-        safe_name = f"act_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'gallery', safe_name)
-        image_file.save(save_path)
-        act.image_url = f"/uploads/gallery/{safe_name}"
-    elif image_url_input:
-        act.image_url = image_url_input
-        
-    db.session.commit()
-    return admin_activities()
-
-@app.route('/admin/activity/delete/<int:act_id>', methods=['POST'])
-@login_required
-@admin_required
-def admin_delete_activity(act_id):
-    act = Activity.query.get_or_404(act_id)
-    # Hapus partisipan terkait
-    ActivityParticipant.query.filter_by(activity_id=act.id).delete()
-    # Unlink foto galeri terkait
-    for g in GalleryItem.query.filter_by(activity_id=act.id).all():
-        g.activity_id = None
-    db.session.delete(act)
-    db.session.commit()
-    return admin_activities()
-
-@app.route('/admin/activity/toggle-status/<int:act_id>', methods=['POST'])
-@login_required
-@admin_required
-def admin_toggle_activity_status(act_id):
-    act = Activity.query.get_or_404(act_id)
-    act.is_open = not act.is_open
-    db.session.commit()
-    return admin_activities()
-
-
-# ========== ADMIN GALLERY CRUD ROUTES ============================================
-
-@app.route('/admin/gallery')
-@login_required
-@admin_required
-def admin_gallery():
-    """Kelola kurasi foto pin-down ekspedisi"""
-    activity_filter = request.args.get('activity_id', type=int)
-    pinned_filter = request.args.get('pinned', '')
-    
-    query = GalleryItem.query
-    if activity_filter:
-        query = query.filter_by(activity_id=activity_filter)
-    if pinned_filter == '1':
-        query = query.filter_by(is_pinned=True)
-    elif pinned_filter == '0':
-        query = query.filter_by(is_pinned=False)
-        
-    items = query.order_by(GalleryItem.is_pinned.desc(), GalleryItem.id.desc()).all()
-    activities = Activity.query.order_by(Activity.title.asc()).all()
-    
-    total_count = GalleryItem.query.count()
-    pinned_count = GalleryItem.query.filter_by(is_pinned=True).count()
-    
-    data = {
-        'gallery_items': items,
-        'activities': activities,
-        'total_count': total_count,
-        'pinned_count': pinned_count,
-        'selected_activity_id': activity_filter,
-        'selected_pinned': pinned_filter
-    }
-    return render_gimbal_page('admin/admin_pages.html', 'admin_gallery', data, active_page='admin_gallery')
-
-
-@app.route('/admin/gallery/create-modal')
-@login_required
-@admin_required
-def admin_create_gallery_modal():
-    """Modal unggah / pin-down foto ekspedisi baru"""
-    activities = Activity.query.order_by(Activity.title.asc()).all()
-    return render_template('components/modals.html', modal_type='create_gallery', activities=activities)
-
-
-@app.route('/admin/gallery/create', methods=['POST'])
-@login_required
-@admin_required
-def admin_create_gallery():
-    """Simpan foto pin-down ekspedisi baru"""
-    title = request.form.get('title', '').strip()
-    caption = request.form.get('caption', '').strip()
-    category = request.form.get('category', 'Pendakian')
-    location = request.form.get('location', '').strip()
-    activity_id = request.form.get('activity_id', type=int)
-    is_pinned = bool(request.form.get('is_pinned'))
-    
-    image_file = request.files.get('image_file')
-    image_url_input = request.form.get('image_url', '').strip()
-    
-    image_url = ''
-    if image_file and image_file.filename:
-        safe_name = f"gal_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'gallery', safe_name)
-        image_file.save(save_path)
-        image_url = f"/uploads/gallery/{safe_name}"
-    elif image_url_input:
-        image_url = image_url_input
-    else:
-        image_url = '/static/pics/cartoon/divisi_mountaineer.jpg'
-        
-    new_item = GalleryItem(
-        title=title or 'Dokumentasi Ekspedisi',
-        caption=caption,
-        image_url=image_url,
-        category=category,
-        location=location,
-        activity_id=activity_id if activity_id and activity_id > 0 else None,
-        is_pinned=is_pinned
-    )
-    db.session.add(new_item)
-    db.session.commit()
-    return admin_gallery()
-
-
-@app.route('/admin/gallery/toggle-pin/<int:item_id>', methods=['POST'])
-@login_required
-@admin_required
-def admin_toggle_pin_gallery(item_id):
-    """Toggle status pin-down foto ke landing page"""
-    item = GalleryItem.query.get_or_404(item_id)
-    item.is_pinned = not item.is_pinned
-    db.session.commit()
-    return admin_gallery()
-
-
-@app.route('/admin/gallery/edit-modal/<int:item_id>')
-@login_required
-@admin_required
-def admin_edit_gallery_modal(item_id):
-    """Modal edit foto galeri"""
-    item = GalleryItem.query.get_or_404(item_id)
-    activities = Activity.query.order_by(Activity.title.asc()).all()
-    return render_template('components/modals.html', modal_type='edit_gallery', item=item, activities=activities)
-
-
-@app.route('/admin/gallery/edit/<int:item_id>', methods=['POST'])
-@login_required
-@admin_required
-def admin_edit_gallery(item_id):
-    """Simpan perubahan data foto galeri"""
-    item = GalleryItem.query.get_or_404(item_id)
-    title = request.form.get('title', '').strip()
-    if title:
-        item.title = title
-    item.caption = request.form.get('caption', '').strip()
-    category = request.form.get('category')
-    if category:
-        item.category = category
-    item.location = request.form.get('location', '').strip()
-    
-    activity_id_val = request.form.get('activity_id')
-    try:
-        item.activity_id = int(activity_id_val) if activity_id_val and int(activity_id_val) > 0 else None
-    except (ValueError, TypeError):
-        item.activity_id = None
-        
-    item.is_pinned = bool(request.form.get('is_pinned'))
-    
-    image_file = request.files.get('image_file')
-    image_url_input = request.form.get('image_url', '').strip()
-    if image_file and image_file.filename:
-        safe_name = f"gal_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
-        save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'gallery', safe_name)
-        image_file.save(save_path)
-        item.image_url = f"/uploads/gallery/{safe_name}"
-    elif image_url_input:
-        item.image_url = image_url_input
-        
-    db.session.commit()
-    return admin_gallery()
-
-
-@app.route('/admin/gallery/delete/<int:item_id>', methods=['POST'])
-@login_required
-@admin_required
-def admin_delete_gallery(item_id):
-    """Hapus foto galeri"""
-    item = GalleryItem.query.get_or_404(item_id)
-    db.session.delete(item)
-    db.session.commit()
-    return admin_gallery()
-
+# ========== REGISTER MODULAR BLUEPRINTS ==========================================
+
+from admin_pages import admin_bp
+from members_page import members_bp
+from web_api import api_bp
+
+app.register_blueprint(admin_bp)
+app.register_blueprint(members_bp)
+app.register_blueprint(api_bp)
 
 
 # =================================================================================
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     print(">>> GIMBAL WebApps running")
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)

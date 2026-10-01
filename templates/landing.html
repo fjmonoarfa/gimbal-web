@@ -1,146 +1,44 @@
-<!DOCTYPE html>
-<html lang="id" class="scroll-smooth">
+<!-- LAYER 3: Public Landing Page KPAB GIMBAL (Hero, Divisi, Ekspedisi, Galeri, Kode Etik, Keanggotaan, Pengurus, Footer, Modals) -->
+<div id="landing-layer" class="w-full min-h-screen bg-brand-50/30 text-stone-800 antialiased selection:bg-brand-600 selection:text-white">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KPAB GIMBAL - Generasi Indonesia Menyatu Bersama Alam</title>
-    <link rel="icon" href="/assets/logo.png" type="image/png">
-
-    <!-- Central Theme & Site Width Configuration -->
-    <link rel="stylesheet" href="/static/css/theme.css?v=20260926_3">
-    <script src="/static/js/theme-config.js?v=20260926_3"></script>
-
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-
-    <!-- FontAwesome 6 Icons CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <!-- Google Fonts: Plus Jakarta Sans & Poppins -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-        h1, h2, h3, h4, .font-heading {
-            font-family: 'Poppins', sans-serif;
-        }
-        
-        .card-hover {
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .card-hover:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 30px -10px rgba(var(--brand-700-rgb), 0.25);
-        }
-    </style>
-</head>
-
-<body class="bg-brand-50/30 text-stone-800 antialiased selection:bg-brand-600 selection:text-white">
-
-    <!-- 1. TOP NAVBAR RESMI GIMBAL (MONOTONE ORANYE) -->
-    <nav class="fixed top-0 left-0 w-full z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-brand-200/80 dark:border-white/10 shadow-sm transition">
-        <div class="site-container">
-            <div class="flex items-center justify-between h-20">
-                
-                <!-- Kiri: Logo & Identitas Organisasi -->
-                <a href="/" class="flex items-center gap-3 group">
-                    <img src="/assets/logo.png" alt="Logo KPAB GIMBAL" class="h-12 w-12 object-contain drop-shadow group-hover:scale-105 transition">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-black text-2xl tracking-wider text-brand-950 font-heading">GIMBAL</span>
-                            <span class="text-[10px] px-2 py-0.5 bg-brand-600 text-white rounded font-mono font-bold tracking-widest shadow-sm">KPAB</span>
-                        </div>
-                        <p class="text-[10px] text-brand-800 font-bold tracking-wider uppercase hidden sm:block">
-                            Generasi Indonesia Menyatu Bersama Alam
-                        </p>
-                    </div>
-                </a>
-
-                <!-- Tengah: Navigasi Menu Desktop -->
-                <div class="hidden lg:flex items-center gap-7 text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wider">
-                    <a href="#tentang" class="hover:text-brand-600 transition">Tentang Kami</a>
-                    <a href="#divisi" class="hover:text-brand-600 transition">Divisi Minat</a>
-                    <a href="#ekspedisi" class="hover:text-brand-600 transition">Ekspedisi</a>
-                    <a href="#galeri" class="hover:text-brand-600 transition">Galeri</a>
-                    <a href="#kode-etik" class="hover:text-brand-600 transition">Kode Etik</a>
-                    <a href="#alur-anggota" class="hover:text-brand-600 transition">Keanggotaan</a>
-                    <a href="#pengurus" class="hover:text-brand-600 transition">Pengurus</a>
-                </div>
-
-                <!-- Kanan: Tombol Dark/Bright Mode di Paling Kanan Top Navbar (Desktop) -->
-                <div class="hidden lg:flex items-center">
-                    <button type="button" 
-                            onclick="window.toggleGimbalColorMode()" 
-                            class="gimbal-theme-toggle px-3.5 py-2 rounded-xl border border-stone-200 dark:border-white/15 bg-stone-100/90 dark:bg-stone-800 text-stone-700 dark:text-stone-200 hover:border-brand-500 transition flex items-center gap-2 text-xs font-bold shadow-sm"
-                            title="Beralih Mode Tampilan (Terang / Gelap)">
-                        <i class="theme-toggle-icon fas fa-moon text-stone-600"></i>
-                        <span class="theme-toggle-text text-[11px]">Gelap</span>
-                    </button>
-                </div>
-
-                <!-- Kanan Mobile: Toggle Tema & Hamburger Menu -->
-                <div class="flex items-center gap-2 lg:hidden">
-                    <button type="button" 
-                            onclick="window.toggleGimbalColorMode()" 
-                            class="gimbal-theme-toggle p-2 rounded-lg border border-stone-200 dark:border-white/15 bg-stone-100/90 dark:bg-stone-800 text-stone-700 dark:text-stone-200 flex items-center justify-center text-sm shadow-sm"
-                            title="Beralih Mode Tampilan">
-                        <i class="theme-toggle-icon fas fa-moon text-stone-600"></i>
-                    </button>
-                    <button onclick="toggleMobileNav()" class="text-brand-900 hover:text-brand-600 p-2 text-xl focus:outline-none">
-                        <i class="fas fa-bars" id="mobile-menu-icon"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Menu Dropdown Mobile -->
-            <div id="mobile-dropdown" class="hidden lg:hidden py-4 border-t border-brand-200 space-y-2 text-xs font-bold uppercase tracking-wider text-stone-800">
-                <a href="#tentang" onclick="toggleMobileNav()" class="block py-2 hover:text-brand-600">Tentang Kami</a>
-                <a href="#divisi" onclick="toggleMobileNav()" class="block py-2 hover:text-brand-600">Divisi Minat</a>
-                <a href="#ekspedisi" onclick="toggleMobileNav()" class="block py-2 hover:text-brand-600">Ekspedisi</a>
-                <a href="#galeri" onclick="toggleMobileNav()" class="block py-2 hover:text-brand-600">Galeri</a>
-                <a href="#kode-etik" onclick="toggleMobileNav()" class="block py-2 hover:text-brand-600">Kode Etik Pecinta Alam</a>
-                <a href="#alur-anggota" onclick="toggleMobileNav()" class="block py-2 hover:text-brand-600">Alur Keanggotaan R-nn-YY</a>
-                <a href="#pengurus" onclick="toggleMobileNav()" class="block py-2 hover:text-brand-600">Pengurus GIMBAL</a>
-            </div>
-        </div>
-    </nav>
-
-
-    <!-- 2. HERO SECTION SINEMATIK (COMPACT & PROPORTIONAL) -->
-    <header class="hero-overlay w-full pt-28 pb-16 sm:pt-32 sm:pb-20 text-white relative flex items-center">
+    <!-- HERO SECTION SINEMATIK (COMPACT & PROPORTIONAL) -->
+    <header id="beranda" class="hero-overlay w-full pt-8 pb-16 sm:pt-12 sm:pb-20 text-white relative flex items-center">
         <div class="site-container relative z-10 w-full">
             <div class="max-w-3xl space-y-4 sm:space-y-5">
-                
-                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-950/80 border border-orange-500/60 text-orange-300 text-xs font-bold tracking-widest uppercase backdrop-blur-md shadow-lg">
+
+                <div
+                    class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-950/80 border border-orange-500/60 text-orange-300 text-xs font-bold tracking-widest uppercase backdrop-blur-md shadow-lg">
                     <i class="fas fa-mountain text-orange-400"></i> Kelompok Petualang Alam Bebas
                 </div>
 
-                <h1 class="text-3xl sm:text-5xl font-black font-heading leading-tight tracking-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
-                    Menjelajahi Rimba, <br>
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-200 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-                        Menempa Karakter di Alam
-                    </span>
+                <h1
+                    class="text-3xl sm:text-5xl font-black font-heading leading-tight tracking-tight text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                    Menjelajahi Rimba, <br>Menempa Karakter di Alam
                 </h1>
 
-                <p class="text-stone-100 text-sm sm:text-base leading-relaxed max-w-2xl font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-                    Wadah pembinaan generasi muda pecinta alam nusantara berlandaskan Kode Etik Pecinta Alam Indonesia. Mengasah ketahanan fisik, navigasi rimba belantara, konservasi lingkungan hidup, dan persaudaraan tanpa batas di puncak-puncak Indonesia.
+                <p
+                    class="text-stone-100 text-sm sm:text-base leading-relaxed max-w-2xl font-normal drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                    Wadah pembinaan generasi muda pecinta alam nusantara berlandaskan Kode Etik Pecinta Alam Indonesia.
+                    Mengasah ketahanan fisik, navigasi rimba belantara, konservasi lingkungan hidup, dan persaudaraan
+                    tanpa batas di puncak-puncak Indonesia.
                 </p>
 
-                <!-- Dual Action Button -->
-                <div class="flex flex-wrap items-center gap-3.5 pt-1">
-                    <a href="#ekspedisi" 
-                       class="px-7 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xl transition transform hover:-translate-y-0.5 flex items-center gap-2">
+                <!-- Action Buttons with Google SSO -->
+                <div class="flex flex-wrap items-center gap-3 pt-1">
+                    <a href="/auth/google-login"
+                        class="px-6 py-3 bg-white hover:bg-stone-100 text-stone-900 font-extrabold text-xs sm:text-sm rounded-lg shadow-xl transition transform hover:-translate-y-0.5 flex items-center gap-2">
+                        <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.1-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/></svg>
+                        <span>Daftar / Masuk Akun Google</span>
+                    </a>
+
+                    <a href="#ekspedisi"
+                        class="px-5 py-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-extrabold text-xs sm:text-sm rounded-lg shadow-xl transition transform hover:-translate-y-0.5 flex items-center gap-2">
                         <i class="fas fa-hiking"></i>
                         <span>Agenda Ekspedisi</span>
                     </a>
 
-                    <a href="#tentang" 
-                       class="px-7 py-3 bg-stone-900/70 hover:bg-stone-900/90 text-stone-100 hover:text-white font-bold text-xs sm:text-sm rounded-xl border border-white/30 backdrop-blur-md transition flex items-center gap-2 shadow-lg">
+                    <a href="#tentang"
+                        class="px-5 py-3 bg-stone-900/70 hover:bg-stone-900/90 text-stone-100 hover:text-white font-bold text-xs sm:text-sm rounded-lg border border-white/30 backdrop-blur-md transition flex items-center gap-2 shadow-lg">
                         <i class="fas fa-compass text-amber-400"></i>
                         <span>Tentang GIMBAL</span>
                     </a>
@@ -149,20 +47,32 @@
                 <!-- 4 Metrik Kepercayaan -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5 border-t border-white/20">
                     <div>
-                        <p class="text-2xl sm:text-3xl font-black font-mono text-orange-400 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">{{ active_members_count }}+</p>
-                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">Anggota Resmi (NRA)</p>
+                        <p
+                            class="text-2xl sm:text-3xl font-black font-mono text-orange-400 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
+                            {{ active_members_count }}+</p>
+                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                            Anggota Resmi (NRA)</p>
                     </div>
                     <div>
-                        <p class="text-2xl sm:text-3xl font-black font-mono text-amber-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">{{ activities|length }}+</p>
-                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">Agenda Ekspedisi</p>
+                        <p
+                            class="text-2xl sm:text-3xl font-black font-mono text-amber-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
+                            {{ activities|length }}+</p>
+                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                            Agenda Ekspedisi</p>
                     </div>
                     <div>
-                        <p class="text-2xl sm:text-3xl font-black font-mono text-emerald-400 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">100%</p>
-                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">Leave No Trace</p>
+                        <p
+                            class="text-2xl sm:text-3xl font-black font-mono text-emerald-400 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
+                            100%</p>
+                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                            Leave No Trace</p>
                     </div>
                     <div>
-                        <p class="text-2xl sm:text-3xl font-black font-mono text-amber-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">QR Valid</p>
-                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">KTA Digital Resmi</p>
+                        <p
+                            class="text-2xl sm:text-3xl font-black font-mono text-amber-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
+                            QR Valid</p>
+                        <p class="text-xs text-stone-200 font-semibold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                            KTA Digital Resmi</p>
                     </div>
                 </div>
 
@@ -175,52 +85,65 @@
     <section id="tentang" class="py-24 bg-white">
         <div class="site-container">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                
+
                 <div class="space-y-6">
                     <div>
-                        <span class="text-xs font-bold uppercase tracking-widest text-orange-600">Filosofi & Nilai Organisasi</span>
+                        <span class="text-xs font-bold uppercase tracking-widest text-orange-600">Filosofi & Nilai
+                            Organisasi</span>
                         <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading leading-tight mt-1">
                             Bukan Sekadar Menaklukkan Puncak, Tetapi Menempa Jiwa
                         </h2>
                     </div>
 
                     <p class="text-stone-600 text-sm leading-relaxed">
-                        <strong>KPAB GIMBAL (Generasi Indonesia Menyatu Bersama Alam)</strong> didirikan sebagai wadah petualang alam bebas yang mengedepankan etika, keselamatan bernavigasi, dan kecintaan tulus terhadap kelestarian ekosistem alam Nusantara.
+                        <strong>KPAB GIMBAL (Generasi Indonesia Menyatu Bersama Alam)</strong> didirikan sebagai wadah
+                        petualang alam bebas yang mengedepankan etika, keselamatan bernavigasi, dan kecintaan tulus
+                        terhadap kelestarian ekosistem alam Nusantara.
                     </p>
                     <p class="text-stone-600 text-sm leading-relaxed">
-                        Kami meyakini bahwa alam bebas adalah ruang pendidikan karakter terbaik: mengajarkan kerendahan hati di hadapan gunung yang menjulang, kedisiplinan logistik dan manajemen risiko, serta kebersamaan sejati antar rekan seperjalanan.
+                        Kami meyakini bahwa alam bebas adalah ruang pendidikan karakter terbaik: mengajarkan kerendahan
+                        hati di hadapan gunung yang menjulang, kedisiplinan logistik dan manajemen risiko, serta
+                        kebersamaan sejati antar rekan seperjalanan.
                     </p>
 
                     <!-- 3 Pilar Kehormatan Monotone Oranye -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                        <div class="p-4 rounded-2xl bg-orange-50 border border-orange-200 space-y-1">
+                        <div class="p-4 rounded-lg bg-orange-50 border border-orange-200 space-y-1">
                             <i class="fas fa-compass text-orange-700 text-xl mb-1"></i>
                             <h3 class="text-xs font-bold text-orange-950 font-heading">Eksplorasi Rimba</h3>
-                            <p class="text-[11px] text-orange-900/80 leading-normal">Penguasaan navigasi darat, survival, dan manajemen bahaya alam.</p>
+                            <p class="text-[11px] text-orange-900/80 leading-normal">Penguasaan navigasi darat,
+                                survival, dan manajemen bahaya alam.</p>
                         </div>
-                        <div class="p-4 rounded-2xl bg-orange-50 border border-orange-200 space-y-1">
+                        <div class="p-4 rounded-lg bg-orange-50 border border-orange-200 space-y-1">
                             <i class="fas fa-users text-orange-700 text-xl mb-1"></i>
                             <h3 class="text-xs font-bold text-orange-950 font-heading">Persaudaraan Korsa</h3>
-                            <p class="text-[11px] text-orange-900/80 leading-normal">Saling menjaga, berbagi beban, dan solidaritas tanpa sekat kasta.</p>
+                            <p class="text-[11px] text-orange-900/80 leading-normal">Saling menjaga, berbagi beban, dan
+                                solidaritas tanpa sekat kasta.</p>
                         </div>
-                        <div class="p-4 rounded-2xl bg-orange-50 border border-orange-200 space-y-1">
+                        <div class="p-4 rounded-lg bg-orange-50 border border-orange-200 space-y-1">
                             <i class="fas fa-leaf text-orange-700 text-xl mb-1"></i>
                             <h3 class="text-xs font-bold text-orange-950 font-heading">Konservasi Bumi</h3>
-                            <p class="text-[11px] text-orange-900/80 leading-normal">Perlindungan mata air, reboisasi, dan bebas sampah di jalur gunung.</p>
+                            <p class="text-[11px] text-orange-900/80 leading-normal">Perlindungan mata air, reboisasi,
+                                dan bebas sampah di jalur gunung.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- Showcase Gambar Berwibawa (Gaya Kartun / Anime Adventure) -->
                 <div class="relative">
-                    <div class="rounded-3xl overflow-hidden shadow-2xl border-4 border-orange-100 relative">
-                        <img src="/static/pics/cartoon/tentang.jpg" 
-                             alt="Petualang GIMBAL di Api Unggun" class="w-full h-[440px] object-cover">
-                        <div class="absolute inset-0 bg-gradient-to-t from-orange-950/80 via-transparent to-transparent"></div>
-                        <div class="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg border border-orange-200">
-                            <p class="text-[11px] font-bold text-orange-700 uppercase tracking-widest">Semboyan Petualang GIMBAL</p>
+                    <div class="rounded-lg overflow-hidden shadow-2xl border-4 border-orange-100 relative">
+                        <img src="/static/pics/cartoon/tentang.jpg" alt="Petualang GIMBAL di Api Unggun"
+                            class="w-full h-[440px] object-cover">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-t from-orange-950/80 via-transparent to-transparent">
+                        </div>
+                        <div
+                            class="absolute bottom-6 left-6 right-6 p-4 rounded-lg bg-white/95 backdrop-blur-md shadow-lg border border-orange-200">
+                            <p class="text-[11px] font-bold text-orange-700 uppercase tracking-widest">Semboyan
+                                Petualang GIMBAL</p>
                             <p class="text-xs text-orange-950 italic mt-0.5 font-serif font-medium">
-                                "Jangan mengambil apapun selain gambar, jangan meninggalkan apapun selain jejak, jangan membunuh apapun selain waktu."
+                                "Jangan mengambil apapun selain gambar, jangan meninggalkan apapun selain jejak, jangan
+                                membunuh apapun selain waktu."
                             </p>
                         </div>
                     </div>
@@ -231,22 +154,70 @@
     </section>
 
 
-    <!-- 4. SECTION 4 KORPS DIVISI MINAT OPERASIONAL (MONOTONE ORANYE) -->
+    <!-- 4. SECTION KORPS DIVISI MINAT OPERASIONAL (MONOTONE ORANYE) -->
     <section id="divisi" class="py-24 bg-orange-50/50 border-t border-orange-100">
         <div class="site-container">
             <div class="text-center max-w-2xl mx-auto mb-16 space-y-2">
                 <span class="text-xs font-bold uppercase tracking-widest text-orange-600">Spesialisasi Lapangan</span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading">4 Divisi Operasional GIMBAL</h2>
-                <p class="text-xs sm:text-sm text-stone-600">Setiap anggota dibekali keahlian teknis sesuai minat penjelajahan alam bebas</p>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading">
+                    {{ operational_divisions|length if operational_divisions else 5 }} Divisi Operasional GIMBAL
+                </h2>
+                <p class="text-xs sm:text-sm text-stone-600">Setiap anggota dibekali keahlian teknis sesuai minat
+                    penjelajahan alam bebas</p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Divisi 1: Gunung Hutan -->
-                <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-orange-200/80 card-hover flex flex-col justify-between">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-{{ operational_divisions|length if operational_divisions and operational_divisions|length <= 4 else 5 }} gap-6">
+                {% for div in operational_divisions %}
+                <div class="bg-white rounded-lg overflow-hidden shadow-sm border border-orange-200/80 card-hover flex flex-col justify-between">
                     <div>
                         <div class="h-48 overflow-hidden relative">
-                            <img src="/static/pics/cartoon/divisi_mountaineer.jpg" 
-                                 alt="Gunung Hutan" class="w-full h-full object-cover">
+                            <img src="{{ div.image }}" alt="{{ div.clean_name }}"
+                                class="w-full h-full object-cover">
+                            <div
+                                class="absolute top-3 left-3 {{ div.badge_color }} text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
+                                {{ div.tag }}
+                            </div>
+                        </div>
+                        <div class="p-5 space-y-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <h3 class="text-base font-bold text-orange-950 font-heading">{{ div.clean_name }}</h3>
+                                <i class="{{ div.icon }} text-orange-600/70 text-sm"></i>
+                            </div>
+                            <p class="text-xs text-stone-600 leading-relaxed min-h-[3.5rem]">
+                                {{ div.description }}
+                            </p>
+                            
+                            <!-- Penugasan Kepala Divisi Lapangan -->
+                            <div class="pt-2.5 border-t border-orange-100 flex items-center justify-between">
+                                {% if div.is_assigned %}
+                                <div class="flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                                    <i class="fas fa-user-check text-[9px] text-emerald-600"></i>
+                                    <span>Kadiv: {{ div.member_name }}</span>
+                                    {% if div.member_nra %}
+                                    <span class="text-emerald-600 font-mono">({{ div.member_nra }})</span>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <div class="flex items-center gap-1 text-[10px] font-semibold text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
+                                    <i class="fas fa-compass text-[9px] text-orange-500"></i>
+                                    <span>Amanah Terbuka</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-5 pt-0">
+                        <span class="text-[11px] font-bold text-orange-700 flex items-center gap-1">
+                            <i class="fas fa-check-circle text-xs text-orange-600"></i> {{ div.feature_highlight }}
+                        </span>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Divisi 1: Gunung Hutan (Fallback) -->
+                <div class="bg-white rounded-lg overflow-hidden shadow-sm border border-orange-200/80 card-hover flex flex-col justify-between">
+                    <div>
+                        <div class="h-48 overflow-hidden relative">
+                            <img src="/static/pics/cartoon/divisi_mountaineer.jpg" alt="Gunung Hutan" class="w-full h-full object-cover">
                             <div class="absolute top-3 left-3 bg-orange-700 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
                                 Mountaineering
                             </div>
@@ -254,7 +225,8 @@
                         <div class="p-5 space-y-2">
                             <h3 class="text-base font-bold text-orange-950 font-heading">Gunung Hutan (GH)</h3>
                             <p class="text-xs text-stone-600 leading-relaxed">
-                                Navigasi darat (peta & kompas bidik), orientasi medan liar, manajemen perbekalan ekspedisi, dan survival rimba tropis.
+                                Navigasi darat (peta & kompas bidik), orientasi medan liar, manajemen perbekalan
+                                ekspedisi, dan survival rimba tropis.
                             </p>
                         </div>
                     </div>
@@ -264,78 +236,7 @@
                         </span>
                     </div>
                 </div>
-
-                <!-- Divisi 2: Panjat Tebing -->
-                <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-orange-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="h-48 overflow-hidden relative">
-                            <img src="/static/pics/cartoon/divisi_climbing.jpg" 
-                                 alt="Panjat Tebing" class="w-full h-full object-cover">
-                            <div class="absolute top-3 left-3 bg-orange-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
-                                Rock Climbing
-                            </div>
-                        </div>
-                        <div class="p-5 space-y-2">
-                            <h3 class="text-base font-bold text-orange-950 font-heading">Panjat Tebing (RC)</h3>
-                            <p class="text-xs text-stone-600 leading-relaxed">
-                                Teknik pemanjatan tebing alam (lead & top rope), belaying, penambatan anchor aman, rapelling, dan penyelamatan tebing vertikal.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="p-5 pt-0">
-                        <span class="text-[11px] font-bold text-orange-700 flex items-center gap-1">
-                            <i class="fas fa-check-circle text-xs text-orange-600"></i> Sertifikasi Alat UIAA
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Divisi 3: Susur Gua -->
-                <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-orange-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="h-48 overflow-hidden relative">
-                            <img src="/static/pics/cartoon/divisi_caving.jpg" 
-                                 alt="Susur Gua" class="w-full h-full object-cover">
-                            <div class="absolute top-3 left-3 bg-orange-800 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
-                                Speleology
-                            </div>
-                        </div>
-                        <div class="p-5 space-y-2">
-                            <h3 class="text-base font-bold text-orange-950 font-heading">Susur Gua (Caving)</h3>
-                            <p class="text-xs text-stone-600 leading-relaxed">
-                                Penjelajahan sistem gua horizontal dan vertikal menggunakan Single Rope Technique (SRT), pemetaan bawah tanah, dan biospeleologi.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="p-5 pt-0">
-                        <span class="text-[11px] font-bold text-orange-700 flex items-center gap-1">
-                            <i class="fas fa-check-circle text-xs text-orange-600"></i> Konservasi Stalaktit Karst
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Divisi 4: Konservasi & SAR -->
-                <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-orange-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="h-48 overflow-hidden relative">
-                            <img src="/static/pics/cartoon/divisi_conservation.jpg" 
-                                 alt="Konservasi" class="w-full h-full object-cover">
-                            <div class="absolute top-3 left-3 bg-amber-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
-                                Ecology & SAR
-                            </div>
-                        </div>
-                        <div class="p-5 space-y-2">
-                            <h3 class="text-base font-bold text-orange-950 font-heading">Konservasi & SAR</h3>
-                            <p class="text-xs text-stone-600 leading-relaxed">
-                                Aksi penanaman pohon endemik, penjagaan mata air, edukasi kelestarian alam, serta regu tanggap darurat bencana kemanusiaan.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="p-5 pt-0">
-                        <span class="text-[11px] font-bold text-orange-700 flex items-center gap-1">
-                            <i class="fas fa-check-circle text-xs text-orange-600"></i> Tanggap Bencana & Kemanusiaan
-                        </span>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
         </div>
     </section>
@@ -347,11 +248,14 @@
             <div class="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-4">
                 <div>
                     <span class="text-xs font-bold uppercase tracking-widest text-orange-600">Jadwal Perjalanan</span>
-                    <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading mt-1">Agenda Ekspedisi Terbuka</h2>
-                    <p class="text-xs sm:text-sm text-stone-600">Jelajahi keindahan alam bersama rombongan resmi KPAB GIMBAL</p>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading mt-1">Agenda Ekspedisi
+                        Terbuka</h2>
+                    <p class="text-xs sm:text-sm text-stone-600">Jelajahi keindahan alam bersama rombongan resmi KPAB
+                        GIMBAL</p>
                 </div>
                 <div>
-                    <span class="text-xs bg-orange-50 text-orange-800 font-bold px-3 py-1.5 rounded-xl border border-orange-200">
+                    <span
+                        class="text-xs bg-orange-50 text-orange-800 font-bold px-3 py-1.5 rounded-lg border border-orange-200">
                         <i class="fas fa-shield-alt mr-1 text-orange-600"></i> Standar Keselamatan Terpandu
                     </span>
                 </div>
@@ -359,13 +263,15 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {% for act in activities %}
-                <div class="bg-white rounded-3xl border border-orange-200/80 shadow-sm overflow-hidden card-hover flex flex-col justify-between">
+                <div
+                    class="bg-white rounded-lg border border-orange-200/80 shadow-sm overflow-hidden card-hover flex flex-col justify-between">
                     <div>
                         <div class="relative h-52 overflow-hidden">
-                            <img src="{{ act.image_url or 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80' }}" 
-                                 alt="{{ act.title }}" class="w-full h-full object-cover">
+                            <img src="{{ act.image_url or 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80' }}"
+                                alt="{{ act.title }}" class="w-full h-full object-cover">
                             <div class="absolute top-3 left-3">
-                                <span class="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase shadow bg-orange-600 text-white">
+                                <span
+                                    class="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase shadow bg-orange-600 text-white">
                                     {{ act.difficulty }}
                                 </span>
                             </div>
@@ -384,22 +290,24 @@
                     </div>
 
                     <div class="p-6 pt-0 border-t border-orange-100 flex items-center justify-between mt-4">
-                        <span class="text-xs text-stone-500">Kuota: <strong class="text-orange-950">{{ act.quota }} orang</strong></span>
+                        <span class="text-xs text-stone-500">Kuota: <strong class="text-orange-950">{{ act.quota }}
+                                orang</strong></span>
                         {% if current_user %}
-                            <button onclick="alert('Pendaftaran tercatat! Tim logistik ekspedisi akan menghubungi Anda via WhatsApp.')" 
-                                    class="px-4 py-2 bg-orange-700 hover:bg-orange-800 text-white font-bold text-xs rounded-xl shadow transition">
-                                Daftar Ikut
-                            </button>
+                        <button
+                            onclick="alert('Pendaftaran tercatat! Tim logistik ekspedisi akan menghubungi Anda via WhatsApp.')"
+                            class="px-4 py-2 bg-orange-700 hover:bg-orange-800 text-white font-bold text-xs rounded-lg shadow transition">
+                            Daftar Ikut
+                        </button>
                         {% else %}
-                            <button onclick="openAuthModal()" 
-                                    class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow transition">
-                                Gabung Trip
-                            </button>
+                        <button onclick="openAuthModal()"
+                            class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow transition">
+                            Gabung Trip
+                        </button>
                         {% endif %}
                     </div>
                 </div>
                 {% else %}
-                <div class="col-span-3 p-12 text-center bg-white rounded-3xl border border-orange-200 text-stone-400">
+                <div class="col-span-3 p-12 text-center bg-white rounded-lg border border-orange-200 text-stone-400">
                     <p class="text-sm">Belum ada agenda ekspedisi terbuka saat ini.</p>
                 </div>
                 {% endfor %}
@@ -409,41 +317,102 @@
 
 
     <!-- 6. SECTION GALERI DOKUMENTASI JEJAK PETUALANGAN (PIN-DOWN EKSPEDISI) -->
-    <section id="galeri" class="py-24 bg-orange-50/50 border-t border-orange-100">
+    <section id="galeri" class="py-24 bg-gradient-to-b from-orange-50/60 via-stone-50 to-orange-50/40 border-t border-orange-100 overflow-hidden"
+             x-data="{ activeCategory: 'all' }">
         <div class="site-container">
-            <div class="text-center max-w-2xl mx-auto mb-16 space-y-2">
+            
+            <!-- Section Header -->
+            <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
                 <span class="text-xs font-bold uppercase tracking-widest text-orange-600 flex items-center justify-center gap-1.5">
                     <i class="fas fa-thumbtack text-[10px]"></i> Curated Expedition Gallery
                 </span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading">Galeri Jejak Petualangan</h2>
-                <p class="text-xs sm:text-sm text-stone-600">Dokumentasi pin-down pilihan dari berbagai ekspedisi, pendakian puncak, dan bakti konservasi alam</p>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading">
+                    Galeri Jejak Petualangan
+                </h2>
+                <p class="text-xs sm:text-sm text-stone-600">
+                    Dokumentasi pin-down pilihan dari berbagai ekspedisi rimba, pendakian puncak, susur gua, dan bakti konservasi alam Nusantara
+                </p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {% for item in gallery_items[:8] %}
-                <div class="group relative h-72 rounded-3xl overflow-hidden shadow-sm border border-orange-200/80 bg-white">
-                    <img src="{{ item.image_url }}" alt="{{ item.title }}" 
-                         class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+
+
+            <!-- INTERACTIVE CATEGORY FILTER TABS -->
+            <div class="flex flex-wrap items-center justify-center gap-2 mb-10 text-xs">
+                <button type="button" @click="activeCategory = 'all'"
+                        :class="activeCategory === 'all' ? 'bg-orange-600 text-white font-bold shadow-md scale-105' : 'bg-white text-stone-700 hover:bg-orange-50 border border-orange-200/80'"
+                        class="px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer">
+                    <i class="fas fa-th-large text-[11px]"></i>
+                    <span>Semua Jejak ({{ gallery_items|length }})</span>
+                </button>
+                {% for cat in gallery_categories %}
+                <button type="button" @click="activeCategory = '{{ cat }}'"
+                        :class="activeCategory === '{{ cat }}' ? 'bg-orange-600 text-white font-bold shadow-md scale-105' : 'bg-white text-stone-700 hover:bg-orange-50 border border-orange-200/80'"
+                        class="px-4 py-2 rounded-full transition-all duration-300 flex items-center gap-1.5 cursor-pointer">
+                    <span>{{ cat }}</span>
+                </button>
+                {% endfor %}
+            </div>
+
+            <!-- ANIMATED MASONRY GALLERY GRID -->
+            <div class="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+                {% for item in gallery_items %}
+                {% set is_vid = item.image_url and (item.image_url.endswith('.mp4') or item.image_url.endswith('.mov') or item.image_url.endswith('.webm')) %}
+                <div x-show="activeCategory === 'all' || activeCategory === '{{ item.category }}'"
+                     x-transition:enter="transition ease-out duration-300 transform"
+                     x-transition:enter-start="opacity-0 scale-95 translate-y-3"
+                     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                     class="break-inside-avoid group relative rounded-xl overflow-hidden shadow-sm hover:shadow-2xl border border-orange-200/80 bg-slate-900 cursor-pointer transition-all duration-500 hover:-translate-y-1.5"
+                     data-url="{{ item.image_url }}"
+                     data-type="{{ 'video' if is_vid else 'image' }}"
+                     data-title="{{ item.title or 'Dokumentasi Ekspedisi' }}"
+                     data-caption="{{ item.location or (item.activity.title if item.activity else 'KPAB GIMBAL') }} • {{ item.category }}"
+                     {% if item.album_json %}data-album='{{ item.album_json|safe }}'{% endif %}
+                     onclick="if (this.dataset.album) { try { var alb = JSON.parse(this.dataset.album); var idx = 0; for (var i=0; i<alb.length; i++) { if (alb[i].media_url === this.dataset.url) { idx = i; break; } } window.openMediaLightbox(alb, idx); return; } catch(e){} } window.openSingleLightbox(this.dataset.url, this.dataset.type, this.dataset.title, this.dataset.caption)">
                     
-                    <!-- Top Category Badge -->
-                    <div class="absolute top-3 right-3 z-10">
+                    {% if is_vid %}
+                    <div class="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
+                        <video src="{{ item.image_url }}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-700" preload="metadata" muted playsinline></video>
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/25 group-hover:bg-black/10 transition">
+                            <span class="w-10 h-10 rounded-full bg-orange-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition">
+                                <i class="fas fa-play text-xs pl-0.5"></i>
+                            </span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <img src="{{ item.image_url }}" alt="{{ item.title }}"
+                         loading="lazy"
+                         class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-700">
+                    {% endif %}
+
+                    <!-- Top Glass Badge -->
+                    <div class="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+                        {% if item.post and item.post.media_items and item.post.media_items|length > 1 %}
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shadow-md bg-amber-500/90 backdrop-blur-md text-white border border-amber-400/40 flex items-center gap-1" title="Bagian dari postingan {{ item.post.media_items|length }} foto">
+                            <i class="fas fa-images text-[9px]"></i>
+                            <span>{{ item.post.media_items|length }} Foto</span>
+                        </span>
+                        {% endif %}
                         <span class="px-2.5 py-1 rounded-full text-[10px] font-bold shadow-md bg-black/60 backdrop-blur-md text-orange-200 border border-orange-500/30">
                             {{ item.category }}
+                        </span>
+                        <!-- Quick View Zoom Icon Badge on Hover -->
+                        <span class="w-6 h-6 rounded-full bg-orange-600/90 text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow">
+                            <i class="fas fa-expand"></i>
                         </span>
                     </div>
 
                     <!-- Overlay Detail on Hover & Subtle Gradient -->
-                    <div class="absolute inset-0 bg-gradient-to-t from-orange-950/90 via-orange-950/40 to-transparent flex flex-col justify-end p-5 text-white">
+                    <div class="absolute inset-0 bg-gradient-to-t from-orange-950/95 via-orange-950/40 to-transparent flex flex-col justify-end p-5 text-white opacity-90 group-hover:opacity-100 transition-opacity">
                         {% if item.activity %}
                         <span class="text-[10px] font-bold text-orange-400 uppercase tracking-wider flex items-center gap-1 mb-0.5">
                             <i class="fas fa-mountain text-[9px]"></i> {{ item.activity.title }}
                         </span>
                         {% endif %}
 
-                        <p class="text-sm font-bold text-white font-heading">{{ item.title or 'Ekspedisi Rimba' }}</p>
+                        <p class="text-sm font-bold text-white font-heading leading-tight">{{ item.title or 'Ekspedisi Rimba' }}</p>
 
                         {% if item.location %}
-                        <p class="text-[11px] text-orange-200/90 flex items-center gap-1 mt-0.5">
+                        <p class="text-[11px] text-orange-200/90 flex items-center gap-1 mt-1">
                             <i class="fas fa-map-marker-alt text-orange-400 text-[10px]"></i> {{ item.location }}
                         </p>
                         {% endif %}
@@ -455,44 +424,62 @@
                 </div>
                 {% endfor %}
             </div>
+
+            <!-- Teks Ajakan Lihat Detail -->
+            <div class="mt-12 text-center text-xs text-stone-500">
+                <span><i class="fas fa-mouse-pointer text-orange-600 mr-1 animate-bounce"></i> Klik sembarang foto untuk membuka <strong>Cinema Lightbox Viewer</strong> beresolusi tinggi</span>
+            </div>
         </div>
     </section>
+
+
 
 
     <!-- 7. SECTION PIAGAM KODE ETIK PECINTA ALAM INDONESIA -->
     <section id="kode-etik" class="py-24 kode-etik-section text-white relative overflow-hidden">
         <div class="site-container relative z-10 text-center space-y-8">
-            
-            <div class="w-16 h-16 rounded-2xl bg-orange-600/30 border border-orange-500/50 text-orange-400 flex items-center justify-center mx-auto text-2xl shadow-xl">
+
+            <div
+                class="w-16 h-16 rounded-lg bg-orange-600/30 border border-orange-500/50 text-orange-400 flex items-center justify-center mx-auto text-2xl shadow-xl">
                 <i class="fas fa-scroll"></i>
             </div>
 
             <div class="space-y-2">
-                <span class="text-xs font-bold uppercase tracking-widest text-orange-400">Piagam Kehormatan Nasional</span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold font-heading text-white">Kode Etik Pecinta Alam Indonesia</h2>
-                <p class="text-xs text-orange-200/70">Landasan moral sakral yang dipegang teguh oleh seluruh anggota KPAB GIMBAL</p>
+                <span class="text-xs font-bold uppercase tracking-widest text-orange-400">Piagam Kehormatan
+                    Nasional</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold font-heading text-white">Kode Etik Pecinta Alam Indonesia
+                </h2>
+                <p class="text-xs text-orange-200/70">Landasan moral sakral yang dipegang teguh oleh seluruh anggota
+                    KPAB GIMBAL</p>
             </div>
 
             <!-- Kartu Naskah Kode Etik -->
-            <div class="piagam-border rounded-3xl p-8 sm:p-12 text-left shadow-2xl space-y-6">
+            <div class="piagam-border rounded-lg p-8 sm:p-12 text-left shadow-2xl space-y-6">
                 <p class="text-center text-orange-300 font-heading font-extrabold text-sm sm:text-base tracking-wide">
                     "Mencintai alam adalah mencintai Sang Pencipta dan tanah air."
                 </p>
                 <div class="space-y-4 text-xs sm:text-sm text-orange-100/90 leading-relaxed font-serif">
                     <p class="flex items-start gap-3">
-                        <span class="w-6 h-6 rounded-full bg-orange-800 text-orange-200 flex items-center justify-center font-bold text-xs flex-shrink-0">1</span>
-                        <span>Pencinta Alam Indonesia sadar bahwa alam beserta isinya adalah ciptaan Tuhan Yang Maha Esa.</span>
+                        <span
+                            class="w-6 h-6 rounded-full bg-orange-800 text-orange-200 flex items-center justify-center font-bold text-xs flex-shrink-0">1</span>
+                        <span>Pencinta Alam Indonesia sadar bahwa alam beserta isinya adalah ciptaan Tuhan Yang Maha
+                            Esa.</span>
                     </p>
                     <p class="flex items-start gap-3">
-                        <span class="w-6 h-6 rounded-full bg-orange-800 text-orange-200 flex items-center justify-center font-bold text-xs flex-shrink-0">2</span>
-                        <span>Pencinta Alam Indonesia sebagai bagian dari masyarakat Indonesia sadar akan tanggung jawabnya kepada Tuhan, bangsa dan tanah air.</span>
+                        <span
+                            class="w-6 h-6 rounded-full bg-orange-800 text-orange-200 flex items-center justify-center font-bold text-xs flex-shrink-0">2</span>
+                        <span>Pencinta Alam Indonesia sebagai bagian dari masyarakat Indonesia sadar akan tanggung
+                            jawabnya kepada Tuhan, bangsa dan tanah air.</span>
                     </p>
                     <p class="flex items-start gap-3">
-                        <span class="w-6 h-6 rounded-full bg-orange-800 text-orange-200 flex items-center justify-center font-bold text-xs flex-shrink-0">3</span>
-                        <span>Pencinta Alam Indonesia sadar bahwa mencintai alam adalah sebagian dari mengabdi kepada nusa dan bangsa.</span>
+                        <span
+                            class="w-6 h-6 rounded-full bg-orange-800 text-orange-200 flex items-center justify-center font-bold text-xs flex-shrink-0">3</span>
+                        <span>Pencinta Alam Indonesia sadar bahwa mencintai alam adalah sebagian dari mengabdi kepada
+                            nusa dan bangsa.</span>
                     </p>
                 </div>
-                <div class="pt-4 border-t border-orange-800/60 text-center font-sans text-[11px] text-orange-400 font-bold uppercase tracking-widest">
+                <div
+                    class="pt-4 border-t border-orange-800/60 text-center font-sans text-[11px] text-orange-400 font-bold uppercase tracking-widest">
                     Disahkan pada Gladian Nasional IV Pecinta Alam se-Indonesia di Ujung Pandang, 1974
                 </div>
             </div>
@@ -506,41 +493,49 @@
         <div class="site-container">
             <div class="text-center max-w-2xl mx-auto mb-16 space-y-2">
                 <span class="text-xs font-bold uppercase tracking-widest text-orange-600">Transparan & Terstandar</span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading">Alur Registrasi Anggota (R-nn-YY)</h2>
-                <p class="text-xs sm:text-sm text-stone-600">3 tahap mudah untuk resmi menjadi bagian dari keluarga besar KPAB GIMBAL</p>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading">Alur Registrasi Anggota
+                    (R-nn-YY)</h2>
+                <p class="text-xs sm:text-sm text-stone-600">3 tahap mudah untuk resmi menjadi bagian dari keluarga
+                    besar KPAB GIMBAL</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Langkah 1 -->
-                <div class="bg-orange-50/50 p-8 rounded-3xl border border-orange-200 space-y-4 relative card-hover">
-                    <div class="w-12 h-12 rounded-2xl bg-orange-600 text-white font-black text-lg flex items-center justify-center shadow">
+                <div class="bg-orange-50/50 p-8 rounded-lg border border-orange-200 space-y-4 relative card-hover">
+                    <div
+                        class="w-12 h-12 rounded-lg bg-orange-600 text-white font-black text-lg flex items-center justify-center shadow">
                         1
                     </div>
                     <h3 class="text-base font-bold text-orange-950 font-heading">Hubungkan Akun Google</h3>
                     <p class="text-xs text-stone-600 leading-relaxed">
-                        Cukup sekali klik untuk otentikasi cepat via Google OAuth resmi. Email dan identitas dasar Anda langsung terhubung dengan aman.
+                        Cukup sekali klik untuk otentikasi cepat via Google OAuth resmi. Email dan identitas dasar Anda
+                        langsung terhubung dengan aman.
                     </p>
                 </div>
 
                 <!-- Langkah 2 -->
-                <div class="bg-orange-50/50 p-8 rounded-3xl border border-orange-200 space-y-4 relative card-hover">
-                    <div class="w-12 h-12 rounded-2xl bg-orange-700 text-white font-black text-lg flex items-center justify-center shadow">
+                <div class="bg-orange-50/50 p-8 rounded-lg border border-orange-200 space-y-4 relative card-hover">
+                    <div
+                        class="w-12 h-12 rounded-lg bg-orange-700 text-white font-black text-lg flex items-center justify-center shadow">
                         2
                     </div>
                     <h3 class="text-base font-bold text-orange-950 font-heading">Lengkapi Data Medis & Darurat</h3>
                     <p class="text-xs text-stone-600 leading-relaxed">
-                        Keselamatan adalah prioritas utama. Isi golongan darah, riwayat alergi/kesehatan, dan nomor telepon keluarga terdekat (Emergency Contact).
+                        Keselamatan adalah prioritas utama. Isi golongan darah, riwayat alergi/kesehatan, dan nomor
+                        telepon keluarga terdekat (Emergency Contact).
                     </p>
                 </div>
 
                 <!-- Langkah 3 -->
-                <div class="bg-orange-50/50 p-8 rounded-3xl border border-orange-200 space-y-4 relative card-hover">
-                    <div class="w-12 h-12 rounded-2xl bg-orange-900 text-amber-300 font-black text-lg flex items-center justify-center shadow">
+                <div class="bg-orange-50/50 p-8 rounded-lg border border-orange-200 space-y-4 relative card-hover">
+                    <div
+                        class="w-12 h-12 rounded-lg bg-orange-900 text-amber-300 font-black text-lg flex items-center justify-center shadow">
                         3
                     </div>
                     <h3 class="text-base font-bold text-orange-950 font-heading">Verifikasi & Nomor R-nn-YY</h3>
                     <p class="text-xs text-stone-600 leading-relaxed">
-                        Pengurus menyetujui pendaftaran dan sistem otomatis menerbitkan nomor unik tahun berjalan <strong>(R-nn-YY)</strong> serta KTA Digital dengan QR Code validasi lapangan.
+                        Pengurus menyetujui pendaftaran dan sistem otomatis menerbitkan nomor unik tahun berjalan
+                        <strong>(R-nn-YY)</strong> serta KTA Digital dengan QR Code validasi lapangan.
                     </p>
                 </div>
             </div>
@@ -554,53 +549,85 @@
             <div class="text-center max-w-2xl mx-auto mb-16 space-y-2">
                 <span class="text-xs font-bold uppercase tracking-widest text-orange-600">Amanah Organisasi</span>
                 <h2 class="text-3xl sm:text-4xl font-extrabold text-orange-950 font-heading">Dewan Pengurus Inti</h2>
-                <p class="text-xs sm:text-sm text-stone-600">Kepengurusan yang bertugas menjaga tata kelola organisasi, keselamatan ekspedisi, dan integritas kas</p>
+                <p class="text-xs sm:text-sm text-stone-600">Kepengurusan yang bertugas menjaga tata kelola organisasi,
+                    keselamatan ekspedisi, dan integritas kas</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Ketua Umum -->
-                <div class="bg-white p-6 rounded-3xl border border-orange-200/80 shadow-sm text-center space-y-3 card-hover">
-                    <img src="/static/pics/cartoon/avatar_ketua.jpg" 
-                         alt="Ketua Umum" class="w-24 h-24 rounded-full mx-auto object-cover border-2 border-orange-500 shadow-md">
-                    <div>
-                        <h3 class="text-sm font-bold text-orange-950 font-heading">Ketua Umum</h3>
-                        <p class="text-xs text-orange-600 font-mono font-bold">R-01-26</p>
-                        <p class="text-xs text-stone-500 mt-1">Koordinator Kebijakan Organisasi & Ekspedisi</p>
+                {% if board_members %}
+                    {% for leader in board_members %}
+                    <div class="bg-white p-6 rounded-lg border border-orange-200/80 shadow-sm text-center space-y-3 card-hover transition transform hover:-translate-y-1">
+                        <div class="relative w-24 h-24 mx-auto">
+                            <img src="{{ leader.avatar }}" alt="{{ leader.position_name }}"
+                                class="w-24 h-24 rounded-full mx-auto object-cover border-2 border-orange-500 shadow-md">
+                            {% if leader.is_assigned %}
+                            <span class="absolute bottom-0 right-0 w-6 h-6 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center text-white text-[10px] shadow" title="Pejabat Aktif">
+                                <i class="fas fa-check"></i>
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-orange-950 font-heading">{{ leader.position_name }}</h3>
+                            {% if leader.is_assigned %}
+                            <p class="text-xs text-orange-700 font-bold mt-0.5">{{ leader.member_name }}</p>
+                            <p class="text-[11px] text-orange-600 font-mono font-bold">{{ leader.member_nra or 'NRA Resmi' }}</p>
+                            {% else %}
+                            <p class="text-xs text-stone-400 italic mt-0.5">Amanah Terbuka</p>
+                            <p class="text-[10px] text-stone-400 font-mono uppercase tracking-wider">{{ leader.category }}</p>
+                            {% endif %}
+                            <p class="text-xs text-stone-500 mt-2 line-clamp-2 leading-relaxed">{{ leader.description }}</p>
+                        </div>
                     </div>
-                </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Ketua Umum -->
+                    <div
+                        class="bg-white p-6 rounded-lg border border-orange-200/80 shadow-sm text-center space-y-3 card-hover">
+                        <img src="/static/pics/cartoon/avatar_ketua.jpg" alt="Ketua Umum"
+                            class="w-24 h-24 rounded-full mx-auto object-cover border-2 border-orange-500 shadow-md">
+                        <div>
+                            <h3 class="text-sm font-bold text-orange-950 font-heading">Ketua Umum</h3>
+                            <p class="text-xs text-orange-600 font-mono font-bold">R-01-26</p>
+                            <p class="text-xs text-stone-500 mt-1">Koordinator Kebijakan Organisasi & Ekspedisi</p>
+                        </div>
+                    </div>
 
-                <!-- Sekretariat -->
-                <div class="bg-white p-6 rounded-3xl border border-orange-200/80 shadow-sm text-center space-y-3 card-hover">
-                    <img src="/static/pics/cartoon/avatar_sekjen.jpg" 
-                         alt="Sekretaris" class="w-24 h-24 rounded-full mx-auto object-cover border-2 border-orange-600 shadow-md">
-                    <div>
-                        <h3 class="text-sm font-bold text-orange-950 font-heading">Sekretaris Jenderal</h3>
-                        <p class="text-xs text-orange-600 font-mono font-bold">R-02-26</p>
-                        <p class="text-xs text-stone-500 mt-1">Administrasi, Database Anggota & Dokumen</p>
+                    <!-- Sekretariat -->
+                    <div
+                        class="bg-white p-6 rounded-lg border border-orange-200/80 shadow-sm text-center space-y-3 card-hover">
+                        <img src="/static/pics/cartoon/avatar_sekjen.jpg" alt="Sekretaris"
+                            class="w-24 h-24 rounded-full mx-auto object-cover border-2 border-orange-600 shadow-md">
+                        <div>
+                            <h3 class="text-sm font-bold text-orange-950 font-heading">Sekretaris Jenderal</h3>
+                            <p class="text-xs text-orange-600 font-mono font-bold">R-02-26</p>
+                            <p class="text-xs text-stone-500 mt-1">Administrasi, Database Anggota & Dokumen</p>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Bendahara -->
-                <div class="bg-white p-6 rounded-3xl border border-orange-200/80 shadow-sm text-center space-y-3 card-hover">
-                    <img src="/static/pics/cartoon/avatar_bendahara.jpg" 
-                         alt="Bendahara" class="w-24 h-24 rounded-full mx-auto object-cover border-2 border-orange-500 shadow-md">
-                    <div>
-                        <h3 class="text-sm font-bold text-orange-950 font-heading">Bendahara Umum</h3>
-                        <p class="text-xs text-orange-600 font-mono font-bold">Divisi Finansial</p>
-                        <p class="text-xs text-stone-500 mt-1">Transparansi Iuran, Kas & Logistik Alat</p>
+                    <!-- Bendahara -->
+                    <div
+                        class="bg-white p-6 rounded-lg border border-orange-200/80 shadow-sm text-center space-y-3 card-hover">
+                        <img src="/static/pics/cartoon/avatar_bendahara.jpg" alt="Bendahara"
+                            class="w-24 h-24 rounded-full mx-auto object-cover border-2 border-orange-500 shadow-md">
+                        <div>
+                            <h3 class="text-sm font-bold text-orange-950 font-heading">Bendahara Umum</h3>
+                            <p class="text-xs text-orange-600 font-mono font-bold">Divisi Finansial</p>
+                            <p class="text-xs text-stone-500 mt-1">Transparansi Iuran, Kas & Logistik Alat</p>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Operasional Rimba -->
-                <div class="bg-white p-6 rounded-3xl border border-orange-200/80 shadow-sm text-center space-y-3 card-hover">
-                    <img src="/static/pics/cartoon/avatar_kadiv.jpg" 
-                         alt="Kadiv Lapangan" class="w-24 h-24 rounded-full mx-auto object-cover border-2 border-orange-700 shadow-md">
-                    <div>
-                        <h3 class="text-sm font-bold text-orange-950 font-heading">Kadiv Operasional Rimba</h3>
-                        <p class="text-xs text-orange-700 font-mono font-bold">Gunung Hutan & SAR</p>
-                        <p class="text-xs text-stone-500 mt-1">Jalur Pendakian, Peta & Manajemen Risiko</p>
+                    <!-- Operasional Rimba -->
+                    <div
+                        class="bg-white p-6 rounded-lg border border-orange-200/80 shadow-sm text-center space-y-3 card-hover">
+                        <img src="/static/pics/cartoon/avatar_kadiv.jpg" alt="Kadiv Lapangan"
+                            class="w-24 h-24 rounded-full mx-auto object-cover border-2 border-orange-700 shadow-md">
+                        <div>
+                            <h3 class="text-sm font-bold text-orange-950 font-heading">Kadiv Operasional Rimba</h3>
+                            <p class="text-xs text-orange-700 font-mono font-bold">Gunung Hutan & SAR</p>
+                            <p class="text-xs text-stone-500 mt-1">Jalur Pendakian, Peta & Manajemen Risiko</p>
+                        </div>
                     </div>
-                </div>
+                {% endif %}
             </div>
         </div>
     </section>
@@ -613,24 +640,25 @@
                 Puncak dan Lembah Menanti Langkah Petualanganmu
             </h2>
             <p class="text-stone-100 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-normal">
-                Bergabunglah bersama keluarga besar KPAB GIMBAL. Tempuh rimba, jalin persaudaraan abadi, dan kibarkan panji kepedulian lingkungan hidup di seluruh pelosok nusantara.
+                Bergabunglah bersama keluarga besar KPAB GIMBAL. Tempuh rimba, jalin persaudaraan abadi, dan kibarkan
+                panji kepedulian lingkungan hidup di seluruh pelosok nusantara.
             </p>
             <div class="flex flex-wrap justify-center items-center gap-4 pt-4">
                 {% if current_user %}
-                    <a href="{{ '/admin/dashboard' if current_user.is_admin else '/member/dashboard' }}" 
-                       class="px-8 py-3.5 btn-brand-primary hover:brightness-110 text-white font-extrabold text-sm rounded-2xl shadow-2xl transition">
-                        Buka Portal Saya
-                    </a>
+                <a href="{{ '/admin/dashboard' if current_user.is_admin else '/member/dashboard' }}"
+                    class="px-8 py-3.5 btn-brand-primary hover:brightness-110 text-white font-extrabold text-sm rounded-lg shadow-2xl transition">
+                    Buka Portal Saya
+                </a>
                 {% else %}
-                    <button onclick="openAuthModal()" 
-                            class="px-8 py-3.5 btn-brand-primary hover:brightness-110 text-white font-extrabold text-sm rounded-2xl shadow-2xl transition flex items-center gap-2">
-                        <i class="fab fa-google"></i>
-                        <span>Daftar Anggota Sekarang</span>
-                    </button>
-                    <a href="/verify-kta/R-01-26" target="_blank"
-                       class="px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-2xl border border-white/20 transition">
-                        Cek Validasi KTA (QR)
-                    </a>
+                <button onclick="openAuthModal()"
+                    class="px-8 py-3.5 btn-brand-primary hover:brightness-110 text-white font-extrabold text-sm rounded-lg shadow-2xl transition flex items-center gap-2">
+                    <i class="fab fa-google"></i>
+                    <span>Daftar Anggota Sekarang</span>
+                </button>
+                <a href="/verify-kta/R-01-26" target="_blank"
+                    class="px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-lg border border-white/20 transition">
+                    Cek Validasi KTA (QR)
+                </a>
                 {% endif %}
             </div>
         </div>
@@ -640,57 +668,82 @@
     <footer class="footer-theme-bg py-16 text-xs text-stone-300 border-t">
         <div class="site-container">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
-                
+
                 <div class="space-y-3">
                     <div class="flex items-center gap-3">
                         <img src="/assets/logo.png" alt="Logo" class="w-10 h-10 object-contain">
                         <div>
-                            <span class="text-sm font-black text-white font-heading">KPAB - GIMBAL</span>
+                            <span class="text-sm font-black text-white font-heading">{{ org_name or 'KPAB - GIMBAL' }}</span>
                             <p class="text-[9px] text-brand-400 font-bold uppercase tracking-wider">INDONESIA</p>
                         </div>
                     </div>
                     <p class="text-stone-300 text-xs leading-relaxed">
-                        Kelompok Petualang Alam Bebas yang berkomitmen mencetak generasi petualang tangguh, berakhlak mulia, dan setia menjaga kelestarian alam nusantara.
+                        {{ app_tagline or 'Kelompok Petualang Alam Bebas yang berkomitmen mencetak generasi petualang tangguh, berakhlak mulia, dan setia menjaga kelestarian alam nusantara.' }}
                     </p>
                 </div>
 
                 <div>
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-4 font-heading">Sekretariat Basecamp</h3>
-                    <div class="space-y-2 text-stone-300">
-                        <p><i class="fas fa-map-marker-alt text-brand-400 mr-2"></i> Sekretariat Pusat KPAB GIMBAL, Kota Gorontalo, Provinsi Gorontalo</p>
-                        <p><i class="fas fa-envelope text-brand-400 mr-2"></i> kontak@gimbal.org</p>
-                        <p><i class="fas fa-phone-alt text-brand-400 mr-2"></i> +62 812-3456-7890 (Basecamp Gorontalo)</p>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-4 font-heading">Sekretariat
+                        Basecamp</h3>
+                    <div class="space-y-2.5 text-stone-300">
+                        <p class="flex items-start gap-2.5">
+                            <i class="fas fa-map-marker-alt text-brand-400 mt-0.5 flex-shrink-0"></i>
+                            <span>{{ org_address or 'Sekretariat KPAB GIMBAL, Provinsi Gorontalo' }}</span>
+                        </p>
+                        <p class="flex items-center gap-2.5">
+                            <i class="fas fa-envelope text-brand-400 flex-shrink-0"></i>
+                            <a href="mailto:{{ org_email or 'sekretariat@gimbal.org' }}" class="hover:text-white transition">{{ org_email or 'sekretariat@gimbal.org' }}</a>
+                        </p>
+                        <p class="flex items-center gap-2.5">
+                            <i class="fas fa-phone-alt text-brand-400 flex-shrink-0"></i>
+                            <span>{{ org_phone or '+62 812-3456-7890' }}</span>
+                        </p>
                     </div>
                 </div>
 
                 <div>
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-4 font-heading">Navigasi Cepat</h3>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-4 font-heading">Navigasi Cepat
+                    </h3>
                     <ul class="space-y-2 text-stone-300">
                         <li><a href="#tentang" class="hover:text-brand-400 transition">Profil & Filosofi</a></li>
-                        <li><a href="#divisi" class="hover:text-brand-400 transition">4 Divisi Minat Lapangan</a></li>
+                        <li>
+                            <a href="#divisi" class="hover:text-brand-400 transition font-medium">
+                                {{ operational_divisions|length if operational_divisions else 5 }} Divisi Operasional Lapangan
+                            </a>
+                            {% if operational_divisions %}
+                            <div class="flex flex-wrap gap-x-2 gap-y-0.5 mt-1 text-[10px] text-stone-400 font-normal leading-relaxed">
+                                {% for div in operational_divisions %}
+                                <a href="#divisi" class="hover:text-orange-300 transition">• {{ div.clean_name }}</a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </li>
                         <li><a href="#ekspedisi" class="hover:text-brand-400 transition">Agenda Ekspedisi</a></li>
-                        <li><a href="#kode-etik" class="hover:text-brand-400 transition">Piagam Kode Etik Pecinta Alam</a></li>
-                        <li><a href="/verify-kta/R-01-26" target="_blank" class="hover:text-brand-400 transition">Validasi KTA Digital (QR)</a></li>
+                        <li><a href="#kode-etik" class="hover:text-brand-400 transition">Piagam Kode Etik Pecinta
+                                Alam</a></li>
+                        <li><a href="/verify-kta/R-01-26" target="_blank"
+                                class="hover:text-brand-400 transition">Validasi KTA Digital (QR)</a></li>
                     </ul>
                 </div>
 
                 <div>
-                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-4 font-heading">Portal Anggota</h3>
+                    <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-4 font-heading">Portal Anggota
+                    </h3>
                     <p class="text-stone-300 text-xs mb-3 leading-relaxed">
                         Akses KTA Digital, agenda ekspedisi, dan status iuran bulanan resmi anggota.
                     </p>
                     {% if current_user %}
-                        <a href="{{ '/admin/dashboard' if current_user.is_admin else '/member/dashboard' }}" 
-                           class="w-full py-3 px-4 btn-brand-primary hover:brightness-110 text-white font-extrabold rounded-xl transition text-center text-xs flex items-center justify-center gap-2 shadow-lg">
-                            <i class="fas fa-compass"></i>
-                            <span>Buka Portal {{ 'Admin' if current_user.is_admin else 'Anggota' }}</span>
-                        </a>
+                    <a href="{{ '/admin/dashboard' if current_user.is_admin else '/member/dashboard' }}"
+                        class="w-full py-3 px-4 btn-brand-primary hover:brightness-110 text-white font-extrabold rounded-lg transition text-center text-xs flex items-center justify-center gap-2 shadow-lg">
+                        <i class="fas fa-compass"></i>
+                        <span>Buka Portal {{ 'Admin' if current_user.is_admin else 'Anggota' }}</span>
+                    </a>
                     {% else %}
-                        <button onclick="openAuthModal()" 
-                                class="w-full py-3 px-4 btn-brand-primary hover:brightness-110 text-white font-black rounded-xl transition text-center text-xs flex items-center justify-center gap-2 shadow-lg transform hover:-translate-y-0.5">
-                            <i class="fab fa-google"></i>
-                            <span>Masuk / Daftar Portal</span>
-                        </button>
+                    <button onclick="openAuthModal()"
+                        class="w-full py-3 px-4 btn-brand-primary hover:brightness-110 text-white font-black rounded-lg transition text-center text-xs flex items-center justify-center gap-2 shadow-lg transform hover:-translate-y-0.5">
+                        <i class="fab fa-google"></i>
+                        <span>Masuk / Daftar Portal</span>
+                    </button>
                     {% endif %}
                 </div>
 
@@ -700,8 +753,6 @@
                 <p>&copy; 2026 KPAB GIMBAL (Generasi Indonesia Menyatu Bersama Alam). All Rights Reserved.</p>
                 <p class="flex items-center gap-2">
                     <span class="text-brand-400 font-bold"><i class="fas fa-fire mr-1"></i> Salam Lestari!</span>
-                    <span>•</span>
-                    <span>Flask + Full HTMX Dual-Layer</span>
                 </p>
             </div>
         </div>
@@ -709,95 +760,55 @@
 
 
     <!-- MODAL AUTHENTICATION (STYLISH SIMPEL MONOTONE) -->
-    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden"
-         x-data="{ authTab: 'dev' }">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative border border-slate-200">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-stone-100 transition">
+    <div id="auth-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md hidden"
+        x-data="{ authTab: 'google' }">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 sm:p-7 shadow-2xl relative border border-slate-200">
+            <button onclick="closeAuthModal()"
+                class="absolute top-4 right-4 text-stone-400 hover:text-stone-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-stone-100 transition">
                 <i class="fas fa-times"></i>
             </button>
 
             <div class="text-center space-y-1.5 mb-5">
                 <img src="/assets/logo.png" alt="Logo GIMBAL" class="w-12 h-12 mx-auto object-contain">
-                <h3 class="text-xl font-black text-stone-900 font-heading">Akses Anggota GIMBAL</h3>
+                <h3 class="text-xl font-black text-stone-900 font-heading">Akses Portal GIMBAL</h3>
                 <p class="text-xs text-stone-500">Provinsi Gorontalo • Portal Terpadu Petualang</p>
             </div>
 
             <!-- Segmented Tab Switcher -->
-            <div class="flex p-1 bg-stone-100 rounded-2xl mb-4 text-xs font-semibold">
-                <button type="button" @click="authTab = 'dev'"
-                        :class="authTab === 'dev' ? 'bg-white text-stone-900 shadow-sm font-bold' : 'text-stone-500 hover:text-stone-800'"
-                        class="flex-1 py-1.5 px-2 rounded-xl transition text-center flex items-center justify-center gap-1.5">
-                    <i class="fas fa-bolt text-[10px]"></i>
-                    <span>1-Klik Cepat</span>
-                </button>
+            <div class="flex p-1 bg-stone-100 rounded-lg mb-4 text-xs font-semibold border border-stone-200">
                 <button type="button" @click="authTab = 'google'"
-                        :class="authTab === 'google' ? 'bg-white text-stone-900 shadow-sm font-bold' : 'text-stone-500 hover:text-stone-800'"
-                        class="flex-1 py-1.5 px-2 rounded-xl transition text-center flex items-center justify-center gap-1.5">
-                    <i class="fab fa-google text-[10px]"></i>
-                    <span>Google</span>
+                    :class="authTab === 'google' ? 'bg-white text-stone-900 shadow-sm font-bold' : 'text-stone-500 hover:text-stone-800'"
+                    class="flex-1 py-1.5 px-2 rounded-lg transition text-center flex items-center justify-center gap-1.5">
+                    <i class="fab fa-google text-red-500 text-[10px]"></i>
+                    <span>Akun Google</span>
                 </button>
                 <button type="button" @click="authTab = 'manual'"
-                        :class="authTab === 'manual' ? 'bg-white text-stone-900 shadow-sm font-bold' : 'text-stone-500 hover:text-stone-800'"
-                        class="flex-1 py-1.5 px-2 rounded-xl transition text-center flex items-center justify-center gap-1.5">
+                    :class="authTab === 'manual' ? 'bg-white text-stone-900 shadow-sm font-bold' : 'text-stone-500 hover:text-stone-800'"
+                    class="flex-1 py-1.5 px-2 rounded-lg transition text-center flex items-center justify-center gap-1.5">
                     <i class="fas fa-key text-[10px]"></i>
-                    <span>Email</span>
+                    <span>Email & Sandi</span>
                 </button>
-            </div>
-
-            <!-- Tab 1: 1-Klik Simulasi Peran -->
-            <div x-show="authTab === 'dev'" class="space-y-2.5">
-                <a href="/auth/switch-role?email=admin@gimbal.org" 
-                   class="p-3 rounded-2xl border border-stone-200 hover:border-brand-500 hover:bg-stone-50 transition flex items-center justify-between group">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-stone-900 text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs font-bold text-stone-900">Pengurus Admin (R-01-26)</p>
-                            <p class="text-[10px] text-stone-500">Ketua Umum • Akses Penuh Kas & Anggota</p>
-                        </div>
-                    </div>
-                    <span class="text-stone-400 group-hover:text-stone-900 text-xs font-bold">&rarr;</span>
-                </a>
-
-                <a href="/auth/switch-role?email=budi.pendaki@gmail.com" 
-                   class="p-3 rounded-2xl border border-stone-200 hover:border-brand-500 hover:bg-stone-50 transition flex items-center justify-between group">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-stone-200 text-stone-800 flex items-center justify-center font-bold text-xs">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs font-bold text-stone-900">Anggota Aktif Budi (R-02-26)</p>
-                            <p class="text-[10px] text-stone-500">KTA Digital, Iuran & Ekspedisi</p>
-                        </div>
-                    </div>
-                    <span class="text-stone-400 group-hover:text-stone-900 text-xs font-bold">&rarr;</span>
-                </a>
-
-                <a href="/auth/switch-role?email=calon.petualang@gmail.com" 
-                   class="p-3 rounded-2xl border border-stone-200 hover:border-brand-500 hover:bg-stone-50 transition flex items-center justify-between group">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="text-left">
-                            <p class="text-xs font-bold text-stone-900">Calon Anggota (Pending)</p>
-                            <p class="text-[10px] text-stone-500">Menunggu Verifikasi & Syarat Medis</p>
-                        </div>
-                    </div>
-                    <span class="text-stone-400 group-hover:text-stone-900 text-xs font-bold">&rarr;</span>
-                </a>
             </div>
 
             <!-- Tab 2: Akun Google -->
             <div x-show="authTab === 'google'" class="space-y-3">
                 <p class="text-xs text-stone-500 text-center">
-                    Masuk otomatis 1-klik menggunakan akun Google resmi Anda.
+                    Masuk atau daftarkan keanggotaan Anda menggunakan akun Google resmi.
                 </p>
-                <a href="/auth/google-login" 
-                   class="w-full py-3 px-4 bg-white hover:bg-stone-50 text-stone-800 font-bold rounded-2xl shadow-sm border border-stone-300 transition flex items-center justify-center gap-3 text-xs">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.1-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/></svg>
-                    <span>Lanjutkan dengan Google</span>
+                <a href="/auth/google-login"
+                    class="w-full py-3.5 px-4 bg-white hover:bg-stone-50 text-stone-800 font-bold rounded-lg shadow-sm border border-stone-300 hover:border-stone-400 transition flex items-center justify-center gap-3 text-xs sm:text-sm group">
+                    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+                        <path fill="#EA4335"
+                            d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z" />
+                        <path fill="#4285F4"
+                            d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                        <path fill="#FBBC05"
+                            d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.1-1.5.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9z" />
+                        <path fill="#34A853"
+                            d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z" />
+                    </svg>
+                    <span>Daftar / Masuk dengan Google</span>
                 </a>
             </div>
 
@@ -805,17 +816,17 @@
             <div x-show="authTab === 'manual'">
                 <form action="/auth/login" method="POST" class="space-y-3 text-xs">
                     <div>
-                        <label class="block font-semibold text-stone-700 mb-1">Email</label>
-                        <input type="email" name="email" required placeholder="nama@gmail.com"
-                               class="w-full px-3 py-2 rounded-xl border border-stone-200 text-stone-900 focus:ring-2 focus:ring-stone-400 focus:outline-none">
+                        <label class="block font-semibold text-stone-700 mb-1">Email atau Nama Pengguna</label>
+                        <input type="text" name="email" required placeholder="fitra atau nama@gmail.com"
+                            class="w-full px-3 py-2 rounded-lg border border-stone-200 text-stone-900 focus:ring-2 focus:ring-stone-400 focus:outline-none">
                     </div>
                     <div>
                         <label class="block font-semibold text-stone-700 mb-1">Kata Sandi / PIN</label>
                         <input type="password" name="password" required placeholder="••••••••"
-                               class="w-full px-3 py-2 rounded-xl border border-stone-200 text-stone-900 focus:ring-2 focus:ring-stone-400 focus:outline-none">
+                            class="w-full px-3 py-2 rounded-lg border border-stone-200 text-stone-900 focus:ring-2 focus:ring-stone-400 focus:outline-none">
                     </div>
                     <button type="submit"
-                            class="w-full py-2.5 px-4 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-xl shadow-sm transition text-xs flex items-center justify-center gap-1.5">
+                        class="w-full py-2.5 px-4 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-lg shadow-sm transition text-xs flex items-center justify-center gap-1.5">
                         <i class="fas fa-sign-in-alt"></i> Masuk Akun
                     </button>
                 </form>
@@ -831,17 +842,18 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
-        function openAuthModal() {
-            document.getElementById('auth-modal').classList.remove('hidden');
-        }
-        function closeAuthModal() {
-            document.getElementById('auth-modal').classList.add('hidden');
-        }
-        function toggleMobileNav() {
-            const dropdown = document.getElementById('mobile-dropdown');
-            dropdown.classList.toggle('hidden');
-        }
+        window.openAuthModal = function() {
+            var el = document.getElementById('auth-modal');
+            if (el) el.classList.remove('hidden');
+        };
+        window.closeAuthModal = function() {
+            var el = document.getElementById('auth-modal');
+            if (el) el.classList.add('hidden');
+        };
+        window.toggleMobileNav = function() {
+            var dropdown = document.getElementById('mobile-dropdown');
+            if (dropdown) dropdown.classList.toggle('hidden');
+        };
     </script>
 
-</body>
-</html>
+</div>
