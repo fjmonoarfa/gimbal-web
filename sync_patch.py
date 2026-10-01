@@ -29,6 +29,7 @@ FILES_TO_SYNC = _secret_tuple + [
     ('templates/landing.html', f'{REMOTE_DIR}/templates/landing.html'),
     ('templates/shell.html', f'{REMOTE_DIR}/templates/shell.html'),
     ('templates/components/modals.html', f'{REMOTE_DIR}/templates/components/modals.html'),
+    ('templates/components/float_chat.html', f'{REMOTE_DIR}/templates/components/float_chat.html'),
     ('templates/member/member_pages.html', f'{REMOTE_DIR}/templates/member/member_pages.html'),
     ('templates/admin/admin_pages.html', f'{REMOTE_DIR}/templates/admin/admin_pages.html'),
     ('seed.py', f'{REMOTE_DIR}/seed.py'),
