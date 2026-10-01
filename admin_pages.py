@@ -1238,31 +1238,55 @@ def admin_create_doc_modal():
 @admin_required
 def admin_create_doc():
     admin = get_current_user()
-    title = request.form.get('title')
+    title = request.form.get('title', '').strip()
     category = request.form.get('category', 'ad_art')
-    description = request.form.get('description', '')
+    description = request.form.get('description', '').strip()
     is_public = bool(request.form.get('is_public_to_members', 1))
 
-    file = request.files.get('file')
+    file = request.files.get('doc_file') or request.files.get('file')
     file_path = '/static/docs/ad_art_gimbal.pdf'
-    file_size = '2.4 MB'
+    file_size_fmt = '2.4 MB'
+    file_type = 'pdf'
+
     if file and file.filename:
         filename = secure_filename(file.filename)
-        save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'docs', filename)
+        docs_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'docs')
+        os.makedirs(docs_dir, exist_ok=True)
+        safe_name = f"doc_{int(datetime.now().timestamp())}_{filename}"
+        save_path = os.path.join(docs_dir, safe_name)
         file.save(save_path)
-        file_path = f"/uploads/docs/{filename}"
-        file_size = f"{round(os.path.getsize(save_path) / (1024 * 1024), 2)} MB"
+        file_path = f"/uploads/docs/{safe_name}"
+
+        file_size_bytes = os.path.getsize(save_path)
+        if file_size_bytes > 1024 * 1024:
+            file_size_fmt = f"{round(file_size_bytes / (1024 * 1024), 1)} MB"
+        else:
+            file_size_fmt = f"{round(file_size_bytes / 1024, 1)} KB"
+
+        if '.' in filename:
+            file_type = filename.rsplit('.', 1)[1].lower()
 
     new_doc = Document(
         title=title,
         category=category,
         file_path=file_path,
-        file_size=file_size,
+        file_size_fmt=file_size_fmt,
+        file_type=file_type,
         uploaded_by=admin.id,
         is_public_to_members=is_public,
         description=description
     )
     db.session.add(new_doc)
+
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='upload_document',
+        target_type='document',
+        target_id=str(title),
+        details=f"Mengunggah dokumen organisasi '{title}' format {file_type.upper()} ({file_size_fmt})",
+        ip_address=request.remote_addr
+    )
+    db.session.add(log)
     db.session.commit()
     return admin_documents()
 
@@ -1279,20 +1303,41 @@ def admin_edit_doc_modal(doc_id):
 @login_required
 @admin_required
 def admin_edit_doc(doc_id):
+    admin = get_current_user()
     doc = Document.query.get_or_404(doc_id)
     doc.title = request.form.get('title', doc.title).strip()
     doc.category = request.form.get('category', doc.category)
     doc.description = request.form.get('description', doc.description).strip()
     doc.is_public_to_members = bool(request.form.get('is_public_to_members', 1))
-    
-    file = request.files.get('file')
+
+    file = request.files.get('doc_file') or request.files.get('file')
     if file and file.filename:
         filename = secure_filename(file.filename)
-        save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'docs', filename)
+        docs_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'docs')
+        os.makedirs(docs_dir, exist_ok=True)
+        safe_name = f"doc_{int(datetime.now().timestamp())}_{filename}"
+        save_path = os.path.join(docs_dir, safe_name)
         file.save(save_path)
-        doc.file_path = f"/uploads/docs/{filename}"
-        doc.file_size = f"{round(os.path.getsize(save_path) / (1024 * 1024), 2)} MB"
-        
+        doc.file_path = f"/uploads/docs/{safe_name}"
+
+        file_size_bytes = os.path.getsize(save_path)
+        if file_size_bytes > 1024 * 1024:
+            doc.file_size_fmt = f"{round(file_size_bytes / (1024 * 1024), 1)} MB"
+        else:
+            doc.file_size_fmt = f"{round(file_size_bytes / 1024, 1)} KB"
+
+        if '.' in filename:
+            doc.file_type = filename.rsplit('.', 1)[1].lower()
+
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='edit_document',
+        target_type='document',
+        target_id=str(doc.id),
+        details=f"Memperbarui dokumen '{doc.title}' format {(doc.file_type or 'pdf').upper()}",
+        ip_address=request.remote_addr
+    )
+    db.session.add(log)
     db.session.commit()
     return admin_documents()
 
@@ -1720,9 +1765,16 @@ def admin_create_repo_map():
         file_size_fmt = f"{round(file_size_bytes / 1024, 1)} KB"
 
     if '.' in filename_clean:
-        ext = filename_clean.rsplit('.', 1)[1].lower()
-        if ext in ['mbtiles', 'gpx', 'geojson', 'kml', 'zip']:
-            file_type = ext
+        file_type = filename_clean.rsplit('.', 1)[1].lower()
+
+    preview_file = request.files.get('preview_file')
+    preview_image = None
+    if preview_file and preview_file.filename:
+        preview_clean = secure_filename(preview_file.filename)
+        safe_preview = f"prev_{int(datetime.now().timestamp())}_{preview_clean}"
+        preview_path = os.path.join(maps_dir, safe_preview)
+        preview_file.save(preview_path)
+        preview_image = f"/uploads/maps/{safe_preview}"
 
     repo_item = MapRepository(
         title=title,
@@ -1731,6 +1783,7 @@ def admin_create_repo_map():
         file_type=file_type,
         file_path=f"/uploads/maps/{safe_name}",
         file_size_fmt=file_size_fmt,
+        preview_image=preview_image,
         description=description,
         total_waypoints=total_waypoints,
         total_distance_km=total_distance_km,
@@ -1745,6 +1798,72 @@ def admin_create_repo_map():
         target_type='map_repository',
         target_id=str(title),
         details=f"Mengunggah peta ekspedisi '{title}' format {file_type.upper()} ({file_size_fmt})",
+        ip_address=request.remote_addr
+    )
+    db.session.add(log)
+    db.session.commit()
+    return admin_repo_maps()
+
+
+@admin_bp.route('/admin/repo-maps/edit-modal/<int:map_id>')
+@login_required
+@admin_required
+def admin_edit_repo_map_modal(map_id):
+    map_item = MapRepository.query.get_or_404(map_id)
+    return render_template('components/modals.html', modal_type='edit_repo_map', map_item=map_item)
+
+
+@admin_bp.route('/admin/repo-maps/edit/<int:map_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_edit_repo_map(map_id):
+    admin = get_current_user()
+    map_item = MapRepository.query.get_or_404(map_id)
+
+    map_item.title = request.form.get('title', map_item.title).strip()
+    map_item.region = request.form.get('region', map_item.region).strip()
+    map_item.category = request.form.get('category', map_item.category).strip()
+    map_item.description = request.form.get('description', map_item.description).strip()
+    map_item.total_waypoints = int(request.form.get('total_waypoints', map_item.total_waypoints) or 0)
+    map_item.total_distance_km = float(request.form.get('total_distance_km', map_item.total_distance_km) or 0.0)
+    map_item.is_exclusive_member = bool(request.form.get('is_exclusive_member'))
+
+    maps_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'maps')
+    os.makedirs(maps_dir, exist_ok=True)
+
+    # File Peta Pengganti (Opsional)
+    map_file = request.files.get('map_file')
+    if map_file and map_file.filename:
+        filename_clean = secure_filename(map_file.filename)
+        safe_name = f"map_{int(datetime.now().timestamp())}_{filename_clean}"
+        save_path = os.path.join(maps_dir, safe_name)
+        map_file.save(save_path)
+
+        file_size_bytes = os.path.getsize(save_path)
+        if file_size_bytes > 1024 * 1024:
+            map_item.file_size_fmt = f"{round(file_size_bytes / (1024 * 1024), 1)} MB"
+        else:
+            map_item.file_size_fmt = f"{round(file_size_bytes / 1024, 1)} KB"
+
+        map_item.file_path = f"/uploads/maps/{safe_name}"
+        if '.' in filename_clean:
+            map_item.file_type = filename_clean.rsplit('.', 1)[1].lower()
+
+    # File Preview Pengganti (Opsional)
+    preview_file = request.files.get('preview_file')
+    if preview_file and preview_file.filename:
+        preview_clean = secure_filename(preview_file.filename)
+        safe_preview = f"prev_{int(datetime.now().timestamp())}_{preview_clean}"
+        preview_path = os.path.join(maps_dir, safe_preview)
+        preview_file.save(preview_path)
+        map_item.preview_image = f"/uploads/maps/{safe_preview}"
+
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='edit_map_repo',
+        target_type='map_repository',
+        target_id=str(map_item.id),
+        details=f"Memperbarui arsip peta ekspedisi '{map_item.title}' format {map_item.file_type.upper()}",
         ip_address=request.remote_addr
     )
     db.session.add(log)

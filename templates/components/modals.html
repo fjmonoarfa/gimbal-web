@@ -207,6 +207,78 @@
 {% endif %}
 
 
+<!-- 3b. MODAL EDIT DOKUMEN INTERNAL (ADMIN CRUD) -->
+{% if modal_type == 'edit_document' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-edit-doc">
+    <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <h2 class="text-lg font-bold text-slate-900 font-heading mb-4">Edit Dokumen Organisasi</h2>
+
+        <form hx-post="/admin/documents/edit/{{ document.id }}" 
+              hx-target="#main-content"
+              hx-encoding="multipart/form-data"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-4 text-xs">
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Judul Dokumen</label>
+                <input type="text" name="title" value="{{ document.title }}" required
+                       class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Kategori Dokumen</label>
+                <select name="category" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                    <option value="ad_art" {% if document.category == 'ad_art' %}selected{% endif %}>AD / ART & Legalitas</option>
+                    <option value="sop" {% if document.category == 'sop' %}selected{% endif %}>SOP Keselamatan & Pendakian</option>
+                    <option value="materi" {% if document.category == 'materi' %}selected{% endif %}>Materi & Modul Pelatihan</option>
+                    <option value="sk_resmi" {% if document.category == 'sk_resmi' %}selected{% endif %}>Surat Keputusan / Notulensi</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Ganti File Dokumen (Opsional)</label>
+                <div class="p-2.5 mb-2 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-[11px]">
+                    <span class="text-slate-600 truncate max-w-[200px] font-mono"><i class="fas fa-file-alt mr-1 text-orange-600"></i>{{ document.file_path.split('/')[-1] }}</span>
+                    <span class="px-2 py-0.5 bg-orange-100 text-orange-800 font-bold rounded uppercase">.{{ (document.file_type or 'pdf')|upper }} ({{ document.file_size_fmt }})</span>
+                </div>
+                <input type="file" name="doc_file" accept=".pdf,.docx,.doc,.xlsx,.xls,.zip,.rar,.txt"
+                       class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                <p class="text-[10px] text-slate-400 mt-1">Kosongkan jika tidak ingin mengganti berkas saat ini.</p>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Deskripsi Singkat</label>
+                <textarea name="description" rows="2"
+                          class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ document.description or '' }}</textarea>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input type="checkbox" name="is_public_to_members" id="edit_is_public" value="1" {% if document.is_public_to_members %}checked{% endif %} class="rounded text-orange-600 focus:ring-orange-500">
+                <label for="edit_is_public" class="text-slate-700 font-semibold">Tampilkan kepada semua anggota aktif</label>
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow transition">
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
 <!-- 4. MODAL BUAT EKSPEDISI / AGENDA BARU (ADMIN) -->
 {% if modal_type == 'create_activity' %}
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
@@ -1822,6 +1894,118 @@
     </div>
 </div>
 {% endif %}
+
+
+<!-- 18b. MODAL EDIT PETA REPOSITORI GIMBAL (ADMIN) -->
+{% if modal_type == 'edit_repo_map' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-edit-repo-map">
+    <div class="bg-white rounded-lg max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="mb-4">
+            <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase">Pustaka Geodata</span>
+            <h2 class="text-lg font-bold text-slate-900 font-heading mt-1">Edit Peta & Geodata Ekspedisi</h2>
+            <p class="text-xs text-slate-500">Perbarui metadata lintasan, wilayah, deskripsi, atau ganti berkas geodata</p>
+        </div>
+
+        <form hx-post="/admin/repo-maps/edit/{{ map_item.id }}" 
+              hx-target="#main-content"
+              hx-encoding="multipart/form-data"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-3.5 text-xs">
+            
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Judul / Nama Peta</label>
+                <input type="text" name="title" value="{{ map_item.title }}" required
+                       class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Region / Kawasan</label>
+                    <input type="text" name="region" value="{{ map_item.region }}" required
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Kategori</label>
+                    <select name="category" class="w-full px-3 py-2.5 rounded-lg border border-slate-200 font-semibold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="topo" {% if map_item.category == 'topo' %}selected{% endif %}>Topografi / Kontur</option>
+                        <option value="trail" {% if map_item.category in ['trail', 'jalur_pendakian'] %}selected{% endif %}>Jalur Pendakian (Trail)</option>
+                        <option value="conservation" {% if map_item.category in ['conservation', 'cagar_alam'] %}selected{% endif %}>Zonasi Konservasi / TN</option>
+                        <option value="water_source" {% if map_item.category in ['water_source', 'watershed'] %}selected{% endif %}>Sumber Air & Pos</option>
+                        <option value="other" {% if map_item.category == 'other' %}selected{% endif %}>Lainnya</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Estimasi Jarak Track (km)</label>
+                    <input type="number" step="0.1" name="total_distance_km" value="{{ map_item.total_distance_km or 0.0 }}"
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-mono focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Jumlah Waypoint / Titik</label>
+                    <input type="number" name="total_waypoints" value="{{ map_item.total_waypoints or 0 }}"
+                           class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-mono focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Ganti File Peta / Geodata (Opsional)</label>
+                <div class="p-2.5 mb-2 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between text-[11px]">
+                    <span class="text-slate-600 truncate max-w-[200px] font-mono"><i class="fas fa-map mr-1 text-orange-600"></i>{{ map_item.file_path.split('/')[-1] }}</span>
+                    <span class="px-2 py-0.5 bg-orange-100 text-orange-800 font-bold rounded uppercase">.{{ map_item.file_type|upper }} ({{ map_item.file_size_fmt }})</span>
+                </div>
+                <input type="file" name="map_file"
+                       class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                <p class="text-[10px] text-slate-400 mt-1">Kosongkan jika tidak ingin mengganti berkas geodata saat ini.</p>
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Ganti Foto Preview / Cuplikan Peta (Opsional)</label>
+                {% if map_item.preview_image %}
+                <div class="mb-2">
+                    <img src="{{ map_item.preview_image }}" alt="Preview" class="w-20 h-14 object-cover rounded-lg border border-slate-200">
+                </div>
+                {% endif %}
+                <input type="file" name="preview_file" accept="image/*"
+                       class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
+            </div>
+
+            <div>
+                <label class="block font-semibold text-slate-700 mb-1">Keterangan / Informasi Medan</label>
+                <textarea name="description" rows="2"
+                          class="w-full px-3.5 py-2 rounded-lg border border-slate-200 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ map_item.description or '' }}</textarea>
+            </div>
+
+            <div class="flex items-center gap-2 p-2.5 bg-orange-50/70 border border-orange-200 rounded-lg">
+                <input type="checkbox" name="is_exclusive_member" value="1" id="chk_edit_member_only" {% if map_item.is_exclusive_member %}checked{% endif %}
+                       class="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500">
+                <label for="chk_edit_member_only" class="text-xs font-semibold text-orange-950 cursor-pointer">
+                    Eksklusif Anggota Aktif (Hanya bisa didownload oleh anggota lunas iuran)
+                </label>
+            </div>
+
+            <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow transition flex items-center gap-1.5">
+                    <i class="fas fa-save"></i> Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 
 <!-- 19. MODAL / HALAMAN LOGIN & GOOGLE OAUTH -->
 {% if modal_type == 'login' %}

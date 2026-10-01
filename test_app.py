@@ -1,4 +1,5 @@
 import os
+import io
 import unittest
 from app import app, db
 from models import (
@@ -128,12 +129,52 @@ class GimbalWebTestCase(unittest.TestCase):
             admin = User.query.filter_by(email='admin@gimbal.org').first()
             sess['user_id'] = admin.id
 
-        # List docs
+        # 1. List docs
         resp = self.client.get('/admin/documents', headers={'HX-Request': 'true'})
         self.assertEqual(resp.status_code, 200)
         self.assertIn(b'Dokumen & Arsip Organisasi', resp.data)
         self.assertIn(b'AD/ART KPAB GIMBAL', resp.data)
-        print(">>> Test 06: Document CRUD listing OK")
+
+        # 2. Test Create Document with dynamic file extension (.docx)
+        doc_payload = io.BytesIO(b"Dummy DOCX content for testing")
+        resp_create = self.client.post('/admin/documents/create', data={
+            'title': 'SOP Pendakian Tebing 2026',
+            'category': 'sop',
+            'description': 'Standar operasional panjat tebing',
+            'is_public_to_members': '1',
+            'doc_file': (doc_payload, 'sop_tebing.docx')
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_create.status_code, 200)
+
+        created_doc = Document.query.filter_by(title='SOP Pendakian Tebing 2026').first()
+        self.assertIsNotNone(created_doc)
+        self.assertEqual(created_doc.file_type, 'docx')
+        self.assertTrue(created_doc.file_path.endswith('.docx'))
+
+        # 3. Test Edit Document Modal
+        resp_edit_modal = self.client.get(f'/admin/documents/edit-modal/{created_doc.id}')
+        self.assertEqual(resp_edit_modal.status_code, 200)
+        self.assertIn(b'Edit Dokumen Organisasi', resp_edit_modal.data)
+        self.assertIn(b'SOP Pendakian Tebing 2026', resp_edit_modal.data)
+
+        # 4. Test Edit Document Submission with new file (.xlsx)
+        new_file_payload = io.BytesIO(b"Dummy XLSX content")
+        resp_edit = self.client.post(f'/admin/documents/edit/{created_doc.id}', data={
+            'title': 'SOP Pendakian Tebing Revisi Final',
+            'category': 'materi',
+            'description': 'Revisi modul peralatan dan SOP',
+            'is_public_to_members': '1',
+            'doc_file': (new_file_payload, 'tabel_peralatan.xlsx')
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_edit.status_code, 200)
+
+        db.session.refresh(created_doc)
+        self.assertEqual(created_doc.title, 'SOP Pendakian Tebing Revisi Final')
+        self.assertEqual(created_doc.category, 'materi')
+        self.assertEqual(created_doc.file_type, 'xlsx')
+        self.assertTrue(created_doc.file_path.endswith('.xlsx'))
+
+        print(">>> Test 06: Document CRUD listing, editing & dynamic file_type 100% OK")
 
     def test_07_gallery_crud_and_pindown(self):
         with self.client.session_transaction() as sess:
@@ -810,7 +851,39 @@ class GimbalWebTestCase(unittest.TestCase):
 
         new_post = Post.query.filter(Post.content.like('%Rute Kayak Danau Limboto%')).first()
         self.assertIsNotNone(new_post)
-        print(">>> Test 17: Gimbal Maps API (Access Check, Repo Catalog, Download & Track Share) 100% OK")
+
+        # 7. Uji Edit Repo Peta oleh Admin (/admin/repo-maps/edit-modal/<id> & /admin/repo-maps/edit/<id>)
+        admin = User.query.filter_by(email='admin@gimbal.org').first()
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = admin.id
+
+        resp_map_edit_modal = self.client.get(f'/admin/repo-maps/edit-modal/{new_repo.id}')
+        self.assertEqual(resp_map_edit_modal.status_code, 200)
+        self.assertIn(b'Edit Peta & Geodata Ekspedisi', resp_map_edit_modal.data)
+        self.assertIn(b'Rute Kayak Danau Limboto', resp_map_edit_modal.data)
+
+        # Submit edit dengan file format baru (.kml)
+        kml_payload = io.BytesIO(b"<?xml version='1.0'?><kml><Placemark><name>Rute KML</name></Placemark></kml>")
+        resp_map_edit = self.client.post(f'/admin/repo-maps/edit/{new_repo.id}', data={
+            'title': 'Rute Kayak Danau Limboto - Jalur Timur',
+            'region': 'Kab. Gorontalo',
+            'category': 'water_source',
+            'total_distance_km': '8.5',
+            'total_waypoints': '12',
+            'description': 'Jalur survei dermaga timur Danau Limboto',
+            'is_exclusive_member': '1',
+            'map_file': (kml_payload, 'limboto_timur.kml')
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_map_edit.status_code, 200)
+
+        db.session.refresh(new_repo)
+        self.assertEqual(new_repo.title, 'Rute Kayak Danau Limboto - Jalur Timur')
+        self.assertEqual(new_repo.region, 'Kab. Gorontalo')
+        self.assertEqual(new_repo.file_type, 'kml')
+        self.assertTrue(new_repo.file_path.endswith('.kml'))
+        self.assertEqual(new_repo.total_distance_km, 8.5)
+
+        print(">>> Test 17: Gimbal Maps API (Access Check, Repo Catalog, Download, Track Share & Admin Edit) 100% OK")
 
     def test_18_member_deletion_and_superadmin_settings(self):
         """
@@ -1055,6 +1128,9 @@ class GimbalWebTestCase(unittest.TestCase):
         self.assertIn(b'id="gimbal-chat-window"', resp_shell.data)
         self.assertIn(b'window.toggleGimbalChat', resp_shell.data)
         self.assertIn(b'bottom: 5.25rem !important;', resp_shell.data)
+        # Pastikan tidak ada titik hijau online permanen di dalam trigger button floating chat
+        trigger_btn_html = resp_shell.data.split(b'id="float-chat-trigger-btn"')[1].split(b'</button>')[0]
+        self.assertNotIn(b'bg-emerald-500', trigger_btn_html)
 
         # f. Uji guest (unauthenticated) di landing page TIDAK menampilkan floating chat widget
         with self.client.session_transaction() as sess:

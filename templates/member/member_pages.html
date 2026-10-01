@@ -1056,10 +1056,10 @@
             </div>
 
             <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[10px] text-slate-400">Format: <strong>PDF</strong></span>
+                <span class="text-[10px] text-slate-500 font-mono font-bold uppercase">Format: .{{ (doc.file_type or 'pdf')|upper }}</span>
                 <a href="{{ doc.file_path }}" target="_blank" download
                    class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5">
-                    <i class="fas fa-file-pdf"></i> Unduh Dokumen
+                    <i class="fas {% if doc.file_type == 'pdf' %}fa-file-pdf{% elif doc.file_type in ['docx', 'doc'] %}fa-file-word{% elif doc.file_type in ['xlsx', 'xls'] %}fa-file-excel{% elif doc.file_type in ['zip', 'rar'] %}fa-file-archive{% else %}fa-file-alt{% endif %}"></i> Unduh Dokumen
                 </a>
             </div>
         </div>

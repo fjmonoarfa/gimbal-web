@@ -54,6 +54,7 @@ Aplikasi web modern dan portal terintegrasi organisasi petualang alam bebas **KP
 * **Bottom Float Widget (`templates/components/float_chat.html`)**:
   * Widget terapung di pojok kanan bawah dengan mesin ganda yang deterministik (**Alpine.js + Vanilla JS fallback**).
   * Dilengkapi tombol minimize, maximize, pemilih kontak DM, dan counter unread.
+  * **Indikator Chat Cerdas**: Bebas dari titik hijau permanen statis; indikator/badge hanya muncul saat ada pesan belum dibaca (*unread chat*).
   * **Otomatis Tersembunyi untuk Guest**: Hanya aktif dan muncul setelah anggota masuk (login), menjaga landing page publik tetap bersih.
 
 ---
@@ -63,6 +64,14 @@ Aplikasi web modern dan portal terintegrasi organisasi petualang alam bebas **KP
   * **Transfer Bank Manual**: Verifikasi slip transfer oleh bendahara dengan live modal preview.
   * **Midtrans Payment Gateway**: Pembayaran instan otomatis menggunakan Snap Token, QRIS, dan Bank Virtual Account.
   * **Google Pay / In-App Subscription**: Sinkronisasi otomatis langganan dari aplikasi mobile lapangan **gimbal-maps** (`/api/v1/maps/subscription/google-pay`).
+* **Repo Peta Ekspedisi & Geodata GIMBAL**:
+  * Pengelolaan berkas spasial dan rute navigasi ekspedisi dari dashboard admin maupun portal anggota.
+  * **Dukungan Format Dinamis**: Deteksi otomatis ekstensi berkas yang diunggah (`.gpx`, `.kml`, `.kmz`, `.geojson`, `.mbtiles`, `.zip`, dll.).
+  * **Fitur Edit Peta**: Pengurus dapat mengedit judul, region, kategori rute, jarak km, waypoints, deskripsi, pratinjau peta, dan mengganti berkas geodata sewaktu-waktu.
+* **Dokumen & Arsip Organisasi**:
+  * Pusat arsip AD/ART, SOP pendakian, panduan materi lapangan, dan modul organisasi.
+  * **Format Berkas Adaptif**: Otomatis menyesuaikan tipe file sesuai lampiran (`.pdf`, `.docx`, `.xlsx`, `.zip`, dll.).
+  * **Fitur Edit Dokumen**: Pengurus dapat memperbarui metadata, kategori, aksesibilitas anggota, dan mengganti file dokumen langsung melalui modal interaktif.
 * **Org Member Featured Access**: Status lunas iuran membuka akses penuh ke repositori peta offline, impor vektor KML/GeoJSON, rute navigasi tak terbatas, dan berbagi track GPX di aplikasi `gimbal-maps`.
 * **Fitur Sakelar Iuran (Enable/Disable Dues)**: Pengurus dapat mengaktifkan atau menonaktifkan penagihan iuran sewaktu-waktu dari menu Pengaturan Admin.
 
