@@ -356,11 +356,13 @@
         {% endif %}
 
         <!-- LEMBAR PENGESAHAN / TANDA TANGAN BERDASARKAN JABATAN ORGANISASI -->
-        <div class="pt-8 border-t border-slate-300">
-            <div class="text-right text-xs text-slate-600 mb-6">
+        <div class="pt-6 border-t border-slate-300 space-y-6" style="page-break-inside: avoid; break-inside: avoid;">
+            <div class="text-right text-xs text-slate-600">
                 Gorontalo, {{ today_date_fmt }}
             </div>
-            <div class="grid grid-cols-3 gap-4 text-center text-xs">
+
+            <!-- BARIS 1 (2 KOLOM): PIMPINAN PERJALANAN & KEPALA DIVISI -->
+            <div class="grid grid-cols-2 gap-8 text-center text-xs">
                 <div>
                     <p class="text-slate-600 mb-16">Pimpinan Perjalanan,</p>
                     <p class="font-bold text-slate-900 underline" id="sig-lead-name">{{ signers.leader.name if signers.leader else '...................................' }}</p>
@@ -373,8 +375,15 @@
                     <p class="text-slate-500 text-[11px]" id="sig-kadiv-nra">NRA: {{ signers.kadiv.nra if (signers.kadiv and signers.kadiv.nra) else '..............................' }}</p>
                     <p class="text-slate-400 text-[10px]" id="sig-kadiv-pos">{% if signers.kadiv and signers.kadiv.jabatan and signers.kadiv.jabatan != signers.kadiv_title %}({{ signers.kadiv.jabatan }}){% endif %}</p>
                 </div>
+            </div>
+
+            <!-- BARIS 2 (2 KOLOM): MENGETAHUI DI BAGIAN BAWAH KANAN -->
+            <div class="grid grid-cols-2 gap-8 text-center text-xs pt-2">
                 <div>
-                    <p class="text-slate-600 mb-16" id="sig-ketum-title">Mengetahui,<br><span class="font-semibold text-slate-700">{{ signers.ketum_title }}</span></p>
+                    <!-- Kolom kiri bawah kosong untuk stempel resmi / catatan kepengurusan -->
+                </div>
+                <div>
+                    <p class="text-slate-600 mb-16" id="sig-ketum-title">Mengetahui,<br><span class="font-semibold text-slate-800">{{ signers.ketum_title }}</span></p>
                     <p class="font-bold text-slate-900 underline" id="sig-ketum-name">{{ signers.ketum.name if signers.ketum else '...................................' }}</p>
                     <p class="text-slate-500 text-[11px]" id="sig-ketum-nra">NRA: {{ signers.ketum.nra if (signers.ketum and signers.ketum.nra) else '-' }}</p>
                     <p class="text-slate-400 text-[10px]" id="sig-ketum-pos">{% if signers.ketum and signers.ketum.jabatan and signers.ketum.jabatan != signers.ketum_title %}({{ signers.ketum.jabatan }}){% endif %}</p>

@@ -147,5 +147,17 @@ class TestRolTabOptimization(unittest.TestCase):
         self.assertIn(b'id="rol-panel-field_ops"', resp_log.data)
         self.assertIn(b'Pos 1 Lapor Uji', resp_log.data)
 
+    def test_05_print_rol_renders_2_columns_signer_area(self):
+        """Uji halaman print PDF dokumen ROL dengan layout signer area 2 kolom"""
+        resp_print = self.client.get(f'/admin/activity/{self.act.id}/print')
+        self.assertEqual(resp_print.status_code, 200)
+        self.assertIn(b'grid grid-cols-2', resp_print.data)
+        self.assertIn(b'id="sig-lead-name"', resp_print.data)
+        self.assertIn(b'id="sig-kadiv-name"', resp_print.data)
+        self.assertIn(b'id="sig-ketum-title"', resp_print.data)
+        self.assertIn(b'id="sig-ketum-name"', resp_print.data)
+        self.assertIn(b'Mengetahui', resp_print.data)
+
 if __name__ == '__main__':
     unittest.main()
+
