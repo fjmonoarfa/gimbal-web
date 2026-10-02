@@ -108,7 +108,20 @@ class SponsorshipAndModerationTestCase(unittest.TestCase):
         timeline_post = Post.query.filter_by(sponsor_id=sponsor.id).first()
         self.assertIsNotNone(timeline_post)
         self.assertEqual(timeline_post.post_type, 'sponsor')
-        print(">>> Test 02: Admin Sponsorship CRUD, Catalog & Timeline share 100% OK")
+
+        # Verify standalone /admin/sponsors page rendering
+        resp_page = self.client.get('/admin/sponsors', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_page.status_code, 200)
+        self.assertIn(b'Manajemen Sponsorship & Kemitraan', resp_page.data)
+        self.assertIn(b'Consina Outdoor Gorontalo Test', resp_page.data)
+        self.assertNotIn(b'admin-panel-sponsors', resp_page.data)
+
+        # Verify /admin/settings page does NOT contain sponsors tab panel
+        resp_settings = self.client.get('/admin/settings', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_settings.status_code, 200)
+        self.assertNotIn(b'admin-panel-sponsors', resp_settings.data)
+        self.assertIn(b'admin-panel-organization', resp_settings.data)
+        print(">>> Test 02: Admin Sponsorship CRUD, Catalog, Standalone Page & Timeline share 100% OK")
 
     def test_03_member_business_registration_and_moderation(self):
         """Test Member registering a cafe business, managing products, and timeline moderation"""

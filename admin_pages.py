@@ -691,7 +691,7 @@ def admin_verify_dues(payment_id):
 @admin_required
 def admin_settings(initial_tab=None, active_page='admin_settings'):
     """Portal Pengaturan Sistem, Web Admin CRUD, Member Management, Dues, Midtrans, Rekening & Tema"""
-    active_tab = initial_tab or request.args.get('tab', 'sponsors')
+    active_tab = initial_tab or request.args.get('tab', 'organization')
     admins = User.query.filter(User.role.in_(['admin', 'superadmin'])).order_by(User.id.asc()).all()
     members = User.query.order_by(User.id.desc()).all()
     active_dues = Dues.query.filter_by(category='wajib').order_by(Dues.id.desc()).first() or Dues.query.order_by(Dues.id.desc()).first()
@@ -748,8 +748,35 @@ def admin_settings(initial_tab=None, active_page='admin_settings'):
 @login_required
 @admin_required
 def admin_sponsors():
-    """Portal Utama Sponsorship & Mitra Resmi Organisasi"""
-    return admin_settings(initial_tab='sponsors', active_page='admin_sponsors')
+    """Halaman Penuh Mandiri: Manajemen Sponsorship & Kemitraan Korporat Organisasi"""
+    tier_filter = request.args.get('tier')
+    category_filter = request.args.get('category')
+
+    query = Sponsor.query.filter_by(is_member_business=False)
+    if tier_filter:
+        query = query.filter_by(tier=tier_filter)
+    if category_filter:
+        query = query.filter_by(category=category_filter)
+    official_sponsors = query.order_by(Sponsor.order_index.asc(), Sponsor.id.desc()).all()
+
+    member_businesses = Sponsor.query.filter_by(is_member_business=True).order_by(Sponsor.id.desc()).all()
+
+    total_sponsors = Sponsor.query.filter_by(is_member_business=False).count()
+    active_timeline_count = Sponsor.query.filter_by(is_shared_to_timeline=True).count()
+    total_products = SponsorProduct.query.count()
+    total_member_businesses = len(member_businesses)
+
+    data = {
+        'sponsors': official_sponsors,
+        'member_businesses': member_businesses,
+        'total_sponsors': total_sponsors,
+        'active_timeline_count': active_timeline_count,
+        'total_products': total_products,
+        'total_member_businesses': total_member_businesses,
+        'selected_tier': tier_filter,
+        'selected_category': category_filter
+    }
+    return render_gimbal_page('admin/admin_pages.html', 'admin_sponsors', data, active_page='admin_sponsors')
 
 
 @admin_bp.route('/admin/settings/cloudflare', methods=['POST'])
@@ -3175,8 +3202,8 @@ def admin_create_sponsor():
     db.session.commit()
     flash(f"Mitra sponsor '{name}' berhasil didaftarkan.", "success")
     if request.headers.get('HX-Request'):
-        return admin_settings(initial_tab='sponsors')
-    return redirect('/admin/settings?tab=sponsors')
+        return admin_sponsors()
+    return redirect('/admin/sponsors')
 
 
 @admin_bp.route('/admin/sponsors/edit-modal/<int:sponsor_id>')
@@ -3229,8 +3256,8 @@ def admin_edit_sponsor(sponsor_id):
     db.session.commit()
     flash(f"Data mitra sponsor '{sponsor.name}' berhasil diperbarui.", "success")
     if request.headers.get('HX-Request'):
-        return admin_settings(initial_tab='sponsors')
-    return redirect('/admin/settings?tab=sponsors')
+        return admin_sponsors()
+    return redirect('/admin/sponsors')
 
 
 @admin_bp.route('/admin/sponsors/toggle-active/<int:sponsor_id>', methods=['POST'])
@@ -3244,8 +3271,8 @@ def admin_toggle_sponsor_active(sponsor_id):
     status_str = "diaktifkan" if sponsor.is_active else "dinonaktifkan"
     flash(f"Mitra '{sponsor.name}' berhasil {status_str}.", "success")
     if request.headers.get('HX-Request'):
-        return admin_settings(initial_tab='sponsors')
-    return redirect('/admin/settings?tab=sponsors')
+        return admin_sponsors()
+    return redirect('/admin/sponsors')
 
 
 @admin_bp.route('/admin/sponsors/verify/<int:sponsor_id>', methods=['POST'])
@@ -3276,8 +3303,8 @@ def admin_verify_member_sponsor(sponsor_id):
     db.session.add(log)
     db.session.commit()
     if request.headers.get('HX-Request'):
-        return admin_settings(initial_tab='sponsors')
-    return redirect('/admin/settings?tab=sponsors')
+        return admin_sponsors()
+    return redirect('/admin/sponsors')
 
 
 @admin_bp.route('/admin/sponsors/delete/<int:sponsor_id>', methods=['POST'])
@@ -3303,8 +3330,8 @@ def admin_delete_sponsor(sponsor_id):
     db.session.commit()
     flash(f"Mitra sponsor '{name}' berhasil dihapus secara permanen.", "success")
     if request.headers.get('HX-Request'):
-        return admin_settings(initial_tab='sponsors')
-    return redirect('/admin/settings?tab=sponsors')
+        return admin_sponsors()
+    return redirect('/admin/sponsors')
 
 
 @admin_bp.route('/admin/sponsors/products/<int:sponsor_id>')
@@ -3447,7 +3474,7 @@ def admin_sponsor_toggle_share(sponsor_id):
             """
 
     flash(f"Status publikasi linimasa untuk '{sponsor.name}' berhasil diperbarui.", "success")
-    return redirect('/admin/settings?tab=sponsors')
+    return redirect('/admin/sponsors')
 
 
 @admin_bp.route('/admin/sponsors/share-timeline/<int:sponsor_id>', methods=['POST'])

@@ -85,7 +85,10 @@ def check_content_moderation(text_content):
         # Fallback offline jika API key tidak tersedia
         if has_ethics_match:
             return True, "ethics", "Postingan terdeteksi memuat konten yang berpotensi melanggar etika pencinta alam, tata krama, atau norma sosial."
-        if has_commercial_match and ('rp' in text_lower or 'wa' in text_lower or 'dijual' in text_lower):
+        # Pengecualian konteks cerita perjalanan / biaya resmi pos pendakian (simaksi, tiket masuk)
+        if any(term in text_lower for term in ['simaksi', 'retribusi', 'tiket masuk', 'pos perizinan']) and not any(term in text_lower for term in ['dijual', 'jual', 'nego', 'hubungi', 'minat', 'ready']):
+            return False, "none", ""
+        if has_commercial_match and any(term in text_lower for term in ['dijual', 'jual', 'ready stock', 'pre-order', 'open po', 'nego', 'minat hubungi', 'wa 08', 'whatsapp 08']):
             return True, "commercial", "Postingan terdeteksi memuat penawaran komersial langsung tanpa melalui pendaftaran Lapak Resmi."
         return False, "none", ""
 

@@ -231,7 +231,7 @@
                                 <a href="/admin/sponsors" data-page="admin_sponsors"
                                     @click="adminMenu = false"
                                     onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_sponsors' or (active_page == 'admin_settings' and (curr_tab == 'sponsors' or request.args.get('tab') == 'sponsors')) %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_sponsors' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
                                     hx-get="/admin/sponsors" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
                                     <div class="flex items-center gap-2.5">
                                         <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
@@ -246,7 +246,7 @@
                                 <a href="/admin/settings" data-page="admin_settings"
                                     @click="adminMenu = false"
                                     onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_settings' and (not request.args.get('tab') or request.args.get('tab') != 'sponsors') and active_page != 'admin_sponsors' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_settings' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
                                     hx-get="/admin/settings" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
                                     <div class="flex items-center gap-2.5">
                                         <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
@@ -966,6 +966,8 @@
                 if (href === path) {
                     isActive = true;
                 } else if (href === '/admin/members' && (path.startsWith('/admin/member') || path.startsWith('/admin/members'))) {
+                    isActive = true;
+                } else if (href === '/admin/sponsors' && path.startsWith('/admin/sponsors')) {
                     isActive = true;
                 } else if (href === '/admin/settings' && (path.startsWith('/admin/settings') || path.startsWith('/admin/positions'))) {
                     isActive = true;

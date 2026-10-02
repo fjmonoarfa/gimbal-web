@@ -2249,7 +2249,7 @@
 
 <!-- 8. PENGATURAN & HAK AKSES SISTEM ORGANISASI -->
 {% macro admin_settings(data) %}
-{% set curr_tab = data.active_tab or data.initial_tab or 'sponsors' %}
+{% set curr_tab = data.active_tab or data.initial_tab or 'organization' %}
 <div id="admin-settings-container" class="space-y-6" x-data="{ activeTab: '{{ curr_tab }}' }">
     {{ flash_alerts() }}
 
@@ -2262,7 +2262,7 @@
                 </span>
                 <h1 class="text-2xl font-black text-slate-900 font-heading">Pengaturan & Hak Akses Organisasi</h1>
             </div>
-            <p class="text-xs text-slate-500 mt-1">Konfigurasi sponsorship & mitra, rekening resmi organisasi, skema warna tampilan, gateway pembayaran online, dan integrasi Cloudflare/AI</p>
+            <p class="text-xs text-slate-500 mt-1">Konfigurasi rekening resmi organisasi, skema warna tampilan, gateway pembayaran online, struktur jabatan, dan integrasi Cloudflare/AI</p>
         </div>
         <div class="flex items-center gap-2">
             <span class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 flex items-center gap-1.5">
@@ -2274,13 +2274,6 @@
 
     <!-- Segmented Navigation Tabs -->
     <div class="flex overflow-x-auto p-1.5 bg-slate-100 rounded-lg border border-slate-200 text-xs font-semibold gap-1">
-        <button type="button" @click="activeTab = 'sponsors'" onclick="window.switchAdminTab('sponsors')"
-                data-tab="sponsors"
-                :class="activeTab === 'sponsors' ? 'bg-white text-orange-700 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'"
-                class="admin-tab-btn py-2 px-3.5 rounded-lg transition flex items-center gap-2 whitespace-nowrap {{ 'bg-white text-orange-700 shadow-sm font-bold' if curr_tab == 'sponsors' else 'text-slate-600 hover:text-slate-900' }}">
-            <i class="fas fa-handshake text-xs"></i>
-            <span>Sponsorship & Mitra ({{ data.sponsors|length if data.sponsors else 0 }})</span>
-        </button>
         <button type="button" @click="activeTab = 'organization'" onclick="window.switchAdminTab('organization')"
                 data-tab="organization"
                 :class="activeTab === 'organization' ? 'bg-white text-orange-700 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'"
@@ -3149,290 +3142,11 @@
         </div>
     </div>
 
-    <!-- TAB: MANAJEMEN SPONSORSHIP & MITRA USAHA ANGGOTA -->
-    <div id="admin-panel-sponsors" class="admin-tab-panel space-y-6" x-show="activeTab === 'sponsors'" x-cloak {% if curr_tab != 'sponsors' %}style="display: none;"{% endif %}>
-        
-        <!-- CARD 1: Mitra Sponsor Korporat & Brand Resmi (Managed CRUD) -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-lg shrink-0">
-                        <i class="fas fa-handshake"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-base font-bold text-slate-900 font-heading">Mitra Sponsor Resmi & Brand Outdoor</h2>
-                        <p class="text-xs text-slate-500 mt-0.5">Kelola kemitraan strategis korporat, brand perlengkapan, donatur konservasi, serta katalog produk resmi.</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button"
-                            hx-get="/admin/sponsors/create-modal"
-                            hx-target="#modal-container"
-                            class="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-sm text-xs flex items-center gap-2 transition cursor-pointer">
-                        <i class="fas fa-plus"></i>
-                        <span>Tambah Sponsor Resmi</span>
-                    </button>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-700">
-                    <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
-                        <tr>
-                            <th class="px-5 py-3">Sponsor / Brand</th>
-                            <th class="px-5 py-3">Kategori & Tier</th>
-                            <th class="px-5 py-3">Benefit Member (KTA)</th>
-                            <th class="px-5 py-3 text-center">Produk</th>
-                            <th class="px-5 py-3 text-center">Status</th>
-                            <th class="px-5 py-3 text-right">Aksi Manajemen</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        {% set official_sponsors = [] %}
-                        {% for s in data.sponsors %}
-                            {% if not s.is_member_business %}
-                                {% set _ = official_sponsors.append(s) %}
-                            {% endif %}
-                        {% endfor %}
-
-                        {% for s in official_sponsors %}
-                        <tr class="hover:bg-slate-50/70 transition">
-                            <td class="px-5 py-3.5">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                        {% if s.logo_url %}
-                                        <img src="{{ s.logo_url }}" alt="{{ s.name }}" class="w-full h-full object-cover">
-                                        {% else %}
-                                        <i class="fas fa-image text-slate-400"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        <h4 class="font-bold text-slate-900 leading-tight">{{ s.name }}</h4>
-                                        <p class="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{{ s.description or '-' }}</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-5 py-3.5">
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase
-                                    {% if s.tier == 'platinum' %}bg-purple-100 text-purple-800
-                                    {% elif s.tier == 'gold' %}bg-amber-100 text-amber-800
-                                    {% elif s.tier == 'silver' %}bg-slate-200 text-slate-800
-                                    {% else %}bg-orange-100 text-orange-800{% endif %}">
-                                    {{ s.tier_label }}
-                                </span>
-                                <p class="text-[10px] text-slate-500 mt-1 capitalize">{{ s.category_label }}</p>
-                            </td>
-                            <td class="px-5 py-3.5">
-                                {% if s.promo_badge %}
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                                    <i class="fas fa-tag text-amber-600"></i> {{ s.promo_badge }}
-                                </span>
-                                {% endif %}
-                                <p class="text-[11px] text-slate-600 mt-0.5">{{ s.member_benefit or 'Akses kemitraan terbuka' }}</p>
-                            </td>
-                            <td class="px-5 py-3.5 text-center">
-                                <button type="button"
-                                        hx-get="/admin/sponsors/products/{{ s.id }}"
-                                        hx-target="#modal-container"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-orange-50 hover:text-orange-700 transition border border-slate-200 cursor-pointer">
-                                    <i class="fas fa-box-open text-orange-600"></i>
-                                    <span>{{ s.products|length }} Item</span>
-                                </button>
-                            </td>
-                            <td class="px-5 py-3.5 text-center">
-                                <button type="button"
-                                        hx-post="/admin/sponsors/toggle-active/{{ s.id }}"
-                                        hx-target="#main-content"
-                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition cursor-pointer
-                                            {{ 'bg-emerald-100 text-emerald-800 border border-emerald-300' if s.is_active else 'bg-slate-100 text-slate-500 border border-slate-200' }}">
-                                    <i class="fas fa-circle text-[8px] {{ 'text-emerald-500' if s.is_active else 'text-slate-400' }}"></i>
-                                    <span>{{ 'Aktif' if s.is_active else 'Nonaktif' }}</span>
-                                </button>
-                            </td>
-                            <td class="px-5 py-3.5 text-right">
-                                <div class="flex items-center justify-end gap-1.5">
-                                    <button type="button"
-                                            hx-post="/admin/sponsors/toggle-share/{{ s.id }}"
-                                            hx-swap="outerHTML"
-                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold transition cursor-pointer {{ 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200' if s.is_shared_to_timeline else 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200' }}"
-                                            title="{{ 'Aktif di Linimasa (Klik untuk matikan)' if s.is_shared_to_timeline else 'Belum di Linimasa (Klik untuk aktifkan & terbitkan di puncak linimasa)' }}">
-                                        <i class="fas {{ 'fa-toggle-on text-emerald-600' if s.is_shared_to_timeline else 'fa-toggle-off text-slate-400' }} text-xs"></i>
-                                        <span>{{ 'Linimasa: ON' if s.is_shared_to_timeline else 'Linimasa: OFF' }}</span>
-                                    </button>
-                                    <button type="button"
-                                            hx-get="/admin/sponsors/edit-modal/{{ s.id }}"
-                                            hx-target="#modal-container"
-                                            class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                                            title="Edit Sponsor">
-                                        <i class="fas fa-edit text-xs"></i>
-                                    </button>
-                                    <button type="button"
-                                            hx-post="/admin/sponsors/delete/{{ s.id }}"
-                                            hx-target="#main-content"
-                                            hx-confirm="Hapus sponsor ini secara permanen beserta produknya?"
-                                            class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                                            title="Hapus Sponsor">
-                                        <i class="fas fa-trash-alt text-xs"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" class="px-6 py-10 text-center text-slate-400 italic">
-                                Belum ada mitra sponsor resmi terdaftar. Klik "+ Tambah Sponsor Resmi" di atas untuk menambahkan.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- CARD 3: Usaha / Lapak Anggota Komunitas (Member Business Submissions) -->
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0">
-                        <i class="fas fa-store"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-base font-bold text-slate-900 font-heading">Lapak, Cafe & Usaha Mandiri Anggota</h2>
-                        <p class="text-xs text-slate-500 mt-0.5">Daftar usaha yang diajukan oleh anggota (Cafe, Toko Karawo/Etnik, Rental Outdoor, Homestay) untuk promosi resmi dan diskon KTA.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-700">
-                    <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
-                        <tr>
-                            <th class="px-5 py-3">Usaha & Pemilik</th>
-                            <th class="px-5 py-3">Kategori & Lokasi</th>
-                            <th class="px-5 py-3">Benefit KTA GIMBAL</th>
-                            <th class="px-5 py-3 text-center">Produk</th>
-                            <th class="px-5 py-3 text-center">Status Verifikasi</th>
-                            <th class="px-5 py-3 text-right">Aksi Moderasi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        {% set member_biz = [] %}
-                        {% for s in data.sponsors %}
-                            {% if s.is_member_business %}
-                                {% set _ = member_biz.append(s) %}
-                            {% endif %}
-                        {% endfor %}
-
-                        {% for s in member_biz %}
-                        <tr class="hover:bg-slate-50/70 transition">
-                            <td class="px-5 py-3.5">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
-                                        {% if s.logo_url %}
-                                        <img src="{{ s.logo_url }}" alt="{{ s.name }}" class="w-full h-full object-cover">
-                                        {% else %}
-                                        <i class="fas fa-store text-slate-400"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        <h4 class="font-bold text-slate-900 leading-tight">{{ s.name }}</h4>
-                                        <p class="text-[11px] text-slate-500 mt-0.5">
-                                            Pemilik: <strong>{{ s.owner.name if s.owner else 'Anggota' }}</strong> ({{ s.owner.member_number or 'KTA Pending' }})
-                                        </p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-5 py-3.5">
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">
-                                    {{ s.category_label }}
-                                </span>
-                                <p class="text-[10px] text-slate-500 mt-1 line-clamp-1">{{ s.address or 'Gorontalo' }}</p>
-                            </td>
-                            <td class="px-5 py-3.5">
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                                    <i class="fas fa-id-card text-amber-600"></i> {{ s.promo_badge or 'Diskon Khusus KTA' }}
-                                </span>
-                                <p class="text-[11px] text-slate-600 mt-0.5">{{ s.member_benefit or 'Tunjukkan KTA aktif' }}</p>
-                            </td>
-                            <td class="px-5 py-3.5 text-center">
-                                <button type="button"
-                                        hx-get="/admin/sponsors/products/{{ s.id }}"
-                                        hx-target="#modal-container"
-                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 transition border border-slate-200 cursor-pointer">
-                                    <i class="fas fa-boxes text-emerald-600"></i>
-                                    <span>{{ s.products|length }} Item</span>
-                                </button>
-                            </td>
-                            <td class="px-5 py-3.5 text-center">
-                                {% if s.status == 'pending' %}
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
-                                    Menunggu Persetujuan
-                                </span>
-                                {% elif s.status == 'active' %}
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                    <i class="fas fa-check-circle mr-0.5 text-emerald-600"></i> Terverifikasi
-                                </span>
-                                {% else %}
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
-                                    Ditolak
-                                </span>
-                                {% endif %}
-                            </td>
-                            <td class="px-5 py-3.5 text-right">
-                                <div class="flex items-center justify-end gap-1.5">
-                                    {% if s.status != 'active' %}
-                                    <form hx-post="/admin/sponsors/verify/{{ s.id }}" hx-target="#main-content" class="inline">
-                                        <input type="hidden" name="action" value="active">
-                                        <button type="submit" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition cursor-pointer" title="Setujui Usaha Ini">
-                                            <i class="fas fa-check mr-1"></i> Setujui
-                                        </button>
-                                    </form>
-                                    {% endif %}
-                                    <button type="button"
-                                            hx-post="/admin/sponsors/toggle-share/{{ s.id }}"
-                                            hx-swap="outerHTML"
-                                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold transition cursor-pointer {{ 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200' if s.is_shared_to_timeline else 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200' }}"
-                                            title="{{ 'Aktif di Linimasa (Klik untuk matikan)' if s.is_shared_to_timeline else 'Belum di Linimasa (Klik untuk aktifkan & terbitkan di puncak linimasa)' }}">
-                                        <i class="fas {{ 'fa-toggle-on text-emerald-600' if s.is_shared_to_timeline else 'fa-toggle-off text-slate-400' }} text-xs"></i>
-                                        <span>{{ 'Linimasa: ON' if s.is_shared_to_timeline else 'Linimasa: OFF' }}</span>
-                                    </button>
-                                    <button type="button"
-                                            hx-get="/admin/sponsors/edit-modal/{{ s.id }}"
-                                            hx-target="#modal-container"
-                                            class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                                            title="Edit Lapak">
-                                        <i class="fas fa-edit text-xs"></i>
-                                    </button>
-                                    <button type="button"
-                                            hx-post="/admin/sponsors/delete/{{ s.id }}"
-                                            hx-target="#main-content"
-                                            hx-confirm="Hapus usaha anggota ini?"
-                                            class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                                            title="Hapus Lapak">
-                                        <i class="fas fa-trash-alt text-xs"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" class="px-6 py-10 text-center text-slate-400 italic">
-                                Belum ada pengajuan usaha mandiri dari anggota.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </div>
-
     <!-- Tab Switcher & Auto-Select Engine (Guarantees tabs work consistently across all browsers & Alpine states) -->
     <script>
         (function() {
             window.switchAdminTab = function(tabName, updateUrl) {
-                if (!tabName) tabName = 'sponsors';
+                if (!tabName) tabName = 'organization';
 
                 // 1. Show only target panel, hide all other panels
                 var panels = document.querySelectorAll('.admin-tab-panel');
@@ -3449,8 +3163,8 @@
 
                 // Fallback to sponsors if tabName didn't match any panel
                 if (!found && panels.length > 0) {
-                    tabName = 'sponsors';
-                    var firstPanel = document.getElementById('admin-panel-sponsors') || panels[0];
+                    tabName = 'organization';
+                    var firstPanel = document.getElementById('admin-panel-organization') || panels[0];
                     if (firstPanel) {
                         firstPanel.style.display = 'block';
                         firstPanel.removeAttribute('x-cloak');
@@ -3488,10 +3202,10 @@
                     var params = new URLSearchParams(window.location.search);
                     var tabFromUrl = params.get('tab');
                     var hash = window.location.hash ? window.location.hash.replace('#', '') : null;
-                    var initialTab = tabFromUrl || hash || '{{ curr_tab }}' || 'sponsors';
+                    var initialTab = tabFromUrl || hash || '{{ curr_tab }}' || 'organization';
                     window.switchAdminTab(initialTab, false);
                 } catch (e) {
-                    window.switchAdminTab('{{ curr_tab }}' || 'sponsors', false);
+                    window.switchAdminTab('{{ curr_tab }}' || 'organization', false);
                 }
             };
 
@@ -3652,4 +3366,359 @@
 </div>
 {% endmacro %}
 
+<!-- ============================================================================== -->
+<!-- MACRO: MANAJEMEN SPONSORSHIP & KEMITRAAN (STANDALONE FULL PAGE) -->
+<!-- ============================================================================== -->
+{% macro admin_sponsors(data) %}
+<div class="space-y-6">
 
+    <!-- Top Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white flex items-center justify-center text-xl shadow-sm shrink-0">
+                <i class="fas fa-handshake"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black text-slate-900 font-heading">Manajemen Sponsorship & Kemitraan</h1>
+                <p class="text-xs text-slate-500 mt-0.5">Kelola mitra sponsor resmi, lapak usaha anggota komunitas, serta kurasi produk promosi dan integrasi linimasa.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button"
+                    hx-get="/admin/sponsors/create-modal"
+                    hx-target="#modal-container"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-sm hover:shadow transition cursor-pointer">
+                <i class="fas fa-plus"></i>
+                <span>Tambah Sponsor Resmi</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-lg shrink-0">
+                <i class="fas fa-building"></i>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold text-slate-500 uppercase">Mitra Resmi</span>
+                <h3 class="text-xl font-black text-slate-900">{{ data.total_sponsors }}</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0">
+                <i class="fas fa-bullhorn"></i>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold text-slate-500 uppercase">Tayang Linimasa</span>
+                <h3 class="text-xl font-black text-slate-900">{{ data.active_timeline_count }}</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-lg shrink-0">
+                <i class="fas fa-box-open"></i>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold text-slate-500 uppercase">Total Produk</span>
+                <h3 class="text-xl font-black text-slate-900">{{ data.total_products }}</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-lg shrink-0">
+                <i class="fas fa-store"></i>
+            </div>
+            <div>
+                <span class="text-[11px] font-bold text-slate-500 uppercase">Usaha Anggota</span>
+                <h3 class="text-xl font-black text-slate-900">{{ data.total_member_businesses }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD 1: Mitra Sponsor Resmi Organisasi -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-lg shrink-0">
+                    <i class="fas fa-award"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 font-heading">Daftar Mitra Sponsor Resmi Organisasi</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Sponsor utama, official gear partner, dan brand pendukung kegiatan ekspedisi GIMBAL.</p>
+                </div>
+            </div>
+
+            <!-- Filter Tier -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <a href="/admin/sponsors"
+                   hx-get="/admin/sponsors"
+                   hx-target="#main-content"
+                   class="px-2.5 py-1 rounded-lg text-xs font-semibold transition {% if not data.selected_tier %}bg-orange-600 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                    Semua
+                </a>
+                <a href="/admin/sponsors?tier=platinum"
+                   hx-get="/admin/sponsors?tier=platinum"
+                   hx-target="#main-content"
+                   class="px-2.5 py-1 rounded-lg text-xs font-semibold transition {% if data.selected_tier == 'platinum' %}bg-purple-600 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                    Platinum
+                </a>
+                <a href="/admin/sponsors?tier=gold"
+                   hx-get="/admin/sponsors?tier=gold"
+                   hx-target="#main-content"
+                   class="px-2.5 py-1 rounded-lg text-xs font-semibold transition {% if data.selected_tier == 'gold' %}bg-amber-600 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                    Gold
+                </a>
+                <a href="/admin/sponsors?tier=silver"
+                   hx-get="/admin/sponsors?tier=silver"
+                   hx-target="#main-content"
+                   class="px-2.5 py-1 rounded-lg text-xs font-semibold transition {% if data.selected_tier == 'silver' %}bg-slate-700 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                    Silver
+                </a>
+                <a href="/admin/sponsors?tier=bronze"
+                   hx-get="/admin/sponsors?tier=bronze"
+                   hx-target="#main-content"
+                   class="px-2.5 py-1 rounded-lg text-xs font-semibold transition {% if data.selected_tier == 'bronze' %}bg-orange-700 text-white{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                    Bronze / Mitra
+                </a>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
+                    <tr>
+                        <th class="px-5 py-3">Mitra Sponsor</th>
+                        <th class="px-5 py-3">Tier & Kategori</th>
+                        <th class="px-5 py-3">Benefit & Promo Anggota</th>
+                        <th class="px-5 py-3 text-center">Katalog Produk</th>
+                        <th class="px-5 py-3 text-center">Status</th>
+                        <th class="px-5 py-3 text-right">Aksi Manajemen</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for s in data.sponsors %}
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="px-5 py-3.5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                    {% if s.logo_url %}
+                                    <img src="{{ s.logo_url }}" alt="{{ s.name }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                    <i class="fas fa-image text-slate-400"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 leading-tight">{{ s.name }}</h4>
+                                    <p class="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{{ s.description or '-' }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase
+                                {% if s.tier == 'platinum' %}bg-purple-100 text-purple-800
+                                {% elif s.tier == 'gold' %}bg-amber-100 text-amber-800
+                                {% elif s.tier == 'silver' %}bg-slate-200 text-slate-800
+                                {% else %}bg-orange-100 text-orange-800{% endif %}">
+                                {{ s.tier_label }}
+                            </span>
+                            <p class="text-[10px] text-slate-500 mt-1 capitalize">{{ s.category_label }}</p>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            {% if s.promo_badge %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                                <i class="fas fa-tag text-amber-600"></i> {{ s.promo_badge }}
+                            </span>
+                            {% endif %}
+                            <p class="text-[11px] text-slate-600 mt-0.5">{{ s.member_benefit or 'Akses kemitraan terbuka' }}</p>
+                        </td>
+                        <td class="px-5 py-3.5 text-center">
+                            <button type="button"
+                                    hx-get="/admin/sponsors/products/{{ s.id }}"
+                                    hx-target="#modal-container"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-orange-50 hover:text-orange-700 transition border border-slate-200 cursor-pointer">
+                                <i class="fas fa-box-open text-orange-600"></i>
+                                <span>{{ s.products|length }} Item</span>
+                            </button>
+                        </td>
+                        <td class="px-5 py-3.5 text-center">
+                            <button type="button"
+                                    hx-post="/admin/sponsors/toggle-active/{{ s.id }}"
+                                    hx-target="#main-content"
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition cursor-pointer
+                                        {{ 'bg-emerald-100 text-emerald-800 border border-emerald-300' if s.is_active else 'bg-slate-100 text-slate-500 border border-slate-200' }}">
+                                <i class="fas fa-circle text-[8px] {{ 'text-emerald-500' if s.is_active else 'text-slate-400' }}"></i>
+                                <span>{{ 'Aktif' if s.is_active else 'Nonaktif' }}</span>
+                            </button>
+                        </td>
+                        <td class="px-5 py-3.5 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button type="button"
+                                        hx-post="/admin/sponsors/toggle-share/{{ s.id }}"
+                                        hx-swap="outerHTML"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold transition cursor-pointer {{ 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200' if s.is_shared_to_timeline else 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200' }}"
+                                        title="{{ 'Aktif di Linimasa (Klik untuk matikan)' if s.is_shared_to_timeline else 'Belum di Linimasa (Klik untuk aktifkan & terbitkan di puncak linimasa)' }}">
+                                    <i class="fas {{ 'fa-toggle-on text-emerald-600' if s.is_shared_to_timeline else 'fa-toggle-off text-slate-400' }} text-xs"></i>
+                                    <span>{{ 'Linimasa: ON' if s.is_shared_to_timeline else 'Linimasa: OFF' }}</span>
+                                </button>
+                                <button type="button"
+                                        hx-get="/admin/sponsors/edit-modal/{{ s.id }}"
+                                        hx-target="#modal-container"
+                                        class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                                        title="Edit Sponsor">
+                                    <i class="fas fa-edit text-xs"></i>
+                                </button>
+                                <button type="button"
+                                        hx-post="/admin/sponsors/delete/{{ s.id }}"
+                                        hx-target="#main-content"
+                                        hx-confirm="Hapus sponsor ini secara permanen beserta produknya?"
+                                        class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
+                                        title="Hapus Sponsor">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-10 text-center text-slate-400 italic">
+                            Belum ada mitra sponsor resmi terdaftar. Klik "+ Tambah Sponsor Resmi" di atas untuk menambahkan.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- CARD 2: Usaha / Lapak Anggota Komunitas -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0">
+                    <i class="fas fa-store"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 font-heading">Lapak, Cafe & Usaha Mandiri Anggota</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Daftar usaha yang diajukan oleh anggota (Cafe, Toko Karawo/Etnik, Rental Outdoor, Homestay) untuk promosi resmi dan diskon KTA.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
+                    <tr>
+                        <th class="px-5 py-3">Usaha & Pemilik</th>
+                        <th class="px-5 py-3">Kategori & Lokasi</th>
+                        <th class="px-5 py-3">Benefit KTA GIMBAL</th>
+                        <th class="px-5 py-3 text-center">Produk</th>
+                        <th class="px-5 py-3 text-center">Status Verifikasi</th>
+                        <th class="px-5 py-3 text-right">Aksi Moderasi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for s in data.member_businesses %}
+                    <tr class="hover:bg-slate-50/70 transition">
+                        <td class="px-5 py-3.5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-200 overflow-hidden shrink-0 flex items-center justify-center text-emerald-600">
+                                    {% if s.logo_url %}
+                                    <img src="{{ s.logo_url }}" alt="{{ s.name }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                    <i class="fas fa-store"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 leading-tight">{{ s.name }}</h4>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">
+                                        Pemilik: <span class="font-semibold text-slate-700">{{ s.contact_person or (s.owner.nama if s.owner else 'Anggota') }}</span>
+                                        {% if s.contact_phone %}&bull; <a href="https://wa.me/{{ s.contact_phone|replace('+', '')|replace('-', '')|replace(' ', '') }}" target="_blank" class="text-emerald-600 hover:underline">{{ s.contact_phone }}</a>{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 capitalize">
+                                {{ s.category_label }}
+                            </span>
+                            <p class="text-[10px] text-slate-500 mt-1 line-clamp-1"><i class="fas fa-map-marker-alt text-rose-500 mr-1"></i>{{ s.address or 'Gorontalo' }}</p>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            {% if s.promo_badge %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-900 border border-emerald-200">
+                                <i class="fas fa-percent text-emerald-600"></i> {{ s.promo_badge }}
+                            </span>
+                            {% endif %}
+                            <p class="text-[11px] text-slate-600 mt-0.5">{{ s.member_benefit or 'Diskon khusus pemegang KTA' }}</p>
+                        </td>
+                        <td class="px-5 py-3.5 text-center">
+                            <button type="button"
+                                    hx-get="/admin/sponsors/products/{{ s.id }}"
+                                    hx-target="#modal-container"
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 transition border border-slate-200 cursor-pointer">
+                                <i class="fas fa-boxes text-emerald-600"></i>
+                                <span>{{ s.products|length }} Item</span>
+                            </button>
+                        </td>
+                        <td class="px-5 py-3.5 text-center">
+                            {% if s.is_verified %}
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                <i class="fas fa-check-circle text-emerald-600"></i> Terverifikasi
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
+                                <i class="fas fa-clock text-amber-600"></i> Menunggu Verifikasi
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3.5 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                {% if not s.is_verified %}
+                                <form hx-post="/admin/sponsors/verify/{{ s.id }}" hx-target="#main-content" class="inline">
+                                    <button type="submit" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition cursor-pointer" title="Setujui Usaha Ini">
+                                        <i class="fas fa-check mr-1"></i> Setujui
+                                    </button>
+                                </form>
+                                {% endif %}
+                                <button type="button"
+                                        hx-post="/admin/sponsors/toggle-share/{{ s.id }}"
+                                        hx-swap="outerHTML"
+                                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold transition cursor-pointer {{ 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200' if s.is_shared_to_timeline else 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200' }}"
+                                        title="{{ 'Aktif di Linimasa (Klik untuk matikan)' if s.is_shared_to_timeline else 'Belum di Linimasa (Klik untuk aktifkan & terbitkan di puncak linimasa)' }}">
+                                    <i class="fas {{ 'fa-toggle-on text-emerald-600' if s.is_shared_to_timeline else 'fa-toggle-off text-slate-400' }} text-xs"></i>
+                                    <span>{{ 'Linimasa: ON' if s.is_shared_to_timeline else 'Linimasa: OFF' }}</span>
+                                </button>
+                                <button type="button"
+                                        hx-get="/admin/sponsors/edit-modal/{{ s.id }}"
+                                        hx-target="#modal-container"
+                                        class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                                        title="Edit Lapak">
+                                    <i class="fas fa-edit text-xs"></i>
+                                </button>
+                                <button type="button"
+                                        hx-post="/admin/sponsors/delete/{{ s.id }}"
+                                        hx-target="#main-content"
+                                        hx-confirm="Hapus usaha anggota ini?"
+                                        class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
+                                        title="Hapus Lapak">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-10 text-center text-slate-400 italic">
+                            Belum ada pengajuan usaha mandiri dari anggota.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endmacro %}
