@@ -915,18 +915,18 @@
 
     <!-- MAIN APP CONTENT (Targeted by hx-target="#main-content") -->
     {% if current_user and current_user.is_admin and active_page and active_page.startswith('admin_') %}
-    <!-- ADMIN LAYOUT: FULL WIDTH (Menu admin sudah dipindahkan ke header dropdown "Pengaturan") -->
-    <main id="main-content" class="flex-1 site-container py-6">
+    <!-- ADMIN LAYOUT: STANDARD TOP-NAV CONTAINER -->
+    <main id="main-content" class="flex-1 site-container py-6 min-w-0">
         {{ active_macro_content | safe }}
     </main>
     {% elif active_page == 'landing' %}
     <!-- LANDING PAGE LAYOUT: FULL WIDTH -->
-    <main id="main-content" class="flex-1 w-full">
+    <main id="main-content" class="flex-1 w-full min-w-0">
         {{ active_macro_content | safe }}
     </main>
     {% else %}
     <!-- MEMBER & AUTH LAYOUT: STANDARD TOP-NAV CONTAINER -->
-    <main id="main-content" class="flex-1 site-container py-6">
+    <main id="main-content" class="flex-1 site-container py-6 min-w-0">
         {{ active_macro_content | safe }}
     </main>
     {% endif %}
@@ -1119,6 +1119,16 @@
             // Landing nav HANYA boleh aktif jika path adalah persis '/' atau '' DAN elemen landing-layer ada di DOM
             const isLanding = (path === '/' || path === '') && !!document.getElementById('landing-layer');
 
+            // 0. Synchronize Main Content Container Width & Padding (Fix 100% width glitch on HTMX navigation)
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+                if (isLanding) {
+                    mainContent.className = 'flex-1 w-full min-w-0';
+                } else {
+                    mainContent.className = 'flex-1 site-container py-6 min-w-0';
+                }
+            }
+
             // 1. Landing Desktop & Mobile Nav Synchronization
             const landingNav = document.getElementById('landing-desktop-nav');
             const mobileLandingNav = document.getElementById('mobile-landing-nav');
@@ -1238,8 +1248,30 @@
             window.syncActiveNavItems();
         }
 
+        document.addEventListener('htmx:beforeSwap', function (evt) {
+            if (evt.detail.target && evt.detail.target.id === 'main-content') {
+                const activePageHeader = evt.detail.xhr ? evt.detail.xhr.getResponseHeader('X-Active-Page') : null;
+                const path = window.location.pathname;
+                const isLanding = (activePageHeader === 'landing') || (path === '/' && !activePageHeader);
+                if (isLanding) {
+                    evt.detail.target.className = 'flex-1 w-full min-w-0';
+                } else {
+                    evt.detail.target.className = 'flex-1 site-container py-6 min-w-0';
+                }
+            }
+        });
+
         document.addEventListener('htmx:afterSwap', function (evt) {
             if (evt.detail.target && evt.detail.target.id === 'main-content') {
+                const activePageHeader = evt.detail.xhr ? evt.detail.xhr.getResponseHeader('X-Active-Page') : null;
+                const path = window.location.pathname;
+                const hasLandingLayer = !!document.getElementById('landing-layer');
+                const isLanding = (activePageHeader === 'landing') || (hasLandingLayer && (path === '/' || path === ''));
+                if (isLanding) {
+                    evt.detail.target.className = 'flex-1 w-full min-w-0';
+                } else {
+                    evt.detail.target.className = 'flex-1 site-container py-6 min-w-0';
+                }
                 window.syncActiveNavItems();
             }
         });

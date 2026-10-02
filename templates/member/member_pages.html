@@ -204,55 +204,92 @@
                 </div>
             </div>
 
-            <!-- 1b. KARTU AKADEMI RIMBA & SERTIFIKASI -->
-            {% if current_user.member_status == 'active' %}
-            <div class="bg-gradient-to-br from-emerald-900 via-emerald-850 to-teal-950 p-4 rounded-lg border border-emerald-500/40 text-white shadow-lg relative overflow-hidden group"
-                 hx-get="/member/academy" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
-                 style="cursor:pointer;">
-                <div class="absolute -right-3 -bottom-3 opacity-15 text-emerald-400 text-6xl group-hover:scale-110 transition-transform pointer-events-none">
+            <!-- 1b. KARTU FITUR AKADEMI RIMBA & BREVET KEHORMATAN -->
+            <div class="bg-white rounded-lg border border-slate-200/90 p-4 shadow-sm space-y-3 relative overflow-hidden group">
+                <div class="absolute -right-3 -bottom-3 opacity-5 text-orange-600 text-7xl pointer-events-none group-hover:scale-110 transition-transform">
                     <i class="fas fa-graduation-cap"></i>
                 </div>
-                <div class="relative z-10 space-y-2.5">
-                    <div class="flex items-center justify-between">
-                        <span class="px-2 py-0.5 bg-emerald-600 text-white text-[9px] font-black tracking-wider uppercase rounded shadow-xs">Akademi Rimba</span>
-                        {% if data.user_certifications %}
-                        <span class="text-[10px] text-emerald-300 font-bold flex items-center gap-1">
-                            <i class="fas fa-award text-amber-400"></i>
-                            {{ data.user_certifications|length }} Sertifikat
+
+                <div class="flex items-center justify-between relative z-10">
+                    <div class="flex items-center gap-1.5">
+                        <span class="px-2 py-0.5 bg-orange-600 text-white text-[9px] font-black uppercase tracking-wider rounded shadow-xs">
+                            Akademi Rimba
                         </span>
-                        {% else %}
-                        <span class="text-[10px] text-emerald-300 font-mono font-bold">SOP & Diksar</span>
-                        {% endif %}
+                        <span class="text-[10px] text-slate-400 font-semibold">&bull; SOP & Diksar</span>
                     </div>
-                    <div>
-                        <h4 class="text-xs font-black font-heading text-white flex items-center gap-1.5">
-                            <i class="fas fa-book-open text-emerald-400"></i> Pelatihan & Sertifikasi
-                        </h4>
-                        {% if data.user_certifications %}
-                        <div class="flex flex-wrap gap-1 mt-1.5">
-                            {% for cert in data.user_certifications[:2] %}
-                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-700/60 text-emerald-100 text-[9px] font-bold rounded">
-                                <i class="fas {{ cert.tier.badge_icon or 'fa-award' }} text-amber-400 text-[8px]"></i>
-                                {{ cert.tier.badge_name }}
-                            </span>
+                    {% set user_certs = user.certifications_list %}
+                    <span class="text-[10px] font-bold {% if user_certs %}text-emerald-600{% else %}text-amber-600{% endif %} flex items-center gap-1">
+                        <i class="fas {% if user_certs %}fa-award text-amber-500{% else %}fa-compass text-amber-500{% endif %}"></i>
+                        {{ user_certs|length }} Brevet Diraih
+                    </span>
+                </div>
+
+                <div class="relative z-10">
+                    <h4 class="text-xs font-black text-slate-900 font-heading flex items-center gap-1.5">
+                        <i class="fas fa-award text-orange-600 text-sm"></i>
+                        <span>Pelatihan & Brevet Kehormatan</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-500 leading-snug mt-1">
+                        SOP kebencanaan, navigasi rimba & ujian sertifikasi kompetensi resmi KPAB GIMBAL.
+                    </p>
+                </div>
+
+                <div class="relative z-10">
+                    {% if user_certs %}
+                    <div class="space-y-1.5">
+                        <span class="text-[9px] font-black uppercase tracking-wider text-slate-400 block">
+                            Brevet Resmi Anda:
+                        </span>
+                        <div class="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
+                            {% for cert in user_certs %}
+                            <div class="flex items-center justify-between p-2 rounded-lg bg-orange-50/70 border border-orange-200/70 text-slate-800 hover:bg-orange-100/60 transition">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <div class="w-7 h-7 rounded-md flex items-center justify-center text-xs text-white shadow-2xs shrink-0"
+                                         style="background-color: {{ cert.tier.badge_color or '#ea580c' }};">
+                                        <i class="fas {{ cert.tier.badge_icon or 'fa-award' }} text-[11px]"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-[11px] font-bold text-slate-900 truncate leading-tight">{{ cert.tier.badge_name }}</p>
+                                        <div class="flex items-center gap-1.5 mt-0.5">
+                                            <span class="text-[9px] font-mono text-orange-700 font-semibold truncate">{{ cert.certificate_no }}</span>
+                                            <span class="text-[8px] px-1 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold shrink-0">LULUS</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="/member/academy/certificate/{{ cert.certificate_no }}" target="_blank"
+                                   title="Lihat Piagam Sertifikat"
+                                   class="p-1.5 text-slate-400 hover:text-orange-600 hover:bg-white rounded transition shrink-0">
+                                    <i class="fas fa-external-link-alt text-[10px]"></i>
+                                </a>
+                            </div>
                             {% endfor %}
                         </div>
-                        {% else %}
-                        <p class="text-[11px] text-emerald-200 leading-snug mt-1">
-                            Ikuti kurikulum diksar, SOP kebencanaan & raih sertifikasi internal GIMBAL.
-                        </p>
-                        {% endif %}
                     </div>
-                    <button type="button"
-                            hx-get="/member/academy" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
-                            class="inline-flex items-center justify-center gap-1.5 w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded shadow transition">
-                        <i class="fas fa-graduation-cap text-[10px]"></i>
-                        <span>{% if data.user_certifications %}Lanjutkan Belajar{% else %}Mulai Pelatihan{% endif %}</span>
-                        <i class="fas fa-chevron-right text-[9px]"></i>
-                    </button>
+                    {% else %}
+                    <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-slate-600">
+                        <div class="w-6 h-6 rounded-md bg-amber-100 text-amber-600 flex items-center justify-center text-xs shrink-0 mt-0.5">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-[11px] font-bold text-slate-700 leading-tight">Belum Ada Brevet Diraih</p>
+                            <p class="text-[10px] text-slate-500 leading-snug mt-0.5">
+                                Selesaikan materi SOP & ikuti ujian sertifikasi untuk menyematkan brevet resmi di profil KTA Anda.
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="relative z-10 pt-1">
+                    <a href="/member/academy"
+                       hx-get="/member/academy" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                       class="w-full py-2 px-3 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fas fa-graduation-cap text-xs"></i>
+                        <span>{% if user_certs %}Buka Portal Akademi{% else %}Mulai Pelatihan & Ujian{% endif %}</span>
+                        <i class="fas fa-chevron-right text-[9px] opacity-75"></i>
+                    </a>
                 </div>
             </div>
-            {% endif %}
 
             <!-- 1c. KARTU PROMOSI GEOPDF STUDIO MAPS -->
             <div class="bg-gradient-to-br from-stone-900 via-stone-850 to-orange-950 p-4 rounded-lg border border-orange-500/40 text-white shadow-lg relative overflow-hidden group">

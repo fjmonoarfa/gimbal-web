@@ -174,7 +174,8 @@ def member_dashboard():
         'unpaid_count': unpaid_count,
         'posts': posts,
         'recent_chats': recent_chats,
-        'user_businesses': user_businesses
+        'user_businesses': user_businesses,
+        'user_certifications': user.certifications_list
     }
     return render_gimbal_page('member/member_pages.html', 'member_dashboard', data, active_page='member_dashboard')
 

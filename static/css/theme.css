@@ -54,6 +54,8 @@
     margin-right: auto !important;
     padding-left: 1rem;
     padding-right: 1rem;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 @media (max-width: 768px) {

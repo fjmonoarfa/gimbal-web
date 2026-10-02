@@ -2,9 +2,9 @@ import paramiko
 import time
 import os
 
-SERVER_IP = '10.75.0.51'
+SERVER_IP = '10.75.0.16'
 USERNAME = 'root'
-PASSWORD = 'P4ssw0rd!'
+PASSWORD = 'R4h4514!?!'
 REMOTE_DIR = '/root/gimbal-web'
 PORT = 8082
 
