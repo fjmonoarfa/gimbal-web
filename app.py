@@ -929,10 +929,28 @@ def auth_login():
     return redirect('/member/dashboard')
 
 
+@app.route('/logout')
 @app.route('/auth/logout')
 def logout():
+    """Membersihkan sesi dan menghapus seluruh cookie sesi di semua variasi domain & host"""
     session.clear()
-    return redirect('/')
+    next_dest = request.args.get('next', '/')
+    resp = redirect(next_dest)
+    
+    # Hapus cookie session secara eksplisit di semua variasi domain & host
+    cookie_name = app.config.get('SESSION_COOKIE_NAME', 'session')
+    for d in [None, '.gimbal.my.id', 'www.gimbal.my.id', 'gimbal.my.id', 'mapgen.gimbal.my.id']:
+        try:
+            resp.delete_cookie(cookie_name, domain=d, path='/')
+            resp.set_cookie(cookie_name, '', expires=0, max_age=0, domain=d, path='/')
+        except Exception:
+            pass
+            
+    # Pastikan jika request datang dari HTMX, browser diarahkan secara penuh
+    if request.headers.get('HX-Request'):
+        resp.headers['HX-Redirect'] = next_dest
+        
+    return resp
 
 
 # ========== REGISTER MODULAR BLUEPRINTS ==========================================
