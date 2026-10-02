@@ -1480,3 +1480,69 @@ ole (Pimpinan Perjalanan, Navigator, Logistik & Konsumsi, Medis / P3K, Dokumenta
      - Tombol ini langsung memunculkan `ExpeditionSyncDialog` dengan konteks peta aktif, pilihan kegiatan/ekspedisi, dan pemilihan data survei spesifik yang akan diunggah/diunduh.
 
 
+
+---
+
+## 41. Migrasi Penuh Database & Aplikasi Web ke Server Baru (10.75.0.16) (02 Oktober 2026)
+
+### 1. Tujuan & Latar Belakang
+- Pengguna meminta migrasi menyeluruh database MySQL dan seluruh berkas aplikasi web dari server lama (`10.75.0.51`, Rockchip armv7l) ke server baru yang lebih kencang (**`10.75.0.16`**, Proxmox VE container x86_64, 2GB RAM, 32GB Disk).
+- Kredensial server baru: IP `10.75.0.16`, User `root`, Password `R4h4514!?!`.
+
+### 2. Implementasi & Eksekusi Migrasi ([migrate_server.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/migrate_server.py))
+1. **Penyedotan Database Lama (`10.75.0.51`)**:
+   - Menjalankan `mysqldump` dengan `--add-drop-database` untuk database `gimbal-web` dan menyimpannya ke `/root/gimbal_db_dump.sql`.
+   - Mengompresi seluruh isi folder media/berkas anggota `/root/gimbal-web/uploads` ke `/root/gimbal_uploads.tar.gz`.
+   - Mengunduh kedua berkas cadangan ke lingkungan lokal via SFTP.
+2. **Konfigurasi Server Baru (`10.75.0.16`)**:
+   - Memasang server MariaDB, client, Python 3 venv, build tools, dan paket pendukung sistem.
+   - Mengimpor penuh dump database `gimbal-web` ke MariaDB lokal server baru.
+   - Mengonfigurasi hak akses user database `'gimbal-web'@'localhost'` dan `'gimbal-web'@'%'` dengan password `P4ssw0rd!`.
+   - Mentransfer source code webapp terbaru beserta pemulihan struktur folder `uploads/` (`proofs`, `docs`, `gallery`, `avatars`, `maps`, `expeditions`).
+   - Membuat virtual environment Python (`/root/gimbal-web/venv`) dan memasang dependensi `requirements.txt`.
+   - Mengonfigurasi file `.env` dan unit systemd `/etc/systemd/system/gimbal.service` (Gunicorn 3 workers pada port `8082`).
+   - Mengaktifkan dan me-restart service (`systemctl enable --now gimbal.service`).
+3. **Penyelarasan Skrip Deploy Lokal ([deploy_remote.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/deploy_remote.py))**:
+   - Mengarahkan `SERVER_IP = '10.75.0.16'` dan `PASSWORD = 'R4h4514!?!'`.
+
+---
+
+## 42. Instalasi & Migrasi Cloudflare Tunnel ke Server Baru (10.75.0.16) (02 Oktober 2026)
+
+### 1. Tujuan
+- Memasang dan mengonfigurasi Cloudflare Tunnel (`cloudflared`) pada server baru `10.75.0.16` agar domain publik `www.gimbal.my.id` langsung mengarah ke service Gunicorn `http://localhost:8082` di server baru.
+- Mengalihkan trafik secara penuh dan menonaktifkan tunnel di server lama (`10.75.0.51`) untuk mencegah split-traffic.
+
+### 2. Implementasi & Eksekusi ([install_cloudflared.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/install_cloudflared.py))
+1. **Pengambilan Konfigurasi & Token dari Server Lama**:
+   - Mengambil token tunnel resmi dari `/etc/cloudflared/token` di `10.75.0.51` (Tunnel ID: `11014862-a294-4389-b50c-936b5f9de836`).
+2. **Instalasi Paket Resmi Cloudflare di Server Baru (`10.75.0.16`)**:
+   - Mengunduh paket resmi Debian/Ubuntu x86_64: `cloudflared-linux-amd64.deb` rilis terbaru (2026.9.3).
+   - Memasang biner `cloudflared` ke `/usr/local/bin/cloudflared`.
+   - Membuat direktori terlindungi `/etc/cloudflared` (mode `0700`) dan menyimpan token di `/etc/cloudflared/token` (mode `0600`).
+3. **Penyusunan & Pengaktifan Systemd Service**:
+   - Membuat unit service `/etc/systemd/system/cloudflared.service`:
+     ```ini
+     [Unit]
+     Description=Cloudflare Tunnel client
+     After=network-online.target
+     Wants=network-online.target
+
+     [Service]
+     TimeoutStartSec=15
+     Type=notify
+     ExecStart=/usr/local/bin/cloudflared --no-autoupdate tunnel run --token-file /etc/cloudflared/token
+     Restart=on-failure
+     RestartSec=5s
+
+     [Install]
+     WantedBy=multi-user.target
+     ```
+   - Menjalankan `systemctl daemon-reload` dan `systemctl enable --now cloudflared`.
+4. **Verifikasi Koneksi Tunnel**:
+   - Layanan `cloudflared` aktif (*Active: active (running)*).
+   - Tunnel berhasil mendaftarkan 4 koneksi QUIC aktif ke data center Cloudflare edge (Singapore: `sin12`, `sin15`, `sin19`, `sin21`).
+   - Ingress rule otomatis memetakan hostname `www.gimbal.my.id` ke `http://localhost:8082`.
+5. **Penonaktifan Tunnel Server Lama**:
+   - Menjalankan `systemctl stop cloudflared` dan `systemctl disable cloudflared` pada `10.75.0.51`.
+   - Status service pada server lama kini `inactive` dan `disabled`, sehingga 100% trafik kini ditangani server baru `10.75.0.16`.
