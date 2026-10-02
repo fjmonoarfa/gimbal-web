@@ -18,7 +18,7 @@
 
                 <!-- Brand & Logo -->
                 <div class="flex items-center gap-3">
-                    <a href="/" hx-get="/" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true" class="flex items-center gap-3 group">
+                    <a href="{{ '/member/dashboard' if current_user else '/' }}" hx-get="{{ '/member/dashboard' if current_user else '/' }}" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true" class="flex items-center gap-3 group">
                         <img src="/assets/logo.png" alt="Logo GIMBAL"
                             class="w-10 h-10 object-contain drop-shadow-md group-hover:scale-105 transition duration-200">
                         <div>
@@ -42,7 +42,9 @@
                 </div>
 
                 <!-- Desktop Navigation Menu (Publik & Landing Page) -->
-                <nav id="landing-desktop-nav" class="hidden md:flex items-center gap-1 text-xs font-bold text-white uppercase tracking-wider {% if current_user and active_page != 'landing' %}hidden{% endif %}">
+                <nav id="landing-desktop-nav"
+                     class="{% if current_user and active_page != 'landing' %}hidden{% else %}hidden md:flex{% endif %} items-center gap-1 text-xs font-bold text-white uppercase tracking-wider"
+                     {% if current_user and active_page != 'landing' %}style="display: none !important;"{% endif %}>
                     <a href="/#beranda" data-section="beranda"
                        onclick="window.navigateLandingSection(event, 'beranda')"
                        class="landing-nav-item px-3 py-1.5 rounded-lg transition font-medium text-white/90 hover:text-white hover:bg-white/20 {% if active_page == 'landing' %}active bg-white/25 text-white font-extrabold shadow-sm{% endif %}">Beranda</a>
@@ -848,7 +850,8 @@
         window.syncActiveNavItems = function (explicitPath) {
             const path = explicitPath || window.location.pathname;
             const hash = (window.location.hash || '').replace('#', '');
-            const isLanding = (path === '/' || path === '' || !!document.getElementById('landing-layer'));
+            // Landing nav HANYA boleh aktif jika path adalah persis '/' atau '' DAN elemen landing-layer ada di DOM
+            const isLanding = (path === '/' || path === '') && !!document.getElementById('landing-layer');
 
             // 1. Landing Desktop & Mobile Nav Synchronization
             const landingNav = document.getElementById('landing-desktop-nav');
@@ -856,25 +859,25 @@
 
             if (landingNav) {
                 if (isLanding) {
+                    landingNav.style.display = '';
                     landingNav.classList.remove('hidden');
                     if (!landingNav.classList.contains('md:flex')) {
                         landingNav.classList.add('md:flex');
                     }
                 } else {
-                    {% if current_user %}
+                    landingNav.style.display = 'none';
                     landingNav.classList.add('hidden');
                     landingNav.classList.remove('md:flex');
-                    {% endif %}
                 }
             }
 
             if (mobileLandingNav) {
                 if (isLanding) {
+                    mobileLandingNav.style.display = '';
                     mobileLandingNav.classList.remove('hidden');
                 } else {
-                    {% if current_user %}
+                    mobileLandingNav.style.display = 'none';
                     mobileLandingNav.classList.add('hidden');
-                    {% endif %}
                 }
             }
 

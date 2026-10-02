@@ -458,12 +458,24 @@ def member_chat_messages():
             {% if not chats %}
             <div class="p-6 text-center text-slate-400 space-y-2">
                 <i class="fas fa-lock text-slate-300 text-xl"></i>
-                <p class="text-xs">Percakapan pribadi dengan <strong>{{ recipient.name }}</strong></p>
+                <p class="text-xs">Percakapan pribadi dengan <strong class="text-slate-800">{{ recipient.name }}</strong>
+                    {% if recipient.is_online %}
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0 align-middle ml-1" title="Online"></span>
+                    {% endif %}
+                </p>
                 <p class="text-[10px] text-slate-400">Pesan bersifat privat & hanya dapat dibaca oleh Anda berdua.</p>
             </div>
             {% else %}
                 {% for chat in chats %}
                 <div class="flex flex-col {% if chat.user_id == current_user.id %}items-end{% else %}items-start{% endif %} mb-2">
+                    {% if chat.user_id != current_user.id %}
+                    <div class="flex items-center gap-1.5 mb-0.5 px-1">
+                        <span class="text-[10px] font-bold text-slate-700">{{ chat.user.name }}</span>
+                        {% if chat.user.is_online %}
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 ring-1 ring-emerald-200 shrink-0" title="Online"></span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                     <div class="max-w-[85%] p-2.5 rounded-2xl {% if chat.user_id == current_user.id %}bg-orange-600 text-white rounded-tr-none shadow-sm{% else %}bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-xs{% endif %}">
                         <p class="text-xs leading-relaxed break-words">{{ chat.message }}</p>
                     </div>
@@ -517,6 +529,14 @@ def member_chat_send():
         tmpl = """
         {% for chat in chats %}
         <div class="flex flex-col {% if chat.user_id == current_user.id %}items-end{% else %}items-start{% endif %} mb-2">
+            {% if chat.user_id != current_user.id %}
+            <div class="flex items-center gap-1.5 mb-0.5 px-1">
+                <span class="text-[10px] font-bold text-slate-700">{{ chat.user.name }}</span>
+                {% if chat.user.is_online %}
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 ring-1 ring-emerald-200 shrink-0" title="Online"></span>
+                {% endif %}
+            </div>
+            {% endif %}
             <div class="max-w-[85%] p-2.5 rounded-2xl {% if chat.user_id == current_user.id %}bg-orange-600 text-white rounded-tr-none shadow-sm{% else %}bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-xs{% endif %}">
                 <p class="text-xs leading-relaxed break-words">{{ chat.message }}</p>
             </div>
@@ -578,13 +598,16 @@ def member_chat_contacts():
     {% else %}
         {% for c in contacts %}
         {% set m = c.user %}
-        <div onclick="window.openDirectChat && window.openDirectChat({{ m.id }}, '{{ m.name | replace("'", "\\'") }}', '{{ m.nra or "" }}', '{{ m.jabatan or m.role }}', '{{ m.avatar or "" }}')"
+        <div onclick="window.openDirectChat && window.openDirectChat({{ m.id }}, '{{ m.name | replace("'", "\\'") }}', '{{ m.nra or "" }}', '{{ m.jabatan or m.role }}', '{{ m.avatar or "" }}', {{ 'true' if m.is_online else 'false' }})"
              class="p-2.5 hover:bg-orange-50/60 rounded-xl cursor-pointer transition flex items-center justify-between gap-2.5 border-b border-slate-50 last:border-0 group">
             <div class="flex items-center gap-2.5 min-w-0">
                 <div class="relative shrink-0">
                     <img src="{{ m.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}"
                          alt="{{ m.name }}"
                          class="w-9 h-9 rounded-full object-cover border border-slate-200">
+                    {% if m.is_online %}
+                    <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs" title="Online"></span>
+                    {% endif %}
                     {% if c.unread_count > 0 %}
                     <span class="absolute -top-1 -right-1 w-4 h-4 bg-orange-600 text-white font-bold text-[9px] rounded-full flex items-center justify-center border border-white">
                         {{ c.unread_count }}
@@ -594,6 +617,9 @@ def member_chat_contacts():
                 <div class="min-w-0">
                     <div class="flex items-center gap-1.5">
                         <p class="text-xs font-bold text-slate-900 group-hover:text-orange-900 truncate">{{ m.name }}</p>
+                        {% if m.is_online %}
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shadow-xs shrink-0" title="Online"></span>
+                        {% endif %}
                         {% if m.nra %}
                         <span class="px-1 py-0.2 bg-orange-50 text-orange-800 text-[8px] font-mono font-bold rounded border border-orange-200 shrink-0">{{ m.nra }}</span>
                         {% endif %}

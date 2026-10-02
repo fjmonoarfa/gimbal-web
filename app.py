@@ -52,6 +52,22 @@ try:
 except ImportError:
     pass
 
+@app.before_request
+def update_user_last_seen():
+    """Memperbarui last_seen pengguna login untuk status online (throttled tiap 60 detik)"""
+    try:
+        user = get_current_user()
+        if user:
+            now = datetime.utcnow()
+            if not user.last_seen or (now - user.last_seen).total_seconds() > 60:
+                user.last_seen = now
+                db.session.commit()
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+
 @app.after_request
 def apply_htmx_cache_headers(response):
     """
@@ -91,6 +107,7 @@ def init_database_and_defaults():
                 user_cols = [
                     ('jabatan', 'VARCHAR(100)'),
                     ('last_login', 'DATETIME'),
+                    ('last_seen', 'DATETIME'),
                     ('gimbal_alias_email', 'VARCHAR(128)'),
                     ('cloudflare_rule_id', 'VARCHAR(64)'),
                     ('cloudflare_status', "VARCHAR(32) DEFAULT 'pending'")
@@ -385,7 +402,8 @@ def inject_global():
 
 @app.route('/assets/<path:filename>')
 def serve_assets(filename):
-    return send_from_directory('assets', filename)
+    assets_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'assets')
+    return send_from_directory(assets_dir, filename)
 
 @app.route('/index.js')
 def serve_index_js():

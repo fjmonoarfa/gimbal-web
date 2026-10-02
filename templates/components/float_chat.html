@@ -181,7 +181,10 @@
                              alt="Avatar"
                              class="w-7 h-7 rounded-full object-cover border border-slate-200 flex-shrink-0">
                         <div class="min-w-0">
-                            <p id="float-dm-contact-name" class="text-xs font-bold text-slate-900 truncate">Pilih Anggota</p>
+                            <div class="flex items-center gap-1.5">
+                                <p id="float-dm-contact-name" class="text-xs font-bold text-slate-900 truncate">Pilih Anggota</p>
+                                <span id="float-dm-online-indicator" class="hidden inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shrink-0" title="Online"></span>
+                            </div>
                             <p id="float-dm-contact-nra" class="text-[9px] text-slate-400 font-mono truncate">Anggota</p>
                         </div>
                     </div>
@@ -301,13 +304,14 @@
             }
         };
 
-        window.openDirectChat = function (id, name, nra, role, avatar) {
+        window.openDirectChat = function (id, name, nra, role, avatar, isOnline) {
             window.toggleGimbalChat(null, 'private', true);
             window.switchGimbalChatTab('private');
 
             var contactsView = document.getElementById('float-private-contacts-subview');
             var roomView = document.getElementById('float-private-room-subview');
             var nameEl = document.getElementById('float-dm-contact-name');
+            var onlineIndicator = document.getElementById('float-dm-online-indicator');
             var nraEl = document.getElementById('float-dm-contact-nra');
             var avatarEl = document.getElementById('float-dm-contact-avatar');
             var recipientInput = document.getElementById('float-dm-recipient-id');
@@ -315,6 +319,13 @@
             if (contactsView) contactsView.style.display = 'none';
             if (roomView) roomView.style.display = 'flex';
             if (nameEl) nameEl.textContent = name;
+            if (onlineIndicator) {
+                if (isOnline) {
+                    onlineIndicator.classList.remove('hidden');
+                } else {
+                    onlineIndicator.classList.add('hidden');
+                }
+            }
             if (nraEl) nraEl.textContent = nra ? ('NRA ' + nra) : (role || 'Anggota');
             if (avatarEl) avatarEl.src = avatar || '/static/pics/cartoon/avatar_sekjen.jpg';
             if (recipientInput) recipientInput.value = id;

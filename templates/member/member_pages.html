@@ -735,10 +735,15 @@
 {% for chat in chats %}
 <div class="p-2.5 rounded-lg {% if chat.user_id == current_user.id %}bg-orange-50 border border-orange-200/80 ml-3{% else %}bg-slate-50 border border-slate-200 mr-3{% endif %}">
     <div class="flex items-center justify-between gap-1 mb-1">
-        <span class="font-bold text-[11px] {% if chat.user_id == current_user.id %}text-orange-900{% else %}text-slate-900{% endif %} truncate">
-            {{ chat.user.name }}
-        </span>
-        <span class="text-[9px] text-slate-400 font-mono">{{ chat.created_at.strftime('%H:%M') }}</span>
+        <div class="flex items-center gap-1.5 min-w-0">
+            <span class="font-bold text-[11px] {% if chat.user_id == current_user.id %}text-orange-900{% else %}text-slate-900{% endif %} truncate">
+                {{ chat.user.name }}
+            </span>
+            {% if chat.user.is_online %}
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shadow-xs shrink-0" title="Online"></span>
+            {% endif %}
+        </div>
+        <span class="text-[9px] text-slate-400 font-mono shrink-0">{{ chat.created_at.strftime('%H:%M') }}</span>
     </div>
     <p class="text-slate-800 text-xs leading-relaxed break-words">{{ chat.message }}</p>
 </div>

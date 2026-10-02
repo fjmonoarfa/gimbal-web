@@ -49,6 +49,7 @@ class User(db.Model):
     
     # Sesi & Aktivitas Login
     last_login = db.Column(db.DateTime, nullable=True)
+    last_seen = db.Column(db.DateTime, nullable=True)
 
     # Cloudflare Email Routing & Alias Organisasi (@gimbal.my.id)
     gimbal_alias_email = db.Column(db.String(128), unique=True, nullable=True)
@@ -57,6 +58,13 @@ class User(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @property
+    def is_online(self):
+        """Mengecek apakah pengguna aktif dalam 5 menit terakhir"""
+        if not self.last_seen:
+            return False
+        return (datetime.utcnow() - self.last_seen).total_seconds() <= 300
 
     # Relasi
     payments = db.relationship('DuesPayment', foreign_keys='DuesPayment.user_id', backref='user', lazy='dynamic')
