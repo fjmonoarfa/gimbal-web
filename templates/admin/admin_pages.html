@@ -1167,7 +1167,8 @@
 {% set act = data.activity %}
 {% set budget = act.budget_data %}
 {% set gear = act.gear_data %}
-<div class="space-y-6" x-data="{ tab: '{{ data.active_tab or 'overview' }}' }">
+{% set curr_tab = data.active_tab or 'overview' %}
+<div id="admin-activity-manage-container" class="space-y-6" x-data="{ tab: '{{ curr_tab }}' }">
 
     <!-- TOP HEADER: EXPEDITION INFO & PHASE LIFECYCLE BAR -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 space-y-4">
@@ -1225,8 +1226,9 @@
 
                 <!-- PHASE TRANSITION BUTTONS -->
                 {% if act.phase in ['planning', 'open'] %}
-                <form hx-post="/admin/activity/{{ act.id }}/update-phase" hx-target="#main-content">
+                <form hx-post="/admin/activity/{{ act.id }}/update-phase?tab=field_ops" hx-target="#main-content">
                     <input type="hidden" name="phase" value="in_progress">
+                    <input type="hidden" name="tab" value="field_ops">
                     <button type="submit" hx-confirm="Mulai operasi lapangan sekarang? Pendaftaran akan ditutup otomatis dan kanal log lapangan akan aktif."
                             class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
                         <i class="fas fa-play"></i>
@@ -1234,8 +1236,9 @@
                     </button>
                 </form>
                 {% elif act.phase == 'in_progress' %}
-                <form hx-post="/admin/activity/{{ act.id }}/update-phase" hx-target="#main-content">
+                <form hx-post="/admin/activity/{{ act.id }}/update-phase?tab=close_out" hx-target="#main-content">
                     <input type="hidden" name="phase" value="completed">
+                    <input type="hidden" name="tab" value="close_out">
                     <button type="submit" hx-confirm="Tutup kegiatan ekspedisi dan masuk ke tahap wrap-up laporan akhir (LPJ)?"
                             class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
                         <i class="fas fa-flag-checkered"></i>
@@ -1243,7 +1246,8 @@
                     </button>
                 </form>
                 {% else %}
-                <form hx-post="/admin/activity/{{ act.id }}/publish-to-feed" hx-target="#main-content">
+                <form hx-post="/admin/activity/{{ act.id }}/publish-to-feed?tab=close_out" hx-target="#main-content">
+                    <input type="hidden" name="tab" value="close_out">
                     <button type="submit" class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
                         <i class="fas fa-bullhorn"></i>
                         <span>Publikasikan ke Linimasa</span>
@@ -1255,33 +1259,38 @@
 
         <!-- 5 TABS NAVIGATION -->
         <div class="border-t border-slate-100 pt-3 flex items-center gap-1 overflow-x-auto text-xs font-bold">
-            <button @click="tab = 'overview'" 
-                    :class="tab === 'overview' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
-                    class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+            <button type="button" @click="tab = 'overview'; window.switchRolTab('overview')" onclick="window.switchRolTab('overview')"
+                    data-tab="overview"
+                    :class="tab === 'overview' ? 'bg-orange-600 text-white shadow-sm font-bold active' : 'text-slate-600 hover:bg-slate-100'"
+                    class="rol-tab-btn px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap {{ 'bg-orange-600 text-white shadow-sm font-bold active' if curr_tab == 'overview' else 'text-slate-600 hover:bg-slate-100' }}">
                 <i class="fas fa-info-circle"></i>
                 <span>Ikhtisar & Detail</span>
             </button>
-            <button @click="tab = 'manifest'" 
-                    :class="tab === 'manifest' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
-                    class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+            <button type="button" @click="tab = 'manifest'; window.switchRolTab('manifest')" onclick="window.switchRolTab('manifest')"
+                    data-tab="manifest"
+                    :class="tab === 'manifest' ? 'bg-orange-600 text-white shadow-sm font-bold active' : 'text-slate-600 hover:bg-slate-100'"
+                    class="rol-tab-btn px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap {{ 'bg-orange-600 text-white shadow-sm font-bold active' if curr_tab == 'manifest' else 'text-slate-600 hover:bg-slate-100' }}">
                 <i class="fas fa-users"></i>
                 <span>Manifest Tim ({{ data.participants|length }})</span>
             </button>
-            <button @click="tab = 'rol_plan'" 
-                    :class="tab === 'rol_plan' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
-                    class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+            <button type="button" @click="tab = 'rol_plan'; window.switchRolTab('rol_plan')" onclick="window.switchRolTab('rol_plan')"
+                    data-tab="rol_plan"
+                    :class="tab === 'rol_plan' ? 'bg-orange-600 text-white shadow-sm font-bold active' : 'text-slate-600 hover:bg-slate-100'"
+                    class="rol-tab-btn px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap {{ 'bg-orange-600 text-white shadow-sm font-bold active' if curr_tab == 'rol_plan' else 'text-slate-600 hover:bg-slate-100' }}">
                 <i class="fas fa-clipboard-list"></i>
                 <span>Perencanaan ROL</span>
             </button>
-            <button @click="tab = 'field_ops'" 
-                    :class="tab === 'field_ops' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
-                    class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+            <button type="button" @click="tab = 'field_ops'; window.switchRolTab('field_ops')" onclick="window.switchRolTab('field_ops')"
+                    data-tab="field_ops"
+                    :class="tab === 'field_ops' ? 'bg-orange-600 text-white shadow-sm font-bold active' : 'text-slate-600 hover:bg-slate-100'"
+                    class="rol-tab-btn px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap {{ 'bg-orange-600 text-white shadow-sm font-bold active' if curr_tab == 'field_ops' else 'text-slate-600 hover:bg-slate-100' }}">
                 <i class="fas fa-satellite-dish"></i>
                 <span>Operasi Lapangan ({{ data.field_logs|length }})</span>
             </button>
-            <button @click="tab = 'close_out'" 
-                    :class="tab === 'close_out' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
-                    class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+            <button type="button" @click="tab = 'close_out'; window.switchRolTab('close_out')" onclick="window.switchRolTab('close_out')"
+                    data-tab="close_out"
+                    :class="tab === 'close_out' ? 'bg-orange-600 text-white shadow-sm font-bold active' : 'text-slate-600 hover:bg-slate-100'"
+                    class="rol-tab-btn px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap {{ 'bg-orange-600 text-white shadow-sm font-bold active' if curr_tab == 'close_out' else 'text-slate-600 hover:bg-slate-100' }}">
                 <i class="fas fa-award"></i>
                 <span>Laporan Akhir & LPJ</span>
             </button>
@@ -1290,9 +1299,10 @@
     </div>
 
     <!-- TAB 1: IKHTISAR & DETAIL UMUM -->
-    <div x-show="tab === 'overview'" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+    <div id="rol-panel-overview" class="rol-tab-panel bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6" x-show="tab === 'overview'" x-cloak {% if curr_tab != 'overview' %}style="display: none;"{% endif %}>
         <h3 class="text-base font-black text-slate-900 font-heading border-b border-slate-100 pb-2">Informasi Umum Ekspedisi</h3>
-        <form hx-post="/admin/activity/{{ act.id }}/update-basic" hx-target="#main-content" enctype="multipart/form-data" class="space-y-4">
+        <form hx-post="/admin/activity/{{ act.id }}/update-basic?tab=overview" hx-target="#main-content" enctype="multipart/form-data" class="space-y-4">
+            <input type="hidden" name="tab" value="overview">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-700">Nama Ekspedisi</label>
@@ -1360,14 +1370,15 @@
     </div>
 
     <!-- TAB 2: MANIFEST TIM & PESERTA -->
-    <div x-show="tab === 'manifest'" class="space-y-6">
+    <div id="rol-panel-manifest" class="rol-tab-panel space-y-6" x-show="tab === 'manifest'" x-cloak {% if curr_tab != 'manifest' %}style="display: none;"{% endif %}>
         <!-- FORM TAMBAH PESERTA MANUAL -->
         <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 space-y-4">
             <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center gap-2">
                 <i class="fas fa-user-plus text-orange-600"></i>
                 <span>Tunjuk / Tambahkan Personil Anggota ke Manifest</span>
             </h3>
-            <form hx-post="/admin/activity/{{ act.id }}/add-participant" hx-target="#main-content" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <form hx-post="/admin/activity/{{ act.id }}/add-participant?tab=manifest" hx-target="#main-content" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                <input type="hidden" name="tab" value="manifest">
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-700">Pilih Anggota GIMBAL</label>
                     <select name="user_id" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white">
@@ -1437,7 +1448,8 @@
                                 <p class="text-[10px] text-slate-500">Darurat: {{ part.user.emergency_contact or '-' }}</p>
                             </td>
                             <td class="p-3">
-                                <form hx-post="/admin/activity/{{ act.id }}/participant-role/{{ part.id }}" hx-target="#main-content" class="flex items-center gap-1">
+                                <form hx-post="/admin/activity/{{ act.id }}/participant-role/{{ part.id }}?tab=manifest" hx-target="#main-content" class="flex items-center gap-1">
+                                    <input type="hidden" name="tab" value="manifest">
                                     <select name="role" onchange="this.form.requestSubmit()" class="px-2 py-1 border border-slate-300 rounded text-xs font-semibold bg-white text-orange-700">
                                         <option value="Pimpinan Perjalanan" {% if part.role == 'Pimpinan Perjalanan' %}selected{% endif %}>Pimpinan Perjalanan</option>
                                         <option value="Navigator" {% if part.role == 'Navigator' %}selected{% endif %}>Navigator</option>
@@ -1459,14 +1471,21 @@
                             <td class="p-3 text-center">
                                 <div class="flex items-center justify-center gap-1">
                                     {% if part.status != 'confirmed' %}
-                                    <button type="button" hx-post="/admin/activity/participant-status/{{ part.id }}?status=confirmed" hx-target="#main-content"
-                                            class="p-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold" title="Setujui">
+                                    <button type="button" hx-post="/admin/activity/participant-status/{{ part.id }}?status=confirmed&from=manage&tab=manifest" hx-target="#main-content"
+                                            class="p-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold" title="Setujui Personil">
                                         <i class="fas fa-check"></i>
                                     </button>
                                     {% endif %}
-                                    <button type="button" hx-post="/admin/activity/{{ act.id }}/delete-participant/{{ part.id }}" hx-target="#main-content"
+                                    <button type="button" 
+                                            hx-get="/admin/member/edit-modal/{{ part.user_id }}?from_activity={{ act.id }}&from_tab=manifest" 
+                                            hx-target="#modal-container"
+                                            class="p-1 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[10px] font-bold" 
+                                            title="Edit Profil & Data Anggota">
+                                        <i class="fas fa-user-edit"></i>
+                                    </button>
+                                    <button type="button" hx-post="/admin/activity/{{ act.id }}/delete-participant/{{ part.id }}?tab=manifest" hx-target="#main-content"
                                             hx-confirm="Hapus {{ part.user.name }} dari manifest tim?"
-                                            class="p-1 px-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded text-[10px] font-bold" title="Hapus">
+                                            class="p-1 px-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded text-[10px] font-bold" title="Hapus dari Manifest">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
@@ -1484,7 +1503,7 @@
     </div>
 
     <!-- TAB 3: PERENCANAAN ROL -->
-    <div x-show="tab === 'rol_plan'" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+    <div id="rol-panel-rol_plan" class="rol-tab-panel bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6" x-show="tab === 'rol_plan'" x-cloak {% if curr_tab != 'rol_plan' %}style="display: none;"{% endif %}>
         <div class="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
                 <h3 class="text-base font-black text-slate-900 font-heading">Dokumen Perencanaan ROL (RAB, Rute, Logistik & Medis)</h3>
@@ -1525,7 +1544,8 @@
             </div>
         </div>
         
-        <form hx-post="/admin/activity/{{ act.id }}/update-rol" hx-target="#main-content" class="space-y-6">
+        <form hx-post="/admin/activity/{{ act.id }}/update-rol?tab=rol_plan" hx-target="#main-content" class="space-y-6">
+            <input type="hidden" name="tab" value="rol_plan">
 
             <!-- 1. RENCANA ANGGARAN BIAYA (RAB) -->
             <div class="space-y-3">
@@ -1671,7 +1691,7 @@
     </div>
 
     <!-- TAB 4: OPERASI LAPANGAN (START KEGIATAN & LOG LAPANGAN) -->
-    <div x-show="tab === 'field_ops'" class="space-y-6">
+    <div id="rol-panel-field_ops" class="rol-tab-panel space-y-6" x-show="tab === 'field_ops'" x-cloak {% if curr_tab != 'field_ops' %}style="display: none;"{% endif %}>
         
         <!-- STATUS BANNER SAAT IN PROGRESS -->
         {% if act.phase == 'in_progress' %}
@@ -1697,7 +1717,8 @@
                     <i class="fas fa-map-pin text-orange-600"></i>
                     <span>Catat Titik POI / Laporan Pos Lapangan (Manual)</span>
                 </h4>
-                <form hx-post="/admin/activity/{{ act.id }}/add-field-log" hx-target="#main-content" enctype="multipart/form-data" class="space-y-3">
+                <form hx-post="/admin/activity/{{ act.id }}/add-field-log?tab=field_ops" hx-target="#main-content" enctype="multipart/form-data" class="space-y-3">
+                    <input type="hidden" name="tab" value="field_ops">
                     <div class="space-y-1">
                         <label class="text-[11px] font-bold text-slate-700">Nama Titik / Pos</label>
                         <input type="text" name="title" required placeholder="Contoh: Pos 2 Shelter Mata Air" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-semibold">
@@ -1741,7 +1762,8 @@
                         Unggah berkas spasial hasil export dari ponsel Android tim survei (format <strong>.GPX</strong>, <strong>.GeoJSON</strong>, atau <strong>.KMZ</strong>). 
                         Sistem akan otomatis mengekstrak titik-titik POI dan jalur peta aktual ke dalam rekapitulasi ekspedisi.
                     </p>
-                    <form hx-post="/admin/activity/{{ act.id }}/upload-gimbal-maps" hx-target="#main-content" enctype="multipart/form-data" class="space-y-3">
+                    <form hx-post="/admin/activity/{{ act.id }}/upload-gimbal-maps?tab=field_ops" hx-target="#main-content" enctype="multipart/form-data" class="space-y-3">
+                        <input type="hidden" name="tab" value="field_ops">
                         <div class="p-4 border-2 border-dashed border-slate-300 rounded-lg text-center bg-slate-50/50 hover:bg-slate-50 transition cursor-pointer">
                             <i class="fas fa-cloud-upload-alt text-2xl text-slate-400 mb-1"></i>
                             <input type="file" name="geodata_file" required accept=".gpx,.geojson,.kml,.kmz,.json" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700">
@@ -1800,14 +1822,16 @@
                     <!-- AKSI LOG -->
                     <div class="flex items-center gap-2 shrink-0">
                         {% if log.photo_url %}
-                        <form hx-post="/admin/activity/{{ act.id }}/pin-field-photo/{{ log.id }}" hx-target="#main-content">
+                        <form hx-post="/admin/activity/{{ act.id }}/pin-field-photo/{{ log.id }}?tab=field_ops" hx-target="#main-content">
+                            <input type="hidden" name="tab" value="field_ops">
                             <button type="submit" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs rounded-lg transition flex items-center gap-1">
                                 <i class="fas fa-thumbtack text-[10px]"></i>
                                 <span>Pin ke Galeri</span>
                             </button>
                         </form>
                         {% endif %}
-                        <form hx-post="/admin/activity/{{ act.id }}/delete-field-log/{{ log.id }}" hx-target="#main-content">
+                        <form hx-post="/admin/activity/{{ act.id }}/delete-field-log/{{ log.id }}?tab=field_ops" hx-target="#main-content">
+                            <input type="hidden" name="tab" value="field_ops">
                             <button type="submit" hx-confirm="Hapus catatan lapangan ini?" class="p-1.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg transition">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
@@ -1826,7 +1850,7 @@
     </div>
 
     <!-- TAB 5: LAPORAN AKHIR & PENUTUPAN (LPJ) -->
-    <div x-show="tab === 'close_out'" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+    <div id="rol-panel-close_out" class="rol-tab-panel bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6" x-show="tab === 'close_out'" x-cloak {% if curr_tab != 'close_out' %}style="display: none;"{% endif %}>
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
                 <h3 class="text-base font-black text-slate-900 font-heading">Wrap-up Laporan Pertanggungjawaban (LPJ)</h3>
@@ -1840,8 +1864,9 @@
         </div>
 
         <!-- FORM EVALUASI AKHIR -->
-        <form hx-post="/admin/activity/{{ act.id }}/update-phase" hx-target="#main-content" class="space-y-4">
+        <form hx-post="/admin/activity/{{ act.id }}/update-phase?tab=close_out" hx-target="#main-content" class="space-y-4">
             <input type="hidden" name="phase" value="completed">
+            <input type="hidden" name="tab" value="close_out">
             
             <div class="space-y-1">
                 <label class="text-xs font-bold text-slate-700">Catatan Evaluasi Lapangan, Insiden & Rekomendasi</label>
@@ -1855,7 +1880,7 @@
                     <p class="text-[11px] text-emerald-700">Membagikan rekapitulasi resmi dan foto terbaik ekspedisi ke feed petualang anggota.</p>
                 </div>
                 <button type="button" 
-                        hx-post="/admin/activity/{{ act.id }}/publish-to-feed" 
+                        hx-post="/admin/activity/{{ act.id }}/publish-to-feed?tab=close_out" 
                         hx-target="#main-content"
                         class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition shrink-0 flex items-center gap-1.5 shadow-sm">
                     <i class="fas fa-bullhorn"></i>
@@ -1871,6 +1896,87 @@
         </form>
     </div>
 
+    <!-- REFRESH-PROOF TAB MANAGEMENT SCRIPT FOR ROL HUB -->
+    <script>
+        (function() {
+            window.switchRolTab = function(tabName, updateUrl) {
+                // 1. Show/hide panels
+                var panels = document.querySelectorAll('.rol-tab-panel');
+                var found = false;
+                panels.forEach(function(panel) {
+                    if (panel.id === 'rol-panel-' + tabName) {
+                        panel.style.display = 'block';
+                        panel.removeAttribute('x-cloak');
+                        found = true;
+                    } else {
+                        panel.style.display = 'none';
+                    }
+                });
+
+                // Fallback to overview if not found
+                if (!found && panels.length > 0) {
+                    tabName = 'overview';
+                    var firstPanel = document.getElementById('rol-panel-overview') || panels[0];
+                    if (firstPanel) {
+                        firstPanel.style.display = 'block';
+                        firstPanel.removeAttribute('x-cloak');
+                    }
+                }
+
+                // 2. Update button active states
+                var btns = document.querySelectorAll('.rol-tab-btn');
+                btns.forEach(function(btn) {
+                    if (btn.getAttribute('data-tab') === tabName) {
+                        btn.className = 'rol-tab-btn px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap bg-orange-600 text-white shadow-sm font-bold active';
+                    } else {
+                        btn.className = 'rol-tab-btn px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap text-slate-600 hover:bg-slate-100';
+                    }
+                });
+
+                // 3. Sync Alpine state if running
+                var container = document.getElementById('admin-activity-manage-container');
+                if (window.Alpine && container && container._x_dataStack && container._x_dataStack[0]) {
+                    container._x_dataStack[0].tab = tabName;
+                }
+
+                // 4. Update browser URL without reload (so refresh/share remembers tab)
+                if (updateUrl !== false && window.history && window.history.replaceState) {
+                    try {
+                        var currentUrl = new URL(window.location.href);
+                        currentUrl.searchParams.set('tab', tabName);
+                        window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search);
+                    } catch (e) {}
+                }
+            };
+
+            window.autoSelectRolTab = function() {
+                try {
+                    var params = new URLSearchParams(window.location.search);
+                    var tabFromUrl = params.get('tab');
+                    var hash = window.location.hash ? window.location.hash.replace('#', '') : null;
+                    var initialTab = tabFromUrl || hash || '{{ curr_tab }}' || 'overview';
+                    window.switchRolTab(initialTab, false);
+                } catch (e) {
+                    window.switchRolTab('{{ curr_tab }}' || 'overview', false);
+                }
+            };
+
+            // Auto-select immediately
+            window.autoSelectRolTab();
+
+            // Auto-select on DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', window.autoSelectRolTab);
+            }
+
+            // Auto-select after HTMX swaps
+            document.addEventListener('htmx:afterSwap', function(e) {
+                if (document.getElementById('admin-activity-manage-container')) {
+                    window.autoSelectRolTab();
+                }
+            });
+        })();
+    </script>
 </div>
 {% endmacro %}
 

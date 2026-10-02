@@ -1469,6 +1469,10 @@
               hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
               class="space-y-4 text-xs">
             
+            {% if from_activity %}
+            <input type="hidden" name="from_activity" value="{{ from_activity }}">
+            <input type="hidden" name="from_tab" value="{{ from_tab or 'manifest' }}">
+            {% endif %}
             <input type="hidden" name="avatar_url" id="edit-member-avatar-url" :value="selectedPreset">
 
             <!-- Section 0: Foto Profil / Avatar Anggota -->

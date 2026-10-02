@@ -238,7 +238,9 @@ def admin_create_member():
 def admin_edit_member_modal(user_id):
     target_member = User.query.get_or_404(user_id)
     positions = Position.query.filter_by(is_active=True).order_by(Position.order_index.asc(), Position.id.asc()).all()
-    return render_template('components/modals.html', modal_type='edit_member', target_member=target_member, positions=positions)
+    from_activity = request.args.get('from_activity', '').strip()
+    from_tab = request.args.get('from_tab', 'manifest').strip()
+    return render_template('components/modals.html', modal_type='edit_member', target_member=target_member, positions=positions, from_activity=from_activity, from_tab=from_tab)
 
 
 @admin_bp.route('/admin/member/edit/<int:user_id>', methods=['POST'])
@@ -313,6 +315,10 @@ def admin_edit_member(user_id):
     db.session.add(log)
     db.session.commit()
     flash(f"Data dan hak akses anggota '{member.name}' berhasil diperbarui.", "success")
+    from_activity = request.form.get('from_activity', '').strip()
+    from_tab = request.form.get('from_tab', 'manifest').strip()
+    if from_activity and from_activity.isdigit():
+        return admin_activity_manage(int(from_activity), tab=from_tab)
     return admin_members()
 
 
@@ -1774,14 +1780,16 @@ def admin_activity_new():
 @admin_bp.route('/admin/activity/<int:activity_id>/manage')
 @login_required
 @admin_required
-def admin_activity_manage(activity_id):
+def admin_activity_manage(activity_id, tab=None):
     """Workspace Terpadu Ekspedisi & ROL (Full Page Command Hub)"""
     act = Activity.query.get_or_404(activity_id)
     participants = ActivityParticipant.query.filter_by(activity_id=act.id).all()
     all_members = User.query.filter_by(status='active').order_by(User.name.asc()).all()
     repo_maps = MapRepository.query.order_by(MapRepository.created_at.desc()).all()
     field_logs = ActivityFieldLog.query.filter_by(activity_id=act.id).order_by(ActivityFieldLog.recorded_at.desc()).all()
-    tab = request.args.get('tab', 'overview')
+    
+    if not tab:
+        tab = request.args.get('tab') or request.form.get('tab') or 'overview'
 
     data = {
         'activity': act,
@@ -1822,7 +1830,8 @@ def admin_activity_update_basic(activity_id):
 
     db.session.commit()
     flash('Informasi dasar ekspedisi berhasil diperbarui.', 'success')
-    return admin_activity_manage(activity_id)
+    tab = request.args.get('tab') or request.form.get('tab') or 'overview'
+    return admin_activity_manage(activity_id, tab=tab)
 
 
 @admin_bp.route('/admin/activity/<int:activity_id>/update-rol', methods=['POST'])
@@ -1862,7 +1871,8 @@ def admin_activity_update_rol(activity_id):
 
     db.session.commit()
     flash('Dokumen ROL (RAB, Rute, Logistik & P3K) berhasil disimpan.', 'success')
-    return admin_activity_manage(activity_id)
+    tab = request.args.get('tab') or request.form.get('tab') or 'rol_plan'
+    return admin_activity_manage(activity_id, tab=tab)
 
 
 @admin_bp.route('/admin/activity/<int:activity_id>/update-phase', methods=['POST'])
@@ -1885,7 +1895,10 @@ def admin_activity_update_phase(activity_id):
 
     db.session.commit()
     flash(f'Status ekspedisi kini diperbarui ke fase: {new_phase.upper()}', 'success')
-    return admin_activity_manage(activity_id)
+    tab = request.args.get('tab') or request.form.get('tab')
+    if not tab:
+        tab = 'field_ops' if new_phase == 'in_progress' else ('close_out' if new_phase == 'completed' else 'overview')
+    return admin_activity_manage(activity_id, tab=tab)
 
 
 @admin_bp.route('/admin/activity/<int:activity_id>/add-participant', methods=['POST'])
@@ -1912,7 +1925,8 @@ def admin_activity_add_participant(activity_id):
 
     db.session.commit()
     flash('Personil berhasil ditambahkan ke manifest tim.', 'success')
-    return admin_activity_manage(activity_id)
+    tab = request.args.get('tab') or request.form.get('tab') or 'manifest'
+    return admin_activity_manage(activity_id, tab=tab)
 
 
 @admin_bp.route('/admin/activity/<int:activity_id>/participant-role/<int:part_id>', methods=['POST'])
@@ -1924,7 +1938,8 @@ def admin_activity_update_participant_role(activity_id, part_id):
     part.role = request.form.get('role', part.role)
     db.session.commit()
     flash(f'Peran personil {part.user.name if part.user else ""} diubah menjadi: {part.role}', 'success')
-    return admin_activity_manage(activity_id)
+    tab = request.args.get('tab') or request.form.get('tab') or 'manifest'
+    return admin_activity_manage(activity_id, tab=tab)
 
 
 @admin_bp.route('/admin/activity/<int:activity_id>/delete-participant/<int:part_id>', methods=['POST'])
@@ -1936,7 +1951,8 @@ def admin_activity_delete_participant(activity_id, part_id):
     db.session.delete(part)
     db.session.commit()
     flash('Personil dihapus dari manifest.', 'info')
-    return admin_activity_manage(activity_id)
+    tab = request.args.get('tab') or request.form.get('tab') or 'manifest'
+    return admin_activity_manage(activity_id, tab=tab)
 
 
 @admin_bp.route('/admin/activity/<int:activity_id>/add-field-log', methods=['POST'])
@@ -1976,7 +1992,10 @@ def admin_activity_add_field_log(activity_id):
     db.session.add(log)
     db.session.commit()
     flash(f'Laporan titik POI "{title}" berhasil dicatat.', 'success')
-    return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+    tab = request.args.get('tab') or request.form.get('tab') or 'field_ops'
+    if request.headers.get('HX-Request'):
+        return admin_activity_manage(activity_id, tab=tab)
+    return redirect(f'/admin/activity/{activity_id}/manage?tab={tab}')
 
 
 @admin_bp.route('/admin/activity/<int:activity_id>/upload-gimbal-maps', methods=['POST'])
@@ -1988,9 +2007,12 @@ def admin_activity_upload_gimbal_maps(activity_id):
     admin = get_current_user()
     file_upload = request.files.get('geodata_file')
 
+    tab = request.args.get('tab') or request.form.get('tab') or 'field_ops'
     if not file_upload or not file_upload.filename:
         flash('Silakan pilih berkas spasial hasil ekspor Gimbal-Maps (.gpx, .geojson, .kmz)', 'error')
-        return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+        if request.headers.get('HX-Request'):
+            return admin_activity_manage(activity_id, tab=tab)
+        return redirect(f'/admin/activity/{activity_id}/manage?tab={tab}')
 
     safe_name = f"gmaps_{act.id}_{int(datetime.now().timestamp())}_{secure_filename(file_upload.filename)}"
     save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'expeditions', safe_name)
@@ -2049,7 +2071,9 @@ def admin_activity_upload_gimbal_maps(activity_id):
     db.session.commit()
 
     flash(f'Berkas Gimbal-Maps berhasil diimpor! ({synced_points} titik waypoint diekstrak)', 'success')
-    return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+    if request.headers.get('HX-Request'):
+        return admin_activity_manage(activity_id, tab=tab)
+    return redirect(f'/admin/activity/{activity_id}/manage?tab={tab}')
 
 
 @admin_bp.route('/admin/activity/<int:activity_id>/delete-field-log/<int:log_id>', methods=['POST'])
@@ -2061,7 +2085,10 @@ def admin_activity_delete_field_log(activity_id, log_id):
     db.session.delete(log)
     db.session.commit()
     flash('Catatan lapangan berhasil dihapus.', 'info')
-    return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+    tab = request.args.get('tab') or request.form.get('tab') or 'field_ops'
+    if request.headers.get('HX-Request'):
+        return admin_activity_manage(activity_id, tab=tab)
+    return redirect(f'/admin/activity/{activity_id}/manage?tab={tab}')
 
 
 @admin_bp.route('/admin/activity/<int:activity_id>/pin-field-photo/<int:log_id>', methods=['POST'])
@@ -2071,9 +2098,12 @@ def admin_activity_pin_field_photo(activity_id, log_id):
     """Pin foto dokumentasi lapangan langsung ke Galeri Ekspedisi Landing Page"""
     act = Activity.query.get_or_404(activity_id)
     log = ActivityFieldLog.query.get_or_404(log_id)
+    tab = request.args.get('tab') or request.form.get('tab') or 'field_ops'
     if not log.photo_url:
         flash('Catatan lapangan ini tidak memiliki lampiran foto.', 'error')
-        return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+        if request.headers.get('HX-Request'):
+            return admin_activity_manage(activity_id, tab=tab)
+        return redirect(f'/admin/activity/{activity_id}/manage?tab={tab}')
 
     gallery_item = GalleryItem(
         title=log.title,
@@ -2085,7 +2115,9 @@ def admin_activity_pin_field_photo(activity_id, log_id):
     db.session.add(gallery_item)
     db.session.commit()
     flash(f'Foto "{log.title}" berhasil di-pin ke Galeri Utama Landing Page!', 'success')
-    return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+    if request.headers.get('HX-Request'):
+        return admin_activity_manage(activity_id, tab=tab)
+    return redirect(f'/admin/activity/{activity_id}/manage?tab={tab}')
 
 
 @admin_bp.route('/admin/activity/<int:activity_id>/publish-to-feed', methods=['POST'])
@@ -2127,7 +2159,10 @@ def admin_activity_publish_to_feed(activity_id):
 
     db.session.commit()
     flash('Cerita dan dokumentasi ekspedisi berhasil dipublikasikan ke Linimasa Komunitas!', 'success')
-    return redirect(f'/admin/activity/{activity_id}/manage?tab=close_out')
+    tab = request.args.get('tab') or request.form.get('tab') or 'close_out'
+    if request.headers.get('HX-Request'):
+        return admin_activity_manage(activity_id, tab=tab)
+    return redirect(f'/admin/activity/{activity_id}/manage?tab={tab}')
 
 
 def resolve_rol_signers(act):
@@ -2389,6 +2424,9 @@ def admin_update_participant_status(part_id):
     db.session.commit()
 
     act = Activity.query.get(part.activity_id)
+    if request.args.get('from') == 'manage' or request.args.get('tab'):
+        tab = request.args.get('tab', 'manifest')
+        return admin_activity_manage(act.id, tab=tab)
     participants = ActivityParticipant.query.filter_by(activity_id=act.id).all()
     return render_template('components/modals.html', modal_type='activity_participants', activity=act, participants=participants)
 

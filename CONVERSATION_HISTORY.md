@@ -56,6 +56,7 @@
 | 32 | *“modifikasi langkah pembayaran iuran awal saat user baru mendaftar.... buat pilihan 2 pembayaran transfer dengan melampirkan file/foto bukti dan pembayaran melalui qris (yang belum diimplementasikan)”* | Memodifikasi antarmuka dan alur pembayaran iuran pokok awal registrasi keanggotaan (onboarding): (1) Memperbarui `members_page.py` pada handler `/member/onboarding-status` untuk menyuplai status `is_dues_paid` dan `is_payment_pending`, serta memastikan penanganan direktori upload bukti transfer (`/uploads/proofs/`) aman. (2) Mengganti tombol tunggal di `templates/components/modals.html` (`onboarding_status`) menjadi sistem selektor interaktif 2 metode pembayaran: **Metode 1: Transfer Bank Manual** dengan rincian rekening resmi KPAB GIMBAL (Bank Mandiri `131-00-1829-3321` & BCA `593-019-4821` a.n. KPAB GIMBAL KAS PUSAT), tombol copy nomor rekening otomatis dengan feedback "Tersalin!", formulir input bank pengirim, nominal, dropzone upload bukti foto struk transfer dengan live image preview instan sebelum kirim, dan catatan opsional. **Metode 2: Pembayaran QRIS (Belum Diimplementasikan)** dengan mockup frame QRIS ber-overlay badge "Belum Diimplementasikan / Segera Hadir", notice box penjelasan bahwa fitur QRIS otomatis masih dalam tahap sertifikasi merchant perbankan, dan tombol beralih ke Transfer Bank. (3) Menambahkan kartu status interaktif bila calon anggota sudah mengunggah bukti bayar (`status == 'pending'`) dengan thumbnail foto bukti dan opsi unggah ulang. (4) Menyelaraskan seluruh elemen antarmuka dengan estetika minimalis Monotone Oranye (`rounded-lg` untuk kontainer dan `rounded-md` untuk tombol/input). (5) Deploy dan sinkronisasi ke remote server `10.75.0.51:8082`. |
 | 33 | *“- saat hapus user tdak bisa tetapi tidak ada flash message error penyebab, tambahkan fitur flash message untuk keterangan kesalahan...<br>- buat crud anggota supaya ada pengaturan sebagai superadmin<br>- di menu pengaturan superadmin buat supaya ada pengaturan informasi rekening, dan lain2 untuk organisasi<br>- di menu pengaturan superadmin buat supaya ada pengaturan warna tema dan lain2 yg perlu”* | Mengimplementasikan 4 fitur utama admin dan superadmin: (1) **Flash Message & Penanganan Hapus User**: Memperbaiki kegagalan hapus pengguna dengan menambahkan pembersihan cascade dependensi foreign key (`DuesPayment`, `ActivityParticipant`, `Post`, `ChatMessage`, dll.) dalam blok transaksi aman, mencegah penghapusan akun superadmin dan akun diri sendiri, mengganti return error HTTP mentah menjadi Flash Message elegan berstatus 200 via `render_gimbal_page` agar HTMX otomatis menampilkan alert box merah informatif di layar. (2) **Peran Superadmin pada CRUD Anggota**: Menambahkan dropdown pilihan peran (`superadmin`, `admin`, `member`) pada form Tambah Anggota dan Edit Anggota di `templates/components/modals.html` serta menambahkan badge label peran (`SUPERADMIN` / `ADMIN`) pada tabel master anggota di `admin_pages.html`. (3) **Pengaturan Rekening & Organisasi**: Menambahkan tab baru `organization` pada menu Pengaturan Superadmin dengan form konfigurasi nomor rekening bank utama (Mandiri), rekening cadangan (BCA), atas nama kas, nama resmi organisasi, kontak WhatsApp, email resmi, dan alamat sekretariat yang tersimpan di `SystemSetting` dan diinjeksi secara global ke seluruh template modal dan cetak dokumen. (4) **Pengaturan Tema Warna & Lebar Tampilan**: Menambahkan tab `theme` pada Pengaturan Superadmin dengan 6 pilihan warna preset tema (`orange`, `emerald`, `blue`, `amber`, `rose`, `teal`) dan 4 pilihan lebar kontainer situs (`80%`, `85%`, `90%`, `100%`) yang tersinkronisasi langsung dengan `theme-config.js` dan CSS variables. |
 | 34 | *“- di chrome browser di host yang berbeda, kenapa tampilan bagian pengaturan ini berbeda?<br>- deploy ulang ke server setelah perbaikan<br>- tambahkan pengaturan enable/disable iuran dibagian pengaturan iuran bulanan”* | (1) Menginvestigasi perbedaan tampilan pengaturan antar host/browser di mana kegagalan/keterlambatan Alpine.js (misal akibat ekstensi ad-blocker) menyebabkan tab HTML tanpa atribut `x-cloak` dan initial style tampil bertumpuk ke bawah sekaligus. (2) Menerapkan perbaikan defensif pada `templates/admin/admin_pages.html` dengan server-side styling rendering pada tab aktif (`curr_tab`), atribut `x-cloak`, server-side `display: none` untuk tab inaktif, serta vanilla JS fallback switcher (`window.switchAdminTab`). (3) Memperkuat pemanggilan `Alpine.initTree` dan fallback dinamis di `templates/index.html`. (4) Menambahkan fitur konfigurasi **Enable / Disable Iuran Bulanan** di tab pengaturan iuran (`/admin/settings` tab `dues`) lengkap dengan sakelar radio interaktif, badge status penagihan real-time, pencatatan audit log, dan persistensi `Dues.is_active` serta `SystemSetting('dues_enabled')`. (5) Memverifikasi 18/18 tes unit & integrasi 100% lulus, lalu melakukan sinkronisasi dan deploy ulang ke server `10.75.0.51:8082`. |
+| 35 | *“optimasi lagi bagian pengelolaan rol, saat setelah edit anggota tampilan masih kembali ke tab awal, buat supaya halaman refresh proof”* | (1) Memperbarui `admin_activity_manage` di `admin_pages.py` untuk menerima dan memprioritaskan parameter `tab`, menyuplai `active_tab` ke template, serta memperbarui seluruh rute POST operasional ROL (`update-basic`, `add-participant`, `participant-role`, `delete-participant`, `update-status`, `update-rol`, `update-phase`, `add-field-log`, `upload-gimbal-maps`, `delete-field-log`, `pin-field-photo`, `publish-to-feed`) agar mempertahankan tab aktif via parameter URL dan respons HTMX langsung tanpa round-trip redirect. (2) Menambahkan dukungan `from_activity` dan `from_tab` pada modal edit anggota (`admin_edit_member_modal` & `admin_edit_member`) sehingga setelah admin mengedit biodata anggota dari manifest tim ROL, sistem langsung kembali ke tab `manifest` kegiatan tersebut. (3) Menjadikan seluruh 5 tab ROL (`overview`, `manifest`, `rol_plan`, `field_ops`, `close_out`) refresh-proof melalui implementasi sinkronisasi URL tanpa reload (`window.history.replaceState`), atribut `x-cloak`, server-side conditional rendering, class `.rol-tab-panel`, dan vanilla JS tab switcher (`window.switchRolTab` & `window.autoSelectRolTab`) yang otomatis dipicu saat inisialisasi awal, DOM ready, maupun pasca-swap HTMX (`htmx:afterSwap`). |
 
 ---
 
@@ -1278,3 +1279,202 @@ ole (Pimpinan Perjalanan, Navigator, Logistik & Konsumsi, Medis / P3K, Dokumenta
 - **Git Commit**: Commit hash `d370ede` pada branch `feature/auth-and-subscription` di repo `gimbal-maps`.
 
 - **Update Default Production Backend Endpoint**: Mengarahkan default server URL `_baseUrl` pada `ApiSyncService` langsung ke domain resmi produksi bersertifikat SSL `https://www.gimbal.my.id` (menggantikan IP internal staging `http://10.75.0.51:8082`).
+
+---
+
+## 35. Implementasi Unduh Repo Maps & Sinkronisasi Data Lapangan Terisolasi Spesifik Peta
+
+### 1. Unduh Peta Langsung dari Repo Peta www.gimbal.my.id
+- **Tombol Tambah Peta Terintegrasi**: Tombol FAB `+ Tambah Peta` di `map_list_screen.dart` kini menyajikan modal bottom sheet pilihan sumber:
+  1. **Unduh dari Repo Peta GIMBAL (www.gimbal.my.id)**
+  2. **Impor Berkas dari Memori Perangkat (GeoTIFF, MBTiles, GeoPDF)**
+- **Widget Dialog Katalog Repo Peta ([repo_maps_dialog.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/widgets/repo_maps_dialog.dart))**:
+  - Mengambil daftar paket peta resmi dari `GET /api/v1/maps/repo`.
+  - Dilengkapi search filter, penampil badge format (MBTILES, GEOTIFF, GEOPDF, GPX, KML), ukuran file, dan ringkasan wilayah.
+  - Pengunduhan stream berkas fisik via `ApiSyncService.downloadRepoMap()` dengan indikator progres persentase real-time.
+  - Berkas raster yang terunduh langsung diproses ke piramida tile luring (`_processFileImport`), sedangkan berkas geodata vektor langsung diparsing dan dipasang ke basis data peta lokal.
+
+### 2. Upload Data Terisolasi Spesifik Peta & Konfirmasi Jenis Kegiatan API
+- **Endpoint Backend API ([web_api.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/web_api.py))**:
+  - Memperbarui `GET /api/v1/activities/active` untuk menyertakan atribut `category` (Jenis Kegiatan), `description`, dan `route_plan`.
+  - Perubahan telah disinkronkan dan dideploy ke server produksi `10.75.0.51:8082` (`https://www.gimbal.my.id`) dengan status service active (HTTP 200).
+- **Dialog Sinkronisasi Ekspedisi ([expedition_sync_dialog.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/widgets/expedition_sync_dialog.dart))**:
+  - **Pemilih Peta Spesifik**: Pengguna dapat memilih peta lokal mana yang datanya ingin diunggah dari daftar seluruh peta tersimpan.
+  - **Isolasi Data Peta**: Sistem hanya memuat dan mengunggah titik POI dan trek spasial yang tercatat pada peta yang dipilih (`DatabaseService.getPointsForMap(selectedMap.id)`). Seluruh data dari peta lain di HP tidak akan disentuh atau terunggah.
+  - **Konfirmasi Jenis Kegiatan dari API**: Menampilkan kartu konfirmasi visual dengan badge kategori warna dinamis (Gunung Hutan, Panjat Tebing, Susur Gua/Caving, Arung Jeram/Kayak, SAR & Konservasi), lokasi, tanggal, status fase, dan pimpinan perjalanan.
+  - **Pratinjau Data Transparan**: Menampilkan hitungan titik POI, lintasan rute, foto lapangan, serta ringkasan chip nama titik sebelum pengguna menekan tombol konfirmasi upload final.
+
+### 3. Kompilasi Biner APK
+- Seluruh 45/45 tes unit Flutter lulus 100% OK.
+- Berkas rilis APK berhasil dikompilasi: `gimbal-maps/build/app/outputs/flutter-apk/app-release.apk` (26.97 MB, timestamp 13:06:57).
+
+---
+
+## 36. Perbaikan UI G-Maps, Pembatasan Login Khusus Anggota Aktif, Pemisahan Raster/Vektor Repo
+
+### 1. Perubahan UI & Navigasi Mobile Gimbal-Maps
+- **Penamaan Header Brand**: Teks brand di pojok kiri atas [map_list_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/map_list_screen.dart) diubah menjadi **`G-Maps`** sesuai arahan visual pengguna.
+- **Tombol Akun Google di Navbar (Login / Logoff)**:
+  - Ikon sinkronisasi awan pada AppBar digantikan dengan tombol status Akun Google (`Icons.account_circle`).
+  - Menampilkan modal akun Google: bila sudah masuk, menampilkan Nama, Email, NRA, status keanggotaan terverifikasi ("STATUS: AKTIF"), serta tombol **Logoff** untuk keluar dari sesi akun Google.
+  - Bila belum masuk, menyediakan tombol masuk satu-klik Google Sign-In Native SDK serta fallback email terdaftar.
+- **Pemusatan Sinkronisasi Lapangan**:
+  - Tombol sinkronisasi ekspedisi di navbar utama ditiadakan agar lebih bersih, dan difokuskan berada di dalam dialog **Data & Export** ([export_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/export_screen.dart)).
+
+### 2. Validasi Keamanan API: Khusus Akun Google Berstatus "Aktif" di Webapps
+- **Validasi Backend ([web_api.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/web_api.py))**:
+  - Endpoint `POST /api/v1/auth/google-login`: Menolak akses (HTTP 404 / 403) bagi akun Google yang belum terdaftar di database anggota atau akun yang berstatus selain `active` (seperti `pending`, `suspended`, `inactive`).
+  - Endpoint `POST /api/v1/maps/share-track`: Menambahkan pengecekan status keanggotaan aktif sebelum menerima sinkronisasi lintasan GPX ekspedisi.
+  - Penambahan unit test verifikasi penolakan user pending dan unregistered pada [test_rol_and_sync.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/test_rol_and_sync.py) (100% Pass).
+  - Sinkronisasi dan reload service berhasil diterapkan pada server remote produksi `https://www.gimbal.my.id`.
+
+### 3. Filtrasi Khusus Raster pada Tambah Peta Awal & Filtrasi Khusus Vektor pada Layer Maps
+- **Dialog Repo Peta ([repo_maps_dialog.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/widgets/repo_maps_dialog.dart))**:
+  - Ditambahkan parameter filter: `rasterOnly`, `vectorOnly`, dan `customTitle`.
+  - Ekstensi Raster/Tiles: `mbtiles`, `tif`, `tiff`, `geotiff`, `pdf`, `geopdf`.
+  - Ekstensi Vektor: `gpx`, `kml`, `kmz`, `geojson`, `json`, `shp`, `gpkg`, `zip`.
+- **Tambah Peta Awal ([map_list_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/map_list_screen.dart))**:
+  - Menu `+ Tambah Peta -> Unduh dari Repo Peta GIMBAL` memanggil `RepoMapsDialog` dengan `rasterOnly: true`. Seluruh layer vektor disaring keluar agar hanya peta-peta raster/tiles yang muncul.
+- **Impor Layer Vektor dalam Canvas Peta ([layer_manager_sheet.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/widgets/layer_manager_sheet.dart))**:
+  - Tombol `+ Impor Layer` kini menampilkan modal pilihan sumber:
+    1. **"Unduh dari Repo Web GIMBAL"**: Membuka katalog `RepoMapsDialog` dengan `vectorOnly: true` (hanya menampilkan GPX, KML, KMZ, GeoJSON, SHP). Berkas vektor yang diunduh langsung diimpor ke peta aktif sebagai layer vektor.
+    2. **"Impor dari Memori Perangkat (HP)"**: Membuka pemilih berkas lokal seperti sebelumnya.
+
+### 4. Hasil Pengujian & Kompilasi APK
+- `flutter test`: 45/45 tes lulus 100%.
+- Biner rilis APK dikompilasi ulang dan siap digunakan.
+
+---
+
+## 37. Implementasi Lisensi Free Tier vs Unlimited Pro pada Gimbal-Maps APK
+
+### 1. Aturan Bisnis Lisensi & Batasan Akun
+- **Kondisi Free Tier (Dibatasi)**:
+  - Pengguna belum login akun Google, **ATAU**
+  - Akun Google login tetapi tidak terdaftar atau tidak berstatus `active` di webapps GIMBAL (`https://www.gimbal.my.id`), **ATAU**
+  - Akun belum berlangganan (subscription) ke Google Play.
+- **Batasan Free Tier yang Diterapkan**:
+  1. **Maksimal Peta Tersimpan**: Hanya diperbolehkan maksimal **2 peta** offline.
+  2. **Jarak Rekam Rute Spasial (Tracking GPS)**: Maksimal **1.0 km (1.000 meter)** per rute.
+  3. **Maksimal Titik POI (Placemark)**: Maksimal **5 titik POI per peta**.
+- **Kondisi Unlimited Pro (Akses Penuh Tanpa Batas)**:
+- **Klasifikasi Tingkat Lisensi & Hak Akses**:
+  1. **Anggota Aktif Web GIMBAL** (Login Akun Google aktif di `https://www.gimbal.my.id`):
+     - Fitur Penuh (Unlimited): Simpan peta tanpa batas, rute rekam GPS tanpa batas jarak, dan titik POI tanpa batas.
+     - **Akses Cloud GIMBAL**: Unduh paket peta raster dari repo web, unduh layer vektor dari repo web, dan sinkronisasi data survei ekspedisi langsung ke webapps GIMBAL.
+  2. **Akun Ter-Subskripsi Google Play** (Google Play Pro Standalone):
+     - Fitur Penuh Mandiri (Unlimited): Simpan peta tanpa batas, rute rekam GPS tanpa batas jarak, dan titik POI tanpa batas.
+     - **Tanpa Akses Cloud GIMBAL**: Tidak ada opsi/tombol unduh peta raster ataupun vektor dari web GIMBAL, serta tidak ada sinkronisasi/ekspor ke server web GIMBAL.
+     - **Ekspor Lokal Penuh**: Menyimpan berkas hasil survei langsung ke folder lokal memori perangkat atau berbagi lokal dalam format **CSV (Tabel)**, **KMZ (Foto)**, **GeoJSON**, **GPX**, dan **KML**.
+  3. **Free Tier (Gratis / Belum Langganan & Bukan Anggota)**:
+     - Maksimal 2 peta tersimpan.
+     - Jarak rekam rute GPS dibatasi maksimal 1.0 km (1.000 meter).
+     - Maksimal 5 titik POI per peta.
+     - Hanya ekspor lokal ke memori perangkat.
+
+### 2. Modifikasi Layanan & Komponen UI/UX
+- **`SubscriptionService` ([lib/services/subscription_service.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/services/subscription_service.dart))**:
+  - Properti `canAccessGimbalCloud`: Hanya aktif untuk anggota Google aktif di web GIMBAL (`isActiveMember`).
+  - Properti `isUnlimited`: Aktif jika `canAccessGimbalCloud` ATAU `isGooglePlaySubscribed`.
+  - Badge label dan teks deskripsi status lisensi yang transparan membedakan hak akses ketiga tingkatan akun.
+- **`ExportImportService` ([lib/services/export_import_service.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/services/export_import_service.dart))**:
+  - Penambahan generator `generateCsv({required List<SurveyPoint> points})` untuk ekspor tabular titik survei (ID, Name, Code, Category, Lat, Lon, Elevation, Accuracy, Description, Time).
+- **`export_screen.dart` ([lib/ui/screens/export_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/export_screen.dart))**:
+  - Penambahan pill format **CSV (Tabel)** pada pemilih format ekspor.
+  - Tombol **"Sinkronkan ke Ekspedisi GIMBAL Web"** hanya ditampilkan jika `SubscriptionService.instance.canAccessGimbalCloud == true`.
+  - Penambahan tombol **"Simpan ke Folder"** yang memanfaatkan pemilihan direktori lokal perangkat via `FilePicker.getDirectoryPath()` untuk menyimpan file langsung ke folder penyimpanan lokal HP.
+- **`map_list_screen.dart` ([lib/ui/screens/map_list_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/map_list_screen.dart))**:
+  - Tombol "+ Tambah Peta": Jika akun non-anggota web GIMBAL (Google Play Pro / Free), langsung membuka pemilihan file lokal dari memori HP tanpa menampilkan opsi unduh dari repo web GIMBAL.
+  - `_openRepoMapsCatalog`: Diberi proteksi hak akses `canAccessGimbalCloud`.
+- **`layer_manager_sheet.dart` ([lib/ui/widgets/layer_manager_sheet.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/widgets/layer_manager_sheet.dart))**:
+  - Tombol "+ Impor Layer": Jika akun non-anggota web GIMBAL, langsung membuka pemilihan berkas lokal dari memori HP tanpa menampilkan opsi unduh layer dari repo web GIMBAL.
+
+### 3. Pengujian & Kompilasi Rilis APK
+- **Unit Test Lisensi ([test/subscription_service_test.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/test/subscription_service_test.dart))**:
+  - Menguji penegakan batas Free Tier, pembukaan akses Unlimited Pro pada Google Play Subscription tanpa hak akses cloud web GIMBAL (`canAccessGimbalCloud == false`), serta validitas generator CSV.
+  - Seluruh 48/48 tes unit Flutter lulus 100% OK.
+- **Kompilasi Rilis APK**:
+  - Biner rilis Android APK berhasil dikompilasi ulang: `build/app/outputs/flutter-apk/app-release.apk`.
+
+---
+
+## 38. Standarisasi Identitas Publik "G-Maps", Pembersihan Rujukan Ekosistem Web, & Single-Button Google Sign-In dengan Deteksi Latar Belakang Senyap (02 Oktober 2026)
+
+### 1. Tujuan & Latar Belakang Perubahan
+- Mensterilkan antarmuka (UI/UX) aplikasi mobile dari seluruh informasi dan terminologi yang merujuk pada member/anggota webapps GIMBAL, domain internal, maupun API khusus, baik secara **TERSIRAT** maupun **TERSURAT**.
+- Memposisikan aplikasi secara murni dan profesional sebagai produk GIS mandiri: **G-Maps** (Geospatial Field Survey & Offline Mapping System).
+- Menyederhanakan alur otentikasi: Menghapus input manual email dan opsi server URL. Pengguna hanya disajikan satu tombol resmi: **"Masuk dengan Akun Google"**.
+- Menerapkan **Deteksi Latar Belakang Senyap (Silent Background Detection)**: Saat pengguna masuk dengan Akun Google, sistem di balik layar otomatis memeriksa ke backend apakah akun tersebut terdaftar aktif di webapps atau tidak. Jika terdaftar aktif, fitur cloud repository dan ekspedisi terbuka otomatis secara transparan; jika tidak, pengguna tetap masuk secara lokal sebagai akun biasa (Free Tier atau Google Play Pro) tanpa pesan kesalahan kasar.
+
+### 2. Modifikasi Komponen & Layanan Aplikasi
+1. **Otentikasi & Layanan API ([lib/services/api_sync_service.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/services/api_sync_service.dart))**:
+   - `userName`: Nilai default diubah dari `'Petualang GIMBAL'` menjadi netral `'Pengguna'`.
+   - `loginWithGoogle`: Jika akun Google bukan member atau backend tidak terhubung, sistem tidak memunculkan pesan error "Gagal login ke server GIMBAL", melainkan otomatis menyimpan akun Google lokal dengan status `is_active_member = false` dan pesan ramah: `"Akun Google berhasil terhubung."`.
+2. **Modal Akun & Status Lisensi ([lib/ui/screens/map_list_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/map_list_screen.dart))**:
+   - Subtitle header: Diubah dari `'Khusus anggota berstatus aktif di www.gimbal.my.id'` menjadi netral: `'Kelola lisensi dan profil survei'`.
+   - Menghapus box peringatan biru API backend GIMBAL.
+   - Menghapus komponen `ExpansionTile` login email manual beserta field input `emailCtrl` dan tombol masuk manual.
+   - Menyisakan tombol tunggal: **"Masuk dengan Akun Google"**.
+   - Sederhanakan profil terhubung: Menghapus label `'Anggota GIMBAL'` dan nomor registrasi `'NRA: ...'`. Menampilkan Nama, Email, dan badge status netral: `'STATUS: TERVERIFIKASI PRO'`, `'STATUS: GOOGLE PLAY PRO'`, atau `'STATUS: FREE TIER'`.
+   - Deskripsi lisensi diubah menjadi istilah cloud netral: *"Akses Penuh: Peta, rute & POI tanpa batas, katalog Cloud Repository, dan Sinkronisasi Cloud."*
+   - Opsi Tambah Peta: Mengubah `'Unduh dari Repo Peta GIMBAL'` menjadi `'Unduh dari Cloud Repository'`.
+   - Dialog Limit 2 Peta: Mengubah saran menjadi `'1. Masuk dengan Akun Google Pro\n2. Berlangganan Google Play Subscription'`.
+3. **Halaman Tentang / About Screen ([lib/ui/screens/about_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/about_screen.dart))**:
+   - Judul AppBar: `'Tentang G-Maps'`.
+   - Subtitle: `'Geospatial Field Survey & Offline Mapping System'`.
+   - Teks Overview: Diperbarui menjadi `'G-Maps adalah aplikasi Sistem Informasi Geografis (GIS) lapangan profesional...'`.
+   - Copyright: Diubah menjadi `'© 2026 G-Maps Developer Team. Hak Cipta Dilindungi.'`.
+   - Bebas 100% dari informasi webapps secara tersirat maupun tersurat.
+4. **Dialog Sinkronisasi Ekspedisi & Layer ([lib/ui/widgets/expedition_sync_dialog.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/widgets/expedition_sync_dialog.dart), [lib/ui/widgets/layer_manager_sheet.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/widgets/layer_manager_sheet.dart), [lib/ui/screens/export_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/export_screen.dart))**:
+   - `ExpeditionSyncDialog`: Menghapus opsi manual email dan konfigurasi server URL backend GIMBAL.
+   - `LayerManagerSheet`: Mengubah opsi unduh menjadi `'Unduh dari Cloud Layers Repository'` dan deskripsi layer vektor standar.
+   - `ExportScreen`: Mengubah label tombol menjadi `'Sinkronkan ke Cloud Ekspedisi'`.
+   - `RepoMapsDialog`: Mengubah header menjadi `'Katalog Peta Raster / Tiles'` dan `'Katalog Layer Vektor GIS'`.
+5. **Konfigurasi Android & Layanan Ekspor ([android/app/src/main/AndroidManifest.xml](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/android/app/src/main/AndroidManifest.xml), [lib/services/export_import_service.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/services/export_import_service.dart))**:
+   - `AndroidManifest.xml`: Label aplikasi pada Android OS launcher diperbarui dari `android:label="GIMBAL-Maps"` menjadi `android:label="G-Maps"`.
+   - `ExportImportService`: Generator GeoJSON, header KML, pembuat GPX, dan subject share disesuaikan menjadi `'G-Maps'`.
+
+### 3. Pengujian & Kompilasi Akhir
+- **Unit Test Flutter**: Seluruh 48/48 pengujian lulus 100% OK (`flutter test`).
+- **Kompilasi Rilis APK**: Berhasil dibangun via `flutter build apk --release` (ukuran biner 25.8 MB) di `build/app/outputs/flutter-apk/app-release.apk`.
+
+## 39. Perbaikan Persistensi Sesi Otentikasi & Pengembalian Akses Sinkronisasi Cloud Ekspedisi bagi Akun Pro (02 Oktober 2026)
+
+### 1. Masalah & Analisis Akar Masalah
+- **Pertanyaan Pengguna**: *"kenapa untuk login akun yang terdaftar full pro di web api hilang fitur sync ke webapps?"*
+- **Akar Masalah yang Ditemukan**:
+  1. **Perpindahan Lokasi Akses**: Pada penyesuaian tata letak sebelumnya, tombol sinkronisasi ekspedisi dipusatkan hanya di dalam dialog Data & Ekspor (`ExportScreen`). Hal ini menyebabkan pengguna yang masuk ke akun Pro tidak menemukan tombol sinkronisasi di halaman muka daftar peta maupun di dalam dialog profil akun Google.
+  2. **Ketiadaan Persistensi Sesi Login**: `ApiSyncService` sebelumnya hanya menyimpan sesi login Google di dalam memori RAM (`_currentUser`). Saat aplikasi ditutup (force close) atau dibuka kembali, status login kembali menjadi `null` (Free Tier) sampai pengguna menekan tombol masuk ulang.
+  3. **Reaktivitas UI Terlambat**: `SubscriptionService` belum memicu notifikasi perubahan (`refresh()`) secara otomatis saat status `ApiSyncService` berubah pasca proses login/logout.
+
+### 2. Solusi & Perbaikan Komprehensif
+1. **Penyimpanan Sesi Permanen ([lib/services/api_sync_service.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/services/api_sync_service.dart))**:
+   - Menambahkan method `initialize()` yang memulihkan data sesi akun dari SQLite (`app_settings` via `DatabaseService.instance.getSetting`).
+   - Menambahkan method internal `_persistSession()` yang otomatis menyimpan `auth_current_user` dan `auth_token` ke database lokal saat login berhasil, dan menghapusnya saat pengguna menekan Logoff.
+   - Mengintegrasikan pemanggilan `SubscriptionService.instance.refresh()` secara otomatis saat sesi berhasil diverifikasi atau di-logoff.
+2. **Inisialisasi Awal Aplikasi ([lib/main.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/main.dart))**:
+   - Memanggil `await ApiSyncService.instance.initialize();` sebelum `runApp()` agar status akun Pro langsung aktif begitu aplikasi pertama kali dibuka.
+3. **Pengembalian Akses Sinkronisasi Langsung ([lib/ui/screens/map_list_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/map_list_screen.dart))**:
+   - **Ikon AppBar Langsung**: Jika akun terdeteksi Pro Cloud (`canAccessGimbalCloud == true`), ikon `Icons.cloud_sync` otomatis muncul kembali di AppBar halaman daftar peta dengan tooltip *"Sinkronisasi Ekspedisi (Pro Cloud)"*.
+   - **Tombol Pintas di Dialog Profil**: Di dalam modal Akun Google (`_showGoogleAccountModal`), bagi akun terverifikasi Pro, ditambahkan tombol aksi terkemuka berwarna aksen neon: **"Sinkronkan ke Cloud Ekspedisi"** yang langsung memunculkan dialog pemilihan kegiatan dan peta untuk diunggah/diunduh.
+   - **Tetap Tersedia di Halaman Ekspor**: Tombol sinkronisasi ekspedisi tetap dapat diakses di dalam dialog Data & Ekspor (`ExportScreen`).
+4. **Pembaruan Reaktivitas Lisensi ([lib/services/subscription_service.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/services/subscription_service.dart))**:
+   - Menambahkan fungsi `refresh()` yang memicu `notifyListeners()` sehingga seluruh widget di aplikasi (termasuk tombol unduh layer GIS, katalog cloud, dan sinkronisasi) bereaksi instan seketika otentikasi Google berhasil diverifikasi di latar belakang.
+
+## 40. Pemurnian Dialog Login Murni Login/Logoff & Pemusatan Tombol Cloud Sync ke Dialog Data & Ekspor (02 Oktober 2026)
+
+### 1. Tujuan & Penyesuaian Berdasarkan Permintaan Pengguna
+- **Permintaan**:
+  1. *Dialog login kembalikan seperti semula, pure hanya untuk login/logoff.*
+  2. *Pindahkan sync cloud di halaman login ke dialog data & export.*
+- **Perubahan yang Diterapkan**:
+  1. **Pemurnian Modal Akun Google ([lib/ui/screens/map_list_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/map_list_screen.dart))**:
+     - Menghapus tombol *"Sinkronkan ke Cloud Ekspedisi"* dari dalam modal profil Akun Google.
+     - Menghapus ikon sinkronisasi dari AppBar beranda `MapListScreen`.
+     - Modal Akun Google kini kembali bersih, murni dan fokus hanya untuk: Otentikasi Google (Masuk dengan Akun Google), Logoff, melihat ringkasan status lisensi, dan mengelola toggle langganan Google Play.
+  2. **Pemusatan Tombol Sinkronisasi Cloud ke Dialog Data & Ekspor ([lib/ui/screens/export_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/export_screen.dart))**:
+     - Menambahkan tombol aksi cepat ikon awan sinkronisasi (`Icons.cloud_sync`) di AppBar dialog Data & Ekspor bagi akun Pro Cloud.
+     - Menampilkan tombol aksi terkemuka **"Sinkronkan ke Cloud Ekspedisi"** (`ElevatedButton`) di panel bawah pemilihan format ekspor bagi akun Pro Cloud.
+     - Tombol ini langsung memunculkan `ExpeditionSyncDialog` dengan konteks peta aktif, pilihan kegiatan/ekspedisi, dan pemilihan data survei spesifik yang akan diunggah/diunduh.
+
+
