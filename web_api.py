@@ -459,6 +459,8 @@ def maps_share_track():
     user = User.query.filter_by(email=email).first() if email else None
     if not user:
         return jsonify({'status': 'error', 'message': 'Otorisasi gagal: User tidak terdaftar.'}), 401
+    if user.status != 'active':
+        return jsonify({'status': 'error', 'message': f'Akses ditolak: Status akun Anda "{user.status}". Hanya anggota aktif yang dapat menyinkronkan data.'}), 403
 
     title = request.form.get('title', 'Jalur Ekspedisi Baru').strip()
     location = request.form.get('location', 'Gorontalo').strip()
@@ -530,26 +532,26 @@ def api_google_login():
         return jsonify({'status': 'error', 'message': 'Email atau id_token akun Google diperlukan'}), 400
         
     user = User.query.filter_by(email=email).first()
-    if not user and user_info:
-        name = user_info.get('name') or email.split('@')[0]
-        google_id = user_info.get('sub')
-        avatar = user_info.get('picture')
-        user = User(
-            email=email,
-            name=name,
-            google_id=google_id,
-            avatar=avatar,
-            status='pending',
-            role='member'
-        )
-        db.session.add(user)
-        db.session.commit()
-    elif not user:
+    if not user:
         return jsonify({
-            'status': 'unregistered',
-            'message': 'Akun Google belum terdaftar sebagai anggota GIMBAL. Silakan registrasi terlebih dahulu di web resmi.',
+            'status': 'error',
+            'message': 'Akun Google belum terdaftar sebagai anggota GIMBAL. Silakan registrasi terlebih dahulu di web resmi www.gimbal.my.id.',
             'email': email
         }), 404
+
+    if user.status != 'active':
+        return jsonify({
+            'status': 'error',
+            'message': f'Akun Google Anda terdaftar tetapi status saat ini "{user.status}". Akses aplikasi G-Maps hanya untuk anggota berstatus "aktif".',
+            'email': email
+        }), 403
+
+    if user_info:
+        if not user.google_id and user_info.get('sub'):
+            user.google_id = user_info.get('sub')
+        if not user.avatar and user_info.get('picture'):
+            user.avatar = user_info.get('picture')
+        db.session.commit()
         
     user_payload = {
         'id': user.id,

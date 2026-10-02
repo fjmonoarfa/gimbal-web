@@ -125,7 +125,24 @@ class TestRolAndSync(unittest.TestCase):
         self.assertIn(b'Ketua Umum', resp_print.data)
         self.assertIn(b'Kepala Divisi Susur Gua', resp_print.data)
 
-        # 6. Integrasi Mobile gimbal-maps: Login Google
+        # 6. Integrasi Mobile gimbal-maps: Login Google (Hanya Akun Aktif)
+        # 6a. Tolak user tidak terdaftar
+        resp_unreg = self.client.post('/api/v1/auth/google-login', json={'email': 'unregistered@google.com'})
+        self.assertEqual(resp_unreg.status_code, 404)
+
+        # 6b. Tolak user berstatus pending
+        pending_user = User.query.filter_by(email='pending_map@gmail.com').first()
+        if not pending_user:
+            pending_user = User(email='pending_map@gmail.com', name='Pending User', status='pending', role='member')
+            db.session.add(pending_user)
+            db.session.commit()
+        else:
+            pending_user.status = 'pending'
+            db.session.commit()
+        resp_pending = self.client.post('/api/v1/auth/google-login', json={'email': 'pending_map@gmail.com'})
+        self.assertEqual(resp_pending.status_code, 403)
+
+        # 6c. Terima user aktif
         resp_login = self.client.post('/api/v1/auth/google-login', json={
             'email': admin.email
         })

@@ -3,9 +3,9 @@ import sys
 import paramiko
 import time
 
-SERVER_IP = '10.75.0.51'
+SERVER_IP = '10.75.0.16'
 USERNAME = 'root'
-PASSWORD = 'P4ssw0rd!'
+PASSWORD = 'R4h4514!?!'
 REMOTE_DIR = '/root/gimbal-web'
 LOCAL_DIR = os.path.dirname(os.path.abspath(__file__))
 
