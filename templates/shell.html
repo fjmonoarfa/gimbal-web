@@ -83,28 +83,32 @@
                             <i class="fas fa-chevron-down text-[9px] text-white/70 hidden sm:inline flex-shrink-0"></i>
                         </button>
 
-                        <!-- Admin Dropdown Panel (Ukuran w-80 sama persis dengan user dropdown) -->
+                        <!-- Admin Dropdown Panel (VS Code Style Tiered Menu) -->
                         <div id="admin-menu-dropdown" x-show="adminMenu" @click.away="adminMenu = false"
                             x-transition:enter="transition ease-out duration-150"
                             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                             x-transition:leave="transition ease-in duration-100"
                             x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                            class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-2xl p-3 text-slate-800 border border-slate-200 z-50 space-y-2 max-h-[85vh] overflow-y-auto">
+                            class="hidden absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-2xl p-2.5 text-slate-800 border border-slate-200 z-50 space-y-1.5 overflow-visible">
 
                             <!-- Header -->
-                            <div class="px-2.5 pb-2.5 border-b border-slate-100 flex items-center gap-2.5">
-                                <div class="w-8 h-8 rounded-md bg-orange-600 text-white flex items-center justify-center text-xs shadow-sm">
+                            <div class="px-2.5 pb-2 border-b border-slate-100 flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-md bg-orange-600 text-white flex items-center justify-center text-xs shadow-sm flex-shrink-0">
                                     <i class="fas fa-shield-alt"></i>
                                 </div>
-                                <div>
-                                    <p class="text-xs font-black text-slate-900">Pusat Kendali Admin</p>
-                                    <p class="text-[10px] text-orange-600 font-semibold">KPAB-GIMBAL</p>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-black text-slate-900 leading-tight">Pusat Kendali Admin</p>
+                                    <p class="text-[10px] text-orange-600 font-semibold leading-tight">KPAB-GIMBAL</p>
                                 </div>
                             </div>
 
-                            <nav class="space-y-1" id="admin-header-nav">
-                                <!-- 1. Dashboard -->
+                            <nav class="space-y-0.5" id="admin-header-nav"
+                                 x-data="{ hoverGroup: '' }"
+                                 @mouseleave="hoverGroup = ''">
+
+                                <!-- === OVERVIEW (DIRECT) === -->
                                 <a href="/admin/dashboard" data-page="admin_dashboard"
+                                    @mouseenter="hoverGroup = ''"
                                     @click="adminMenu = false"
                                     onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
                                     class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_dashboard' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
@@ -115,167 +119,262 @@
                                         </div>
                                         <span class="text-xs font-semibold">Dashboard Utama</span>
                                     </div>
-                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
+                                    <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
                                 </a>
 
-                                <!-- 2. Verifikasi Anggota -->
-                                <a href="/admin/approvals" data-page="admin_approvals"
-                                    @click="adminMenu = false"
-                                    onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_approvals' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
-                                    hx-get="/admin/approvals" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
-                                            <i class="fas fa-user-check text-[11px]"></i>
+                                <!-- === FLYOUT: KEANGGOTAAN === -->
+                                <div class="relative" @mouseenter="hoverGroup = 'members'">
+                                    <button type="button"
+                                            @click="hoverGroup = (hoverGroup === 'members' ? '' : 'members')"
+                                            class="w-full px-3 py-2 flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition rounded-md"
+                                            :class="hoverGroup === 'members' ? 'bg-orange-50 text-orange-600 font-semibold' : ''">
+                                        <span class="flex items-center gap-2.5">
+                                            <div class="w-6 h-6 rounded-md flex items-center justify-center text-orange-500">
+                                                <i class="fas fa-users text-[11px]"></i>
+                                            </div>
+                                            <span class="text-xs font-semibold">Keanggotaan</span>
+                                        </span>
+                                        <i class="fas fa-chevron-left text-[8px] text-slate-400"></i>
+                                    </button>
+                                    <div x-show="hoverGroup === 'members'"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="opacity-0 translate-x-2"
+                                         x-transition:enter-end="opacity-100 translate-x-0"
+                                         class="absolute top-0 right-full mr-1 w-56 bg-white rounded-lg shadow-2xl border border-slate-200 p-1.5 z-[70] space-y-0.5 before:absolute before:top-0 before:-right-2 before:w-3 before:h-full before:content-['']">
+                                        <div class="px-2 py-1 mb-1 border-b border-slate-100">
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Keanggotaan</span>
                                         </div>
-                                        <span class="text-xs font-semibold">Verifikasi Anggota</span>
+                                        <a href="/admin/approvals" data-page="admin_approvals"
+                                            @click="adminMenu = false"
+                                            onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_approvals' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                            hx-get="/admin/approvals" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-user-check text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Verifikasi Anggota</span>
+                                            </div>
+                                            {% if pending_count and pending_count > 0 %}
+                                            <span class="px-1.5 py-0.5 bg-rose-500 text-white text-[9px] font-bold rounded-full">{{ pending_count }}</span>
+                                            {% else %}
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                            {% endif %}
+                                        </a>
+                                        <a href="/admin/members" data-page="admin_members"
+                                            @click="adminMenu = false"
+                                            onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_members' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                            hx-get="/admin/members" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-users text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Data Anggota</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
+                                        <a href="/admin/academy" data-page="admin_academy"
+                                            @click="adminMenu = false"
+                                            onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_academy' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                            hx-get="/admin/academy" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-graduation-cap text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Akademi & SOP</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
                                     </div>
-                                    {% if pending_count and pending_count > 0 %}
-                                    <span class="px-1.5 py-0.5 bg-rose-500 text-white text-[9px] font-bold rounded-full shadow-sm">{{ pending_count }}</span>
-                                    {% else %}
-                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
-                                    {% endif %}
-                                </a>
+                                </div>
 
-                                <!-- 3. Data Anggota -->
-                                <a href="/admin/members" data-page="admin_members"
-                                    @click="adminMenu = false"
-                                    onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_members' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
-                                    hx-get="/admin/members" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
-                                            <i class="fas fa-users text-[11px]"></i>
+                                <!-- === FLYOUT: OPERASIONAL & KEUANGAN === -->
+                                <div class="relative" @mouseenter="hoverGroup = 'ops'">
+                                    <button type="button"
+                                            @click="hoverGroup = (hoverGroup === 'ops' ? '' : 'ops')"
+                                            class="w-full px-3 py-2 flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition rounded-md"
+                                            :class="hoverGroup === 'ops' ? 'bg-orange-50 text-orange-600 font-semibold' : ''">
+                                        <span class="flex items-center gap-2.5">
+                                            <div class="w-6 h-6 rounded-md flex items-center justify-center text-orange-500">
+                                                <i class="fas fa-wallet text-[11px]"></i>
+                                            </div>
+                                            <span class="text-xs font-semibold">Operasional & Kas</span>
+                                        </span>
+                                        <i class="fas fa-chevron-left text-[8px] text-slate-400"></i>
+                                    </button>
+                                    <div x-show="hoverGroup === 'ops'"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="opacity-0 translate-x-2"
+                                         x-transition:enter-end="opacity-100 translate-x-0"
+                                         class="absolute top-0 right-full mr-1 w-56 bg-white rounded-lg shadow-2xl border border-slate-200 p-1.5 z-[70] space-y-0.5 before:absolute before:top-0 before:-right-2 before:w-3 before:h-full before:content-['']">
+                                        <div class="px-2 py-1 mb-1 border-b border-slate-100">
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Operasional & Kas</span>
                                         </div>
-                                        <span class="text-xs font-semibold">Data Anggota</span>
+                                        <a href="/admin/dues" data-page="admin_dues"
+                                            @click="adminMenu = false"
+                                            onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_dues' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                            hx-get="/admin/dues" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-wallet text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Iuran & Kas</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
+                                        <a href="/admin/sponsors" data-page="admin_sponsors"
+                                            @click="adminMenu = false"
+                                            onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_sponsors' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                            hx-get="/admin/sponsors" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-handshake text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Sponsorship & Mitra</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
                                     </div>
-                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
-                                </a>
+                                </div>
 
-                                <!-- 4. Iuran & Kas -->
-                                <a href="/admin/dues" data-page="admin_dues"
-                                    @click="adminMenu = false"
-                                    onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_dues' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
-                                    hx-get="/admin/dues" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
-                                            <i class="fas fa-wallet text-[11px]"></i>
+                                <!-- === FLYOUT: KEGIATAN & KONTEN === -->
+                                <div class="relative" @mouseenter="hoverGroup = 'content'">
+                                    <button type="button"
+                                            @click="hoverGroup = (hoverGroup === 'content' ? '' : 'content')"
+                                            class="w-full px-3 py-2 flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition rounded-md"
+                                            :class="hoverGroup === 'content' ? 'bg-orange-50 text-orange-600 font-semibold' : ''">
+                                        <span class="flex items-center gap-2.5">
+                                            <div class="w-6 h-6 rounded-md flex items-center justify-center text-orange-500">
+                                                <i class="fas fa-mountain text-[11px]"></i>
+                                            </div>
+                                            <span class="text-xs font-semibold">Kegiatan & Konten</span>
+                                        </span>
+                                        <i class="fas fa-chevron-left text-[8px] text-slate-400"></i>
+                                    </button>
+                                    <div x-show="hoverGroup === 'content'"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="opacity-0 translate-x-2"
+                                         x-transition:enter-end="opacity-100 translate-x-0"
+                                         class="absolute top-0 right-full mr-1 w-56 bg-white rounded-lg shadow-2xl border border-slate-200 p-1.5 z-[70] space-y-0.5 before:absolute before:top-0 before:-right-2 before:w-3 before:h-full before:content-['']">
+                                        <div class="px-2 py-1 mb-1 border-b border-slate-100">
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Kegiatan & Konten</span>
                                         </div>
-                                        <span class="text-xs font-semibold">Iuran & Kas</span>
+                                        <a href="/admin/activities" data-page="admin_activities"
+                                            @click="adminMenu = false"
+                                            onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_activities' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                            hx-get="/admin/activities" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-mountain text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Agenda Ekspedisi</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
+                                        <a href="/admin/gallery" data-page="admin_gallery"
+                                            @click="adminMenu = false"
+                                            onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_gallery' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                            hx-get="/admin/gallery" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-camera-retro text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Galeri Ekspedisi</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
+                                        <a href="/admin/documents" data-page="admin_documents"
+                                            @click="adminMenu = false"
+                                            onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_documents' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                            hx-get="/admin/documents" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-file-contract text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Dokumen Resmi</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
                                     </div>
-                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
-                                </a>
+                                </div>
 
-                                <!-- 5. Dokumen Resmi -->
-                                <a href="/admin/documents" data-page="admin_documents"
-                                    @click="adminMenu = false"
-                                    onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_documents' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
-                                    hx-get="/admin/documents" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
-                                            <i class="fas fa-file-contract text-[11px]"></i>
+                                <!-- === FLYOUT: PETA & GEOSPASIAL === -->
+                                <div class="relative" @mouseenter="hoverGroup = 'maps'">
+                                    <button type="button"
+                                            @click="hoverGroup = (hoverGroup === 'maps' ? '' : 'maps')"
+                                            class="w-full px-3 py-2 flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition rounded-md"
+                                            :class="hoverGroup === 'maps' ? 'bg-orange-50 text-orange-600 font-semibold' : ''">
+                                        <span class="flex items-center gap-2.5">
+                                            <div class="w-6 h-6 rounded-md flex items-center justify-center text-orange-500">
+                                                <i class="fas fa-map-marked-alt text-[11px]"></i>
+                                            </div>
+                                            <span class="text-xs font-semibold">Peta & Geospasial</span>
+                                        </span>
+                                        <i class="fas fa-chevron-left text-[8px] text-slate-400"></i>
+                                    </button>
+                                    <div x-show="hoverGroup === 'maps'"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="opacity-0 translate-x-2"
+                                         x-transition:enter-end="opacity-100 translate-x-0"
+                                         class="absolute top-0 right-full mr-1 w-56 bg-white rounded-lg shadow-2xl border border-slate-200 p-1.5 z-[70] space-y-0.5 before:absolute before:top-0 before:-right-2 before:w-3 before:h-full before:content-['']">
+                                        <div class="px-2 py-1 mb-1 border-b border-slate-100">
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Peta & Geospasial</span>
                                         </div>
-                                        <span class="text-xs font-semibold">Dokumen Resmi</span>
+                                        <a href="/admin/repo-maps" data-page="admin_repo_maps"
+                                            @click="adminMenu = false"
+                                            onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_repo_maps' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                            hx-get="/admin/repo-maps" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-map-marked-alt text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Repo Peta GIMBAL</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
+                                        <a href="https://mapgen.gimbal.my.id" target="_blank"
+                                            @click="adminMenu = false"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-layer-group text-[10px] w-4 text-center text-orange-500"></i>
+                                                <span class="text-xs font-semibold">Studio GeoPDF A3</span>
+                                                <span class="px-1 bg-emerald-600 text-[8px] font-black text-white rounded">NEW</span>
+                                            </div>
+                                            <i class="fas fa-external-link-alt text-[8px] opacity-40"></i>
+                                        </a>
                                     </div>
-                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
-                                </a>
+                                </div>
 
-                                <!-- 6. Agenda Ekspedisi -->
-                                <a href="/admin/activities" data-page="admin_activities"
-                                    @click="adminMenu = false"
-                                    onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_activities' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
-                                    hx-get="/admin/activities" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
-                                            <i class="fas fa-mountain text-[11px]"></i>
+                                <!-- === FLYOUT: SISTEM === -->
+                                <div class="relative" @mouseenter="hoverGroup = 'system'">
+                                    <button type="button"
+                                            @click="hoverGroup = (hoverGroup === 'system' ? '' : 'system')"
+                                            class="w-full px-3 py-2 flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition rounded-md"
+                                            :class="hoverGroup === 'system' ? 'bg-orange-50 text-orange-600 font-semibold' : ''">
+                                        <span class="flex items-center gap-2.5">
+                                            <div class="w-6 h-6 rounded-md flex items-center justify-center text-orange-500">
+                                                <i class="fas fa-sliders-h text-[11px]"></i>
+                                            </div>
+                                            <span class="text-xs font-semibold">Sistem & Pengaturan</span>
+                                        </span>
+                                        <i class="fas fa-chevron-left text-[8px] text-slate-400"></i>
+                                    </button>
+                                    <div x-show="hoverGroup === 'system'"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="opacity-0 translate-x-2"
+                                         x-transition:enter-end="opacity-100 translate-x-0"
+                                         class="absolute bottom-0 right-full mr-1 w-56 bg-white rounded-lg shadow-2xl border border-slate-200 p-1.5 z-[70] space-y-0.5 before:absolute before:top-0 before:-right-2 before:w-3 before:h-full before:content-['']">
+                                        <div class="px-2 py-1 mb-1 border-b border-slate-100">
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Sistem & Pengaturan</span>
                                         </div>
-                                        <span class="text-xs font-semibold">Agenda Ekspedisi</span>
+                                        <a href="/admin/settings" data-page="admin_settings"
+                                            @click="adminMenu = false"
+                                            onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                            class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_settings' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                            hx-get="/admin/settings" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-sliders-h text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Pengaturan & Akses</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
                                     </div>
-                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
-                                </a>
+                                </div>
 
-                                <!-- 7. Galeri Ekspedisi -->
-                                <a href="/admin/gallery" data-page="admin_gallery"
-                                    @click="adminMenu = false"
-                                    onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_gallery' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
-                                    hx-get="/admin/gallery" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
-                                            <i class="fas fa-camera-retro text-[11px]"></i>
-                                        </div>
-                                        <span class="text-xs font-semibold">Galeri Ekspedisi</span>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
-                                </a>
-
-                                <!-- 8. Repo Peta -->
-                                <a href="/admin/repo-maps" data-page="admin_repo_maps"
-                                    @click="adminMenu = false"
-                                    onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_repo_maps' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
-                                     hx-get="/admin/repo-maps" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
-                                            <i class="fas fa-map-marked-alt text-[11px]"></i>
-                                        </div>
-                                        <span class="text-xs font-semibold">Repo Peta GIMBAL</span>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
-                                </a>
-
-                                <!-- 8b. Studio GeoPDF A3 -->
-                                <a href="https://mapgen.gimbal.my.id" target="_blank"
-                                    @click="adminMenu = false"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center bg-orange-100 text-orange-600">
-                                            <i class="fas fa-layer-group text-[11px]"></i>
-                                        </div>
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="text-xs font-semibold">Studio GeoPDF A3</span>
-                                            <span class="px-1 py-0.2 bg-emerald-600 text-[8px] font-black text-white rounded">NEW</span>
-                                        </div>
-                                    </div>
-                                    <i class="fas fa-external-link-alt text-[8px] opacity-50 nav-arrow"></i>
-                                </a>
-
-                                <!-- 9. Sponsorship & Mitra Usaha -->
-                                <a href="/admin/sponsors" data-page="admin_sponsors"
-                                    @click="adminMenu = false"
-                                    onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_sponsors' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
-                                    hx-get="/admin/sponsors" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
-                                            <i class="fas fa-handshake text-[11px]"></i>
-                                        </div>
-                                        <span class="text-xs font-semibold">Sponsorship & Mitra</span>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
-                                </a>
-
-                                <!-- 10. Pengaturan & Akses -->
-                                <a href="/admin/settings" data-page="admin_settings"
-                                    @click="adminMenu = false"
-                                    onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_settings' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
-                                    hx-get="/admin/settings" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
-                                            <i class="fas fa-sliders-h text-[11px]"></i>
-                                        </div>
-                                        <span class="text-xs font-semibold">Pengaturan & Akses</span>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
-                                </a>
                             </nav>
 
                             <!-- Footer: Beranda Anggota & Logout -->
-                            <div class="pt-2 border-t border-slate-100 space-y-1">
+                            <div class="pt-2 border-t border-slate-100 space-y-1" @mouseenter="hoverGroup = ''">
                                 <a href="/member/dashboard"
                                     @click="adminMenu = false"
                                     class="w-full px-3 py-2 rounded-md text-xs font-bold text-slate-600 hover:bg-orange-50 hover:text-orange-600 transition flex items-center justify-between"
@@ -294,6 +393,7 @@
                     </div>
                     {% endif %}
 
+
                     <!-- User Profile Avatar & Google-Style Dropdown Menu -->
                     <div class="relative" id="user-profile-menu-container">
                         <button type="button" id="user-profile-btn"
@@ -310,28 +410,28 @@
                             <i class="fas fa-chevron-down text-[9px] text-white/70 hidden sm:inline flex-shrink-0"></i>
                         </button>
 
-                        <!-- Google-Style Dropdown Menu (Organized by Categories) -->
+                        <!-- VS Code Style Tiered Member Dropdown Menu -->
                         <div id="user-profile-dropdown" x-show="userDropdown" @click.away="userDropdown = false"
                             x-transition:enter="transition ease-out duration-150"
                             x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
                             x-transition:leave="transition ease-in duration-100"
                             x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                            class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-2xl p-3 text-slate-800 border border-slate-200 z-50 space-y-2.5 max-h-[85vh] overflow-y-auto">
+                            class="hidden absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-2xl p-2.5 text-slate-800 border border-slate-200 z-50 space-y-2 overflow-visible">
 
-                            <!-- KELOMPOK 1: IDENTITAS & STATUS ANGGOTA (SESUAI WARNA UTAMA TEMA) -->
-                            <div class="theme-profile-header-card p-3 rounded-lg flex items-center gap-3" style="background: var(--brand-600, #ea580c) !important; color: #ffffff !important;">
+                            <!-- KELOMPOK 1: IDENTITAS RINGKAS & STATUS ANGGOTA -->
+                            <div class="theme-profile-header-card p-2.5 rounded-lg flex items-center gap-2.5 shadow-sm" style="background: var(--brand-600, #ea580c) !important; color: #ffffff !important;">
                                 <img src="{{ current_user.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}"
                                     alt="Avatar"
-                                    class="w-11 h-11 rounded-full object-cover border-2 border-white/90 shadow-md">
-                                <div class="overflow-hidden flex-1">
+                                    class="w-10 h-10 rounded-full object-cover border-2 border-white/90 shadow-sm flex-shrink-0">
+                                <div class="overflow-hidden flex-1 min-w-0">
                                     <p class="text-xs font-black truncate drop-shadow-sm text-white" style="color: #ffffff !important;">{{ current_user.name }}</p>
-                                    <p class="text-[11px] font-mono truncate text-white/90" style="color: rgba(255, 255, 255, 0.9) !important;">{{ current_user.email }}</p>
+                                    <p class="text-[10px] font-mono truncate text-white/90" style="color: rgba(255, 255, 255, 0.9) !important;">{{ current_user.email }}</p>
                                     <div class="mt-1 flex items-center gap-1.5">
-                                        <span class="inline-block px-2 py-0.5 rounded text-[9px] font-bold font-mono bg-white/20 border border-white/30 backdrop-blur-sm text-white" style="color: #ffffff !important;">
+                                        <span class="inline-block px-1.5 py-0.5 rounded text-[8px] font-bold font-mono bg-white/20 border border-white/30 backdrop-blur-sm text-white" style="color: #ffffff !important;">
                                             {{ current_user.nra or 'Calon Anggota' }}
                                         </span>
                                         {% if current_user.is_admin %}
-                                        <span class="badge-admin inline-block px-1.5 py-0.5 rounded text-[9px] font-black shadow-sm bg-white text-orange-700" style="background-color: #ffffff !important; color: #c2410c !important;">
+                                        <span class="badge-admin inline-block px-1.5 py-0.5 rounded text-[8px] font-black shadow-sm bg-white text-orange-700" style="background-color: #ffffff !important; color: #c2410c !important;">
                                             Admin
                                         </span>
                                         {% endif %}
@@ -339,190 +439,242 @@
                                 </div>
                             </div>
 
-                            <!-- Tombol Utama: Kelola Akun & Profil Lengkap (Sesuai Warna Tema) -->
-                            <button type="button" hx-get="/member/profile-modal" hx-target="#modal-container"
-                                @click="userDropdown = false"
-                                onclick="window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
-                                class="theme-account-hub-btn w-full py-2.5 px-3 font-bold text-xs rounded-md shadow-sm transition flex items-center justify-between group bg-orange-50 border border-orange-200 text-orange-950 hover:bg-orange-100"
-                                style="background-color: #fff7ed !important; border: 1px solid #fed7aa !important; color: #7c2d12 !important;">
-                                <span class="flex items-center gap-2" style="color: #7c2d12 !important;">
-                                    <i class="fas fa-user-circle text-sm text-orange-600" style="color: #ea580c !important;"></i>
-                                    <span class="font-bold text-orange-950" style="color: #7c2d12 !important;">Kelola Profil & Akun Hub</span>
-                                </span>
-                                <i class="fas fa-chevron-right text-[10px] text-orange-600 transition group-hover:translate-x-0.5" style="color: #ea580c !important;"></i>
-                            </button>
+                            <!-- Nav Menu Bertingkat (VS Code Style) -->
+                            <nav class="space-y-0.5" id="member-header-nav"
+                                 x-data="{ hoverMemberGroup: '' }"
+                                 @mouseleave="hoverMemberGroup = ''">
 
-                            <!-- KELOMPOK 2: LAYANAN UTAMA ANGGOTA (DIPINDAHKAN DARI TOP MENU) -->
-                            <div class="space-y-1">
-                                <div class="px-2 pt-1 flex items-center justify-between">
-                                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Layanan Anggota</span>
-                                    <span class="text-[9px] text-orange-600 font-semibold">KPAB-GIMBAL</span>
-                                </div>
-
+                                <!-- === BERANDA ANGGOTA (DIRECT) === -->
                                 <a href="/member/dashboard" data-page="member_dashboard"
                                     hx-get="/member/dashboard" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                                    @mouseenter="hoverMemberGroup = ''"
                                     @click="userDropdown = false"
                                     onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
-                                    class="member-nav-item w-full text-left px-3 py-2 rounded-md transition flex items-center gap-3 {% if active_page == 'member_dashboard' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
-                                    <div class="nav-icon-box w-7 h-7 rounded-md flex items-center justify-center">
-                                        <i class="fas fa-compass text-xs"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-xs font-semibold leading-tight text-slate-800">Beranda Anggota</p>
-                                        <p class="text-[10px] text-slate-500 opacity-75">Linimasa petualang & ekspedisi</p>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-[9px] opacity-50 nav-arrow"></i>
-                                </a>
-
-                                {% if current_user.status == 'active' %}
-                                <a href="/member/kta" data-page="member_kta"
-                                    hx-get="/member/kta" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
-                                    @click="userDropdown = false"
-                                    onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
-                                    class="member-nav-item w-full text-left px-3 py-2 rounded-md transition flex items-center gap-3 {% if active_page == 'member_kta' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
-                                    <div class="nav-icon-box w-7 h-7 rounded-md flex items-center justify-center">
-                                        <i class="fas fa-id-card text-xs"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-xs font-semibold leading-tight text-slate-800">KTA Digital</p>
-                                        <p class="text-[10px] text-slate-500 opacity-75">Kartu tanda anggota & QR resmi</p>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-[9px] opacity-50 nav-arrow"></i>
-                                </a>
-                                {% endif %}
-
-                                <a href="/member/iuran" data-page="member_iuran"
-                                    hx-get="/member/iuran" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
-                                    @click="userDropdown = false"
-                                    onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
-                                    class="member-nav-item w-full text-left px-3 py-2 rounded-md transition flex items-center gap-3 {% if active_page == 'member_iuran' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
-                                    <div class="nav-icon-box w-7 h-7 rounded-md flex items-center justify-center">
-                                        <i class="fas fa-coins text-xs"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-xs font-semibold leading-tight text-slate-800">Iuran Saya</p>
-                                        <p class="text-[10px] text-slate-500 opacity-75">Status kas & pembayaran iuran</p>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-[9px] opacity-50 nav-arrow"></i>
-                                </a>
-
-                                <a href="/member/documents" data-page="member_documents"
-                                    hx-get="/member/documents" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
-                                    @click="userDropdown = false"
-                                    onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
-                                    class="member-nav-item w-full text-left px-3 py-2 rounded-md transition flex items-center gap-3 {% if active_page == 'member_documents' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
-                                    <div class="nav-icon-box w-7 h-7 rounded-md flex items-center justify-center">
-                                        <i class="fas fa-book-open text-xs"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-xs font-semibold leading-tight text-slate-800">Arsip Dokumen</p>
-                                        <p class="text-[10px] text-slate-500 opacity-75">AD/ART, SOP & panduan lapangan</p>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-[9px] opacity-50 nav-arrow"></i>
-                                </a>
-
-                                {% if current_user.status == 'active' %}
-                                <a href="/member/repo-maps" data-page="member_repo_maps"
-                                    hx-get="/member/repo-maps" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
-                                    @click="userDropdown = false"
-                                    onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
-                                    class="member-nav-item w-full text-left px-3 py-2 rounded-md transition flex items-center gap-3 {% if active_page == 'member_repo_maps' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
-                                    <div class="nav-icon-box w-7 h-7 rounded-md flex items-center justify-center">
-                                        <i class="fas fa-map-marked-alt text-xs"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-xs font-semibold leading-tight text-slate-800">Repo Peta GIMBAL</p>
-                                        <p class="text-[10px] text-slate-500 opacity-75">Pustaka geodata & offline GPX</p>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-[9px] opacity-50 nav-arrow"></i>
-                                </a>
-
-                                <a href="https://mapgen.gimbal.my.id" target="_blank"
-                                    @click="userDropdown = false"
-                                    class="member-nav-item w-full text-left px-3 py-2 rounded-md transition flex items-center gap-3 text-slate-700 hover:bg-orange-50 hover:text-orange-600 group">
-                                    <div class="nav-icon-box w-7 h-7 rounded-md flex items-center justify-center bg-orange-100 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition">
-                                        <i class="fas fa-layer-group text-xs"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-1.5">
-                                            <p class="text-xs font-semibold leading-tight text-slate-800">Studio GeoPDF A3</p>
-                                            <span class="px-1.5 py-0.2 bg-emerald-600 text-[9px] font-bold text-white rounded">NEW</span>
+                                    class="member-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'member_dashboard' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
+                                            <i class="fas fa-compass text-[11px]"></i>
                                         </div>
-                                        <p class="text-[10px] text-slate-500 opacity-75">Cetak Topo ISO 32000 & Avenza</p>
+                                        <span class="text-xs font-semibold">Beranda Anggota</span>
                                     </div>
-                                    <i class="fas fa-external-link-alt text-[9px] opacity-50 nav-arrow"></i>
+                                    <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
                                 </a>
 
-                                <a href="/member/business" data-page="member_business"
-                                    hx-get="/member/business" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
-                                    @click="userDropdown = false"
-                                    onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
-                                    class="member-nav-item w-full text-left px-3 py-2 rounded-md transition flex items-center gap-3 {% if active_page == 'member_business' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
-                                    <div class="nav-icon-box w-7 h-7 rounded-md flex items-center justify-center">
-                                        <i class="fas fa-store text-xs"></i>
+                                <!-- === FLYOUT: LAYANAN ANGGOTA === -->
+                                <div class="relative" @mouseenter="hoverMemberGroup = 'services'">
+                                    <button type="button"
+                                            @click="hoverMemberGroup = (hoverMemberGroup === 'services' ? '' : 'services')"
+                                            class="w-full px-3 py-2 flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition rounded-md"
+                                            :class="hoverMemberGroup === 'services' ? 'bg-orange-50 text-orange-600 font-semibold' : ''">
+                                        <span class="flex items-center gap-2.5">
+                                            <div class="w-6 h-6 rounded-md flex items-center justify-center text-orange-500">
+                                                <i class="fas fa-id-card text-[11px]"></i>
+                                            </div>
+                                            <span class="text-xs font-semibold">Layanan Anggota</span>
+                                        </span>
+                                        <i class="fas fa-chevron-left text-[8px] text-slate-400"></i>
+                                    </button>
+                                    <div x-show="hoverMemberGroup === 'services'"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="opacity-0 translate-x-2"
+                                         x-transition:enter-end="opacity-100 translate-x-0"
+                                         class="absolute top-0 right-full mr-1 w-56 bg-white rounded-lg shadow-2xl border border-slate-200 p-1.5 z-[70] space-y-0.5 before:absolute before:top-0 before:-right-2 before:w-3 before:h-full before:content-['']">
+                                        <div class="px-2 py-1 mb-1 border-b border-slate-100">
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Layanan Anggota</span>
+                                        </div>
+                                        {% if current_user.status == 'active' %}
+                                        <a href="/member/kta" data-page="member_kta"
+                                            hx-get="/member/kta" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                                            @click="userDropdown = false"
+                                            onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                            class="member-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'member_kta' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-id-badge text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">KTA Digital</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
+                                        {% endif %}
+                                        <a href="/member/iuran" data-page="member_iuran"
+                                            hx-get="/member/iuran" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                                            @click="userDropdown = false"
+                                            onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                            class="member-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'member_iuran' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-coins text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Iuran Saya</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
+                                        <a href="/member/academy" data-page="member_academy"
+                                            hx-get="/member/academy" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                                            @click="userDropdown = false"
+                                            onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                            class="member-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'member_academy' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-graduation-cap text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Akademi & SOP</span>
+                                            </div>
+                                            {% if current_user.is_mandatory_certification_pending %}
+                                            <span class="px-1.5 py-0.2 bg-rose-500 text-[8px] font-black text-white rounded-full animate-pulse">WAJIB</span>
+                                            {% else %}
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                            {% endif %}
+                                        </a>
+                                        <a href="/member/documents" data-page="member_documents"
+                                            hx-get="/member/documents" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                                            @click="userDropdown = false"
+                                            onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                            class="member-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'member_documents' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-book-open text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Arsip Dokumen</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
+                                        <a href="/member/business" data-page="member_business"
+                                            hx-get="/member/business" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                                            @click="userDropdown = false"
+                                            onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                            class="member-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'member_business' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-store text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Usaha & Lapak Saya</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
                                     </div>
-                                    <div class="flex-1">
-                                        <p class="text-xs font-semibold leading-tight text-slate-800">Usaha & Lapak Saya</p>
-                                        <p class="text-[10px] text-slate-500 opacity-75">Daftarkan usaha, cafe & diskon KTA</p>
-                                    </div>
-                                    <i class="fas fa-chevron-right text-[9px] opacity-50 nav-arrow"></i>
-                                </a>
-                                {% endif %}
-                            </div>
-
-                            <!-- KELOMPOK 3: DATA PRIBADI & KEAMANAN -->
-                            <div class="pt-2 border-t border-slate-100 space-y-1">
-                                <div class="px-2 pb-1">
-                                    <span class="text-[10px] font-black uppercase tracking-wider text-slate-400">Data & Keamanan</span>
                                 </div>
-                                <button type="button" hx-get="/member/profile-modal?tab=biodata"
-                                    hx-target="#modal-container" @click="userDropdown = false"
-                                    onclick="window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
-                                    class="w-full text-left px-3 py-2 rounded-md hover:bg-orange-50 hover:text-orange-600 transition flex items-center justify-between text-xs text-slate-700">
-                                    <span class="flex items-center gap-2.5 font-semibold">
-                                        <i class="fas fa-id-badge text-slate-500 w-4 text-center"></i>
-                                        <span>Biodata Pribadi</span>
-                                    </span>
-                                    <i class="fas fa-angle-right text-[10px] text-slate-400"></i>
-                                </button>
-                                <button type="button" hx-get="/member/profile-modal?tab=medis"
-                                    hx-target="#modal-container" @click="userDropdown = false"
-                                    onclick="window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
-                                    class="w-full text-left px-3 py-2 rounded-md hover:bg-orange-50 hover:text-orange-600 transition flex items-center justify-between text-xs text-slate-700">
-                                    <span class="flex items-center gap-2.5 font-semibold">
-                                        <i class="fas fa-heartbeat text-rose-500 w-4 text-center"></i>
-                                        <span>Riwayat Medis & Darurat</span>
-                                    </span>
-                                    <i class="fas fa-angle-right text-[10px] text-slate-400"></i>
-                                </button>
-                                <button type="button" hx-get="/member/profile-modal?tab=keamanan"
-                                    hx-target="#modal-container" @click="userDropdown = false"
-                                    onclick="window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
-                                    class="w-full text-left px-3 py-2 rounded-md hover:bg-orange-50 hover:text-orange-600 transition flex items-center justify-between text-xs text-slate-700">
-                                    <span class="flex items-center gap-2.5 font-semibold">
-                                        <i class="fas fa-shield-alt text-amber-500 w-4 text-center"></i>
-                                        <span>Keamanan & Password</span>
-                                    </span>
-                                    <i class="fas fa-angle-right text-[10px] text-slate-400"></i>
-                                </button>
-                            </div>
 
-                            <!-- KELOMPOK 4: PENGATURAN & SESI -->
-                            <div class="pt-2 border-t border-slate-100 space-y-2">
+                                <!-- === FLYOUT: PETA & GEOSPASIAL === -->
+                                {% if current_user.status == 'active' %}
+                                <div class="relative" @mouseenter="hoverMemberGroup = 'maps'">
+                                    <button type="button"
+                                            @click="hoverMemberGroup = (hoverMemberGroup === 'maps' ? '' : 'maps')"
+                                            class="w-full px-3 py-2 flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition rounded-md"
+                                            :class="hoverMemberGroup === 'maps' ? 'bg-orange-50 text-orange-600 font-semibold' : ''">
+                                        <span class="flex items-center gap-2.5">
+                                            <div class="w-6 h-6 rounded-md flex items-center justify-center text-orange-500">
+                                                <i class="fas fa-map-marked-alt text-[11px]"></i>
+                                            </div>
+                                            <span class="text-xs font-semibold">Peta & Geospasial</span>
+                                        </span>
+                                        <i class="fas fa-chevron-left text-[8px] text-slate-400"></i>
+                                    </button>
+                                    <div x-show="hoverMemberGroup === 'maps'"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="opacity-0 translate-x-2"
+                                         x-transition:enter-end="opacity-100 translate-x-0"
+                                         class="absolute top-0 right-full mr-1 w-56 bg-white rounded-lg shadow-2xl border border-slate-200 p-1.5 z-[70] space-y-0.5 before:absolute before:top-0 before:-right-2 before:w-3 before:h-full before:content-['']">
+                                        <div class="px-2 py-1 mb-1 border-b border-slate-100">
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Peta & Geospasial</span>
+                                        </div>
+                                        <a href="/member/repo-maps" data-page="member_repo_maps"
+                                            hx-get="/member/repo-maps" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                                            @click="userDropdown = false"
+                                            onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                            class="member-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'member_repo_maps' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-map-marked-alt text-[10px] w-4 text-center"></i>
+                                                <span class="text-xs font-semibold">Repo Peta GIMBAL</span>
+                                            </div>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </a>
+                                        <a href="https://mapgen.gimbal.my.id" target="_blank"
+                                            @click="userDropdown = false"
+                                            class="member-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-layer-group text-[10px] w-4 text-center text-orange-500"></i>
+                                                <span class="text-xs font-semibold">Studio GeoPDF A3</span>
+                                                <span class="px-1 bg-emerald-600 text-[8px] font-black text-white rounded">NEW</span>
+                                            </div>
+                                            <i class="fas fa-external-link-alt text-[8px] opacity-40"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- === FLYOUT: PROFIL & KEAMANAN === -->
+                                <div class="relative" @mouseenter="hoverMemberGroup = 'security'">
+                                    <button type="button"
+                                            @click="hoverMemberGroup = (hoverMemberGroup === 'security' ? '' : 'security')"
+                                            class="w-full px-3 py-2 flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600 transition rounded-md"
+                                            :class="hoverMemberGroup === 'security' ? 'bg-orange-50 text-orange-600 font-semibold' : ''">
+                                        <span class="flex items-center gap-2.5">
+                                            <div class="w-6 h-6 rounded-md flex items-center justify-center text-orange-500">
+                                                <i class="fas fa-shield-alt text-[11px]"></i>
+                                            </div>
+                                            <span class="text-xs font-semibold">Profil & Keamanan</span>
+                                        </span>
+                                        <i class="fas fa-chevron-left text-[8px] text-slate-400"></i>
+                                    </button>
+                                    <div x-show="hoverMemberGroup === 'security'"
+                                         x-transition:enter="transition ease-out duration-100"
+                                         x-transition:enter-start="opacity-0 translate-x-2"
+                                         x-transition:enter-end="opacity-100 translate-x-0"
+                                         class="absolute bottom-0 right-full mr-1 w-56 bg-white rounded-lg shadow-2xl border border-slate-200 p-1.5 z-[70] space-y-0.5 before:absolute before:top-0 before:-right-2 before:w-3 before:h-full before:content-['']">
+                                        <div class="px-2 py-1 mb-1 border-b border-slate-100">
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">Profil & Keamanan</span>
+                                        </div>
+                                        <button type="button" hx-get="/member/profile-modal" hx-target="#modal-container"
+                                            @click="userDropdown = false"
+                                            onclick="window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                            class="w-full text-left px-3 py-2 rounded-md hover:bg-orange-50 hover:text-orange-600 transition flex items-center justify-between text-xs text-slate-700">
+                                            <span class="flex items-center gap-2">
+                                                <i class="fas fa-user-circle text-[10px] text-orange-600 w-4 text-center"></i>
+                                                <span class="font-semibold">Kelola Profil Hub</span>
+                                            </span>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </button>
+                                        <button type="button" hx-get="/member/profile-modal?tab=biodata"
+                                            hx-target="#modal-container" @click="userDropdown = false"
+                                            onclick="window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                            class="w-full text-left px-3 py-2 rounded-md hover:bg-orange-50 hover:text-orange-600 transition flex items-center justify-between text-xs text-slate-700">
+                                            <span class="flex items-center gap-2">
+                                                <i class="fas fa-id-badge text-[10px] text-slate-500 w-4 text-center"></i>
+                                                <span class="font-semibold">Biodata Pribadi</span>
+                                            </span>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </button>
+                                        <button type="button" hx-get="/member/profile-modal?tab=medis"
+                                            hx-target="#modal-container" @click="userDropdown = false"
+                                            onclick="window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                            class="w-full text-left px-3 py-2 rounded-md hover:bg-orange-50 hover:text-orange-600 transition flex items-center justify-between text-xs text-slate-700">
+                                            <span class="flex items-center gap-2">
+                                                <i class="fas fa-heartbeat text-[10px] text-rose-500 w-4 text-center"></i>
+                                                <span class="font-semibold">Riwayat Medis & Darurat</span>
+                                            </span>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </button>
+                                        <button type="button" hx-get="/member/profile-modal?tab=keamanan"
+                                            hx-target="#modal-container" @click="userDropdown = false"
+                                            onclick="window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                            class="w-full text-left px-3 py-2 rounded-md hover:bg-orange-50 hover:text-orange-600 transition flex items-center justify-between text-xs text-slate-700">
+                                            <span class="flex items-center gap-2">
+                                                <i class="fas fa-key text-[10px] text-amber-500 w-4 text-center"></i>
+                                                <span class="font-semibold">Keamanan & Password</span>
+                                            </span>
+                                            <i class="fas fa-chevron-right text-[8px] opacity-40"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </nav>
+
+                            <!-- Footer: Keluar (Logout) -->
+                            <div class="pt-2 border-t border-slate-100" @mouseenter="hoverMemberGroup = ''">
                                 <a href="/auth/logout"
                                     onclick="window.location.href='/auth/logout'"
-                                    class="w-full px-3 py-2 text-xs font-black text-rose-600 hover:bg-rose-50 rounded-md border border-rose-200 transition flex items-center justify-between">
+                                    class="w-full px-3 py-2 rounded-md text-xs font-bold text-rose-600 hover:bg-rose-50 transition flex items-center justify-between">
                                     <span class="flex items-center gap-2">
-                                        <i class="fas fa-sign-out-alt text-rose-500"></i>
+                                        <i class="fas fa-sign-out-alt text-rose-500 text-[11px]"></i>
                                         <span>Keluar (Logout)</span>
                                     </span>
-                                    <i class="fas fa-chevron-right text-[10px] text-rose-400 opacity-60"></i>
+                                    <i class="fas fa-chevron-right text-[8px] text-rose-400"></i>
                                 </a>
                             </div>
-
                         </div>
                     </div>
-
                     <!-- Tombol Cepat Logout 1-Klik di Navbar Header (Desktop) -->
                     <a href="/auth/logout" 
                        onclick="window.location.href='/auth/logout'"

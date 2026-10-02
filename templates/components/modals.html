@@ -803,6 +803,15 @@
                     <i class="fas fa-id-card-alt text-xs"></i>
                     <span>Afiliasi & Sesi</span>
                 </button>
+                <button type="button" @click="activeTab = 'sertifikasi'"
+                        :class="activeTab === 'sertifikasi' ? 'bg-white/15 text-white font-bold border-b-2 border-orange-400' : 'text-stone-300 hover:text-white hover:bg-white/5'"
+                        class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-medal text-xs text-amber-300"></i>
+                    <span>Sertifikasi & Brevet</span>
+                    {% if user.certifications_list %}
+                    <span class="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 font-black text-[9px]">{{ user.certifications_list|length }}</span>
+                    {% endif %}
+                </button>
             </div>
         </div>
 
@@ -1099,6 +1108,78 @@
                         <i class="fas fa-sign-out-alt mr-1.5"></i> Keluar dari Sesi Akun (Logout)
                     </a>
                 </div>
+            </div>
+
+            <!-- TAB 6: SERTIFIKASI & BREVET KEAHLIAN LAPANGAN -->
+            <div x-show="activeTab === 'sertifikasi'" class="space-y-4">
+                <div class="p-4 rounded-xl bg-gradient-to-r from-stone-900 to-slate-900 text-white flex items-center justify-between border border-stone-800">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-black">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-black font-heading text-white">Lencana Kompetensi Resmi</h4>
+                            <p class="text-[10px] text-stone-300">Standar Kesiapan Operasional Rimba & SAR KPAB GIMBAL</p>
+                        </div>
+                    </div>
+                    <a href="/member/academy"
+                       onclick="document.getElementById('modal-container').innerHTML = ''"
+                       hx-get="/member/academy" hx-target="#main-content" hx-push-url="true"
+                       class="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-[11px] transition">
+                        Buka Akademi &rarr;
+                    </a>
+                </div>
+
+                {% if user.certifications_list %}
+                <div class="space-y-2.5">
+                    <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Brevet yang Telah Anda Raih:</p>
+                    <div class="grid grid-cols-1 gap-2.5">
+                        {% for cert in user.certifications_list %}
+                        <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between shadow-2xs">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg text-white flex items-center justify-center text-lg shadow-sm shrink-0"
+                                     style="background-color: {{ cert.tier.badge_color or '#f97316' }};">
+                                    <i class="fas {{ cert.tier.badge_icon or 'fa-award' }}"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-[9px] font-black uppercase text-amber-600">Level {{ cert.tier.order_index }}</span>
+                                        <span class="px-1.5 py-0.2 rounded text-[8px] font-black bg-emerald-100 text-emerald-800">AKTIF</span>
+                                    </div>
+                                    <h5 class="text-xs font-bold text-slate-900">{{ cert.tier.badge_name }}</h5>
+                                    <p class="text-[10px] font-mono text-slate-400">No: {{ cert.certificate_no }}</p>
+                                </div>
+                            </div>
+                            <a href="/member/academy/certificate/{{ cert.certificate_no }}" target="_blank"
+                               class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold transition flex items-center gap-1">
+                                <i class="fas fa-certificate text-amber-500"></i> Piagam
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-6 rounded-xl border border-dashed border-slate-200 text-center space-y-2 bg-slate-50/50">
+                    <i class="fas fa-award text-3xl text-slate-300"></i>
+                    <h5 class="text-xs font-bold text-slate-700">Belum Ada Sertifikasi yang Diraih</h5>
+                    <p class="text-[11px] text-slate-500 max-w-sm mx-auto">
+                        Ikuti kurikulum pelatihan dan selesaikan ujian sertifikasi untuk mendapatkan lencana keahlian resmi pada profil dan KTA Anda.
+                    </p>
+                    <a href="/member/academy"
+                       onclick="document.getElementById('modal-container').innerHTML = ''"
+                       hx-get="/member/academy" hx-target="#main-content" hx-push-url="true"
+                       class="inline-block mt-2 px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs transition">
+                        Mulai Pelatihan Tingkat 1 &rarr;
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if user.is_mandatory_certification_pending %}
+                <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 text-xs flex items-center gap-2 font-bold">
+                    <i class="fas fa-exclamation-circle text-rose-600 text-base"></i>
+                    <span>Catatan: Anda memiliki penugasan wajib untuk menyelesaikan sertifikasi tingkat dasar.</span>
+                </div>
+                {% endif %}
             </div>
 
             <!-- Footer Action Buttons -->
@@ -3609,3 +3690,91 @@
 
 
 
+
+<!-- ============================================================== -->
+<!-- 30. MODAL VERIFIKASI KEABSAHAN SERTIFIKAT KOMPETENSI GIMBAL -->
+<!-- ============================================================== -->
+{% if modal_type == 'verify_cert_public' %}
+{% set cert = data.cert %}
+{% set cert_no = data.cert_no %}
+{% set is_valid = data.is_valid %}
+
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in"
+     id="modal-verify-cert">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 relative text-center overflow-hidden">
+        
+        <!-- Watermark -->
+        <div class="absolute -right-8 -bottom-8 opacity-5 text-slate-900 text-9xl pointer-events-none">
+            <i class="fas fa-certificate"></i>
+        </div>
+
+        <div class="relative z-10 space-y-5">
+            <!-- Icon Status -->
+            <div class="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-md {% if is_valid %}bg-emerald-600 text-white{% else %}bg-rose-600 text-white{% endif %}">
+                <i class="fas {% if is_valid %}fa-shield-check{% else %}fa-times-circle{% endif %}"></i>
+            </div>
+
+            <div>
+                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider {% if is_valid %}bg-emerald-100 text-emerald-800 border border-emerald-300{% else %}bg-rose-100 text-rose-800 border border-rose-300{% endif %}">
+                    {% if is_valid %}SERTIFIKAT RESMI & TERVERIFIKASI{% else %}SERTIFIKAT TIDAK VALID / DICABUT{% endif %}
+                </span>
+                <h2 class="text-lg sm:text-xl font-black text-slate-900 font-heading mt-2">
+                    Validasi Kompetensi KPAB GIMBAL
+                </h2>
+                <p class="text-xs font-mono text-slate-500 mt-0.5">
+                    No. Registrasi: <strong class="text-slate-800">{{ cert_no }}</strong>
+                </p>
+            </div>
+
+            {% if is_valid and cert %}
+            <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-3 text-xs">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <span class="text-slate-500">Nama Anggota</span>
+                    <span class="font-black text-slate-900 text-sm">{{ cert.user.name }}</span>
+                </div>
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <span class="text-slate-500">NRA Resmi</span>
+                    <span class="font-bold font-mono text-slate-800">{{ cert.user.nra or 'Anggota GIMBAL' }}</span>
+                </div>
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <span class="text-slate-500">Tingkat / Brevet</span>
+                    <span class="font-bold text-amber-700 flex items-center gap-1">
+                        <i class="fas {{ cert.tier.badge_icon or 'fa-award' }}"></i>
+                        <span>{{ cert.tier.title }} ({{ cert.tier.badge_name }})</span>
+                    </span>
+                </div>
+                <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <span class="text-slate-500">Skor Kelulusan</span>
+                    <span class="font-bold text-emerald-600">{{ cert.score_achieved }}%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-slate-500">Tanggal Terbit</span>
+                    <span class="font-bold text-slate-700">{{ cert.issued_at.strftime('%d %B %Y') }}</span>
+                </div>
+            </div>
+
+            <div class="text-[11px] text-slate-500 leading-relaxed max-w-sm mx-auto">
+                Dokumen ini merupakan sertifikasi resmi dari Dewan Instruktur Akademi Rimba KPAB GIMBAL Provinsi Gorontalo.
+            </div>
+            {% else %}
+            <div class="p-5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+                Nomor sertifikat tidak ditemukan di pangkalan data resmi KPAB GIMBAL atau telah dinyatakan nonaktif oleh pengurus.
+            </div>
+            {% endif %}
+
+            <div class="pt-2 flex items-center justify-center gap-3">
+                <a href="/" class="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition">
+                    Kembali ke Beranda
+                </a>
+                {% if is_valid and cert %}
+                <a href="/member/academy/certificate/{{ cert.certificate_no }}" target="_blank"
+                   class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition flex items-center gap-1.5">
+                    <i class="fas fa-certificate"></i> Buka Piagam Lengkap
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endif %}

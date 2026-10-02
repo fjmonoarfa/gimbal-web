@@ -10,7 +10,9 @@ from models import (
     db, User, Dues, DuesPayment, Document, Activity,
     ActivityParticipant, ActivityFieldLog, GalleryItem, Post, PostMedia,
     PostComment, PostLike, ChatMessage, SystemSetting, AdminAuditLog,
-    MapRepository, Position, generate_next_nra, Sponsor, SponsorProduct
+    MapRepository, Position, generate_next_nra, Sponsor, SponsorProduct,
+    AcademyTier, AcademyCourse, AcademyLesson, AcademyQuiz, QuizQuestion, QuizOption,
+    UserLessonProgress, UserQuizAttempt, UserCertification
 )
 from cloudflare_email import delete_cloudflare_email_rule, sync_cloudflare_email_routing
 from helpers import get_current_user, login_required, admin_required, render_gimbal_page
@@ -3483,5 +3485,477 @@ def admin_sponsor_toggle_share(sponsor_id):
 def admin_sponsor_share_timeline(sponsor_id):
     """Kompatibilitas alias untuk toggle publikasi sponsor"""
     return admin_sponsor_toggle_share(sponsor_id)
+
+
+# ==============================================================================
+# ADMIN ACADEMY, SOP & MEMBER CERTIFICATION COMPLIANCE
+# ==============================================================================
+
+@admin_bp.route('/admin/academy')
+@login_required
+@admin_required
+def admin_academy():
+    """Pusat Kendali Admin Akademi, Kurikulum SOP & Kepatuhan Sertifikasi Anggota"""
+    user = get_current_user()
+    active_tab = request.args.get('tab', 'kurikulum')
+    
+    tiers = AcademyTier.query.order_by(AcademyTier.order_index.asc()).all()
+    all_courses = AcademyCourse.query.order_by(AcademyCourse.order_index.asc()).all()
+    all_docs = Document.query.order_by(Document.title.asc()).all()
+    all_maps = MapRepository.query.order_by(MapRepository.title.asc()).all()
+    
+    # Data Anggota & Kepatuhan Sertifikasi
+    members = User.query.order_by(User.status.desc(), User.name.asc()).all()
+    
+    # Statistik Kepatuhan Level 1
+    total_members = len(members)
+    level1_tier = AcademyTier.query.filter_by(order_index=1).first()
+    level1_id = level1_tier.id if level1_tier else 1
+    
+    certified_level1_count = UserCertification.query.filter_by(tier_id=level1_id, status='active').count()
+    mandatory_active_count = User.query.filter_by(is_mandatory_certified=True).count()
+    
+    # Hitung yang masih pending kewajiban
+    pending_mandatory_count = sum(1 for m in members if m.is_mandatory_certification_pending)
+    
+    # Riwayat Sertifikasi & Ujian
+    certifications = UserCertification.query.order_by(UserCertification.id.desc()).limit(100).all()
+    recent_attempts = UserQuizAttempt.query.order_by(UserQuizAttempt.id.desc()).limit(50).all()
+
+    data = {
+        'user': user,
+        'active_tab': active_tab,
+        'tiers': tiers,
+        'all_courses': all_courses,
+        'all_docs': all_docs,
+        'all_maps': all_maps,
+        'members': members,
+        'total_members': total_members,
+        'certified_level1_count': certified_level1_count,
+        'mandatory_active_count': mandatory_active_count,
+        'pending_mandatory_count': pending_mandatory_count,
+        'certifications': certifications,
+        'recent_attempts': recent_attempts,
+        'level1_tier': level1_tier
+    }
+    return render_gimbal_page('admin/admin_pages.html', 'admin_academy', data, active_page='admin_academy')
+
+
+@admin_bp.route('/admin/academy/tier/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_tier_create():
+    """Tambah Tingkatan / Jenjang Baru Akademi"""
+    name = request.form.get('name', '').strip()
+    slug = request.form.get('slug', '').strip() or name.lower().replace(' ', '-')
+    badge_name = request.form.get('badge_name', '').strip()
+    badge_icon = request.form.get('badge_icon', 'fa-compass').strip()
+    badge_color = request.form.get('badge_color', '#10b981').strip()
+    description = request.form.get('description', '').strip()
+    order_index = int(request.form.get('order_index', 1))
+    passing_grade = int(request.form.get('passing_grade', 75))
+
+    tier = AcademyTier(
+        name=name,
+        slug=slug,
+        badge_name=badge_name,
+        badge_icon=badge_icon,
+        badge_color=badge_color,
+        description=description,
+        order_index=order_index,
+        passing_grade=passing_grade,
+        is_active=True
+    )
+    db.session.add(tier)
+    db.session.commit()
+    flash(f"Jenjang '{name}' berhasil ditambahkan ke kurikulum.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/tier/edit/<int:tier_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_tier_edit(tier_id):
+    """Ubah Data Tingkatan Akademi"""
+    tier = db.session.get(AcademyTier, tier_id)
+    if not tier:
+        flash("Jenjang tidak ditemukan.", "error")
+        return redirect('/admin/academy?tab=kurikulum')
+
+    tier.name = request.form.get('name', tier.name).strip()
+    tier.badge_name = request.form.get('badge_name', tier.badge_name).strip()
+    tier.badge_icon = request.form.get('badge_icon', tier.badge_icon).strip()
+    tier.badge_color = request.form.get('badge_color', tier.badge_color).strip()
+    tier.description = request.form.get('description', tier.description).strip()
+    tier.order_index = int(request.form.get('order_index', tier.order_index))
+    tier.passing_grade = int(request.form.get('passing_grade', tier.passing_grade))
+
+    db.session.commit()
+    flash(f"Jenjang '{tier.name}' berhasil diperbarui.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/tier/delete/<int:tier_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_tier_delete(tier_id):
+    """Hapus Jenjang Tingkat Beserta Kursus & Kuis di Dalamnya"""
+    tier = db.session.get(AcademyTier, tier_id)
+    if tier:
+        name = tier.name
+        db.session.delete(tier)
+        db.session.commit()
+        flash(f"Jenjang '{name}' berhasil dihapus.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/course/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_course_create():
+    """Tambah Mata Kursus / Pelatihan Baru"""
+    tier_id = int(request.form.get('tier_id'))
+    title = request.form.get('title', '').strip()
+    category = request.form.get('category', 'diksar').strip()
+    description = request.form.get('description', '').strip()
+    target_duration_mins = int(request.form.get('target_duration_mins', 30))
+    order_index = int(request.form.get('order_index', 1))
+
+    course = AcademyCourse(
+        tier_id=tier_id,
+        title=title,
+        category=category,
+        description=description,
+        target_duration_mins=target_duration_mins,
+        order_index=order_index,
+        is_published=True
+    )
+    db.session.add(course)
+    db.session.commit()
+    flash(f"Kursus '{title}' berhasil ditambahkan.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/course/edit/<int:course_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_course_edit(course_id):
+    """Edit Mata Kursus"""
+    course = db.session.get(AcademyCourse, course_id)
+    if not course:
+        flash("Kursus tidak ditemukan.", "error")
+        return redirect('/admin/academy?tab=kurikulum')
+
+    course.title = request.form.get('title', course.title).strip()
+    course.category = request.form.get('category', course.category).strip()
+    course.description = request.form.get('description', course.description).strip()
+    course.target_duration_mins = int(request.form.get('target_duration_mins', course.target_duration_mins))
+    course.order_index = int(request.form.get('order_index', course.order_index))
+    if 'tier_id' in request.form and request.form.get('tier_id').isdigit():
+        course.tier_id = int(request.form.get('tier_id'))
+
+    db.session.commit()
+    flash(f"Kursus '{course.title}' berhasil diperbarui.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/course/delete/<int:course_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_course_delete(course_id):
+    """Hapus Mata Kursus"""
+    course = db.session.get(AcademyCourse, course_id)
+    if course:
+        name = course.title
+        db.session.delete(course)
+        db.session.commit()
+        flash(f"Kursus '{name}' berhasil dihapus.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/lesson/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_lesson_create():
+    """Tambah Bab Materi / Dokumen SOP ke Kursus"""
+    course_id = int(request.form.get('course_id'))
+    title = request.form.get('title', '').strip()
+    content_type = request.form.get('content_type', 'article')
+    content_body = request.form.get('content_body', '').strip()
+    media_url = request.form.get('media_url', '').strip() or None
+    
+    raw_doc_id = request.form.get('doc_id', '').strip()
+    doc_id = int(raw_doc_id) if raw_doc_id and raw_doc_id.isdigit() and int(raw_doc_id) > 0 else None
+    
+    raw_map_id = request.form.get('map_repo_id', '').strip()
+    map_repo_id = int(raw_map_id) if raw_map_id and raw_map_id.isdigit() and int(raw_map_id) > 0 else None
+    
+    order_index = int(request.form.get('order_index', 1))
+
+    lesson = AcademyLesson(
+        course_id=course_id,
+        title=title,
+        content_type=content_type,
+        content_body=content_body,
+        media_url=media_url,
+        doc_id=doc_id,
+        map_repo_id=map_repo_id,
+        order_index=order_index
+    )
+    db.session.add(lesson)
+    db.session.commit()
+    flash(f"Materi '{title}' berhasil ditambahkan ke kursus.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/lesson/edit/<int:lesson_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_lesson_edit(lesson_id):
+    """Ubah Bab Materi / SOP"""
+    lesson = db.session.get(AcademyLesson, lesson_id)
+    if not lesson:
+        flash("Materi tidak ditemukan.", "error")
+        return redirect('/admin/academy?tab=kurikulum')
+
+    lesson.title = request.form.get('title', lesson.title).strip()
+    lesson.content_type = request.form.get('content_type', lesson.content_type)
+    lesson.content_body = request.form.get('content_body', lesson.content_body)
+    lesson.media_url = request.form.get('media_url', '').strip() or None
+
+    raw_doc_id = request.form.get('doc_id', '').strip()
+    lesson.doc_id = int(raw_doc_id) if raw_doc_id and raw_doc_id.isdigit() and int(raw_doc_id) > 0 else None
+
+    raw_map_id = request.form.get('map_repo_id', '').strip()
+    lesson.map_repo_id = int(raw_map_id) if raw_map_id and raw_map_id.isdigit() and int(raw_map_id) > 0 else None
+
+    lesson.order_index = int(request.form.get('order_index', lesson.order_index))
+
+    db.session.commit()
+    flash(f"Materi '{lesson.title}' berhasil diperbarui.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/lesson/delete/<int:lesson_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_lesson_delete(lesson_id):
+    """Hapus Bab Materi"""
+    lesson = db.session.get(AcademyLesson, lesson_id)
+    if lesson:
+        title = lesson.title
+        db.session.delete(lesson)
+        db.session.commit()
+        flash(f"Materi '{title}' berhasil dihapus.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/quiz/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_quiz_create():
+    """Tambah Ujian / Kuis Sertifikasi Baru"""
+    raw_tier_id = request.form.get('tier_id', '').strip()
+    tier_id = int(raw_tier_id) if raw_tier_id and raw_tier_id.isdigit() else None
+    
+    raw_course_id = request.form.get('course_id', '').strip()
+    course_id = int(raw_course_id) if raw_course_id and raw_course_id.isdigit() else None
+
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    passing_score = int(request.form.get('passing_score', 75))
+    time_limit_mins = int(request.form.get('time_limit_mins', 20))
+
+    quiz = AcademyQuiz(
+        tier_id=tier_id,
+        course_id=course_id,
+        title=title,
+        description=description,
+        passing_score=passing_score,
+        time_limit_mins=time_limit_mins,
+        is_active=True
+    )
+    db.session.add(quiz)
+    db.session.commit()
+    flash(f"Ujian '{title}' berhasil dibuat.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/quiz/edit/<int:quiz_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_quiz_edit(quiz_id):
+    """Ubah Pengaturan Kuis"""
+    quiz = db.session.get(AcademyQuiz, quiz_id)
+    if not quiz:
+        flash("Kuis tidak ditemukan.", "error")
+        return redirect('/admin/academy?tab=kurikulum')
+
+    quiz.title = request.form.get('title', quiz.title).strip()
+    quiz.description = request.form.get('description', quiz.description).strip()
+    quiz.passing_score = int(request.form.get('passing_score', quiz.passing_score))
+    quiz.time_limit_mins = int(request.form.get('time_limit_mins', quiz.time_limit_mins))
+
+    db.session.commit()
+    flash(f"Ujian '{quiz.title}' berhasil diperbarui.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/quiz/delete/<int:quiz_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_quiz_delete(quiz_id):
+    """Hapus Kuis Beserta Butir Soal"""
+    quiz = db.session.get(AcademyQuiz, quiz_id)
+    if quiz:
+        title = quiz.title
+        db.session.delete(quiz)
+        db.session.commit()
+        flash(f"Ujian '{title}' berhasil dihapus.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/question/create/<int:quiz_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_question_create(quiz_id):
+    """Tambah Butir Soal & Pilihan Jawaban ke Ujian"""
+    quiz = db.session.get(AcademyQuiz, quiz_id)
+    if not quiz:
+        flash("Ujian tidak ditemukan.", "error")
+        return redirect('/admin/academy?tab=kurikulum')
+
+    question_text = request.form.get('question_text', '').strip()
+    explanation = request.form.get('explanation', '').strip()
+    points = int(request.form.get('points', 20))
+    correct_opt_idx = int(request.form.get('correct_option', 1))
+
+    q = QuizQuestion(
+        quiz_id=quiz.id,
+        question_text=question_text,
+        explanation=explanation,
+        points=points,
+        order_index=len(quiz.questions) + 1
+    )
+    db.session.add(q)
+    db.session.flush()
+
+    # Opsi A, B, C, D
+    for i in range(1, 5):
+        opt_text = request.form.get(f'option_{i}', '').strip()
+        if opt_text:
+            opt = QuizOption(
+                question_id=q.id,
+                option_text=opt_text,
+                is_correct=(i == correct_opt_idx),
+                order_index=i
+            )
+            db.session.add(opt)
+
+    db.session.commit()
+    flash("Soal baru berhasil ditambahkan ke ujian.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+@admin_bp.route('/admin/academy/question/delete/<int:question_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_question_delete(question_id):
+    """Hapus Butir Soal"""
+    q = db.session.get(QuizQuestion, question_id)
+    if q:
+        db.session.delete(q)
+        db.session.commit()
+        flash("Butir soal berhasil dihapus.", "success")
+    return redirect('/admin/academy?tab=kurikulum')
+
+
+# --- FITUR KEPATUHAN & PENUGASAN WAJIB SERTIFIKASI (MANDATORY ENFORCEMENT) ---
+
+@admin_bp.route('/admin/academy/mandate/toggle/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_mandate_toggle(user_id):
+    """1-Click Toggle: Wajibkan / Bebaskan Anggota Tertentu untuk Sertifikasi"""
+    target_user = db.session.get(User, user_id)
+    if not target_user:
+        return jsonify({'error': 'Anggota tidak ditemukan'}), 404
+
+    target_user.is_mandatory_certified = not target_user.is_mandatory_certified
+    if target_user.is_mandatory_certified:
+        tier_choice = request.form.get('tier_id')
+        target_user.mandatory_tier_id = int(tier_choice) if tier_choice and tier_choice.isdigit() else 1
+    else:
+        target_user.mandatory_tier_id = None
+
+    db.session.commit()
+
+    if request.headers.get('HX-Request'):
+        # Kembalikan tombol HTMX baru
+        status_text = "WAJIB" if target_user.is_mandatory_certified else "BEBAS"
+        btn_class = "bg-rose-600 text-white hover:bg-rose-700" if target_user.is_mandatory_certified else "bg-slate-100 text-slate-700 hover:bg-slate-200"
+        return f"""
+        <button type="button"
+                hx-post="/admin/academy/mandate/toggle/{target_user.id}"
+                hx-swap="outerHTML"
+                class="px-2.5 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1.5 shadow-2xs {btn_class}"
+                title="Klik untuk mengubah status kewajiban sertifikasi">
+            <i class="fas {'fa-exclamation-circle text-amber-300' if target_user.is_mandatory_certified else 'fa-shield-halved text-slate-400'}"></i>
+            <span>{status_text}</span>
+        </button>
+        """
+
+    flash(f"Status kewajiban sertifikasi untuk {target_user.name} berhasil diperbarui.", "success")
+    return redirect('/admin/academy?tab=kepatuhan')
+
+
+@admin_bp.route('/admin/academy/mandate/all-candidates', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_mandate_all_candidates():
+    """1-Click Instan: Memaksakan SELURUH Calon Anggota & Anggota Baru Wajib Lulus Level 1"""
+    level1_tier = AcademyTier.query.filter_by(order_index=1).first()
+    target_tier_id = level1_tier.id if level1_tier else 1
+
+    # Anggota dengan status 'pending' atau yang belum memiliki sertifikat Level 1
+    candidates = User.query.filter(User.role != 'superadmin').all()
+    count_updated = 0
+
+    for u in candidates:
+        # Cek apakah sudah punya cert level 1
+        has_l1 = UserCertification.query.filter_by(user_id=u.id, tier_id=target_tier_id, status='active').first()
+        if not has_l1:
+            u.is_mandatory_certified = True
+            u.mandatory_tier_id = target_tier_id
+            count_updated += 1
+
+    db.session.commit()
+    flash(f"Sukses! {count_updated} calon anggota / anggota aktif telah diwajibkan menyelesaikan Sertifikasi Level 1.", "success")
+    return redirect('/admin/academy?tab=kepatuhan')
+
+
+@admin_bp.route('/admin/academy/mandate/clear-all', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_mandate_clear_all():
+    """1-Click: Bebaskan Seluruh Anggota dari Kewajiban Sertifikasi Paksa"""
+    User.query.update({User.is_mandatory_certified: False, User.mandatory_tier_id: None})
+    db.session.commit()
+    flash("Seluruh anggota telah dibebaskan dari kewajiban sertifikasi paksa.", "info")
+    return redirect('/admin/academy?tab=kepatuhan')
+
+
+@admin_bp.route('/admin/academy/cert/revoke/<int:cert_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_academy_cert_revoke(cert_id):
+    """Mencabut Sertifikat / Brevet Anggota Jika Terjadi Pelanggaran Kode Etik"""
+    cert = db.session.get(UserCertification, cert_id)
+    if cert:
+        cert.status = 'revoked'
+        db.session.commit()
+        flash(f"Sertifikat '{cert.certificate_no}' atas nama {cert.user.name} berhasil dicabut.", "warning")
+    return redirect('/admin/academy?tab=riwayat')
+
 
 

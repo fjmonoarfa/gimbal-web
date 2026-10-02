@@ -5,7 +5,9 @@ from app import app, db
 from models import (
     User, Dues, DuesPayment, Document, GalleryItem, Activity,
     Post, PostComment, PostLike, ChatMessage, MapRepository, generate_next_nra,
-    SystemSetting, Position, PostMedia
+    SystemSetting, Position, PostMedia,
+    AcademyTier, AcademyCourse, AcademyLesson, AcademyQuiz,
+    UserLessonProgress, UserQuizAttempt, UserCertification
 )
 
 class GimbalWebTestCase(unittest.TestCase):
@@ -1505,6 +1507,113 @@ class GimbalWebTestCase(unittest.TestCase):
         self.assertIn(b'Tilongkabila', resp_dashboard.data)
 
         print(">>> Test 22: Timeline Sharing (Pre-Start Activity, Document Toggle, Map Repo Toggle) 100% OK")
+
+    def test_23_academy_sop_and_certification_flow(self):
+        """Uji menyeluruh E-Learning Academy, SOP Digital, Kuis, Sertifikasi Digital & Penugasan Wajib"""
+        member = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+        admin = User.query.filter(User.role.in_(['admin', 'superadmin'])).first()
+        self.assertIsNotNone(member)
+        self.assertIsNotNone(admin)
+
+        # 1. Member Akses Portal Akademi
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = member.id
+
+        resp_academy = self.client.get('/member/academy', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_academy.status_code, 200)
+        self.assertIn(b'Akademi Rimba KPAB GIMBAL', resp_academy.data)
+        self.assertIn(b'Brevet Kesiapan Rimba', resp_academy.data)
+
+        # 2. Member Baca Pelajaran Pertama
+        lesson = AcademyLesson.query.first()
+        self.assertIsNotNone(lesson)
+        resp_lesson = self.client.get(f'/member/academy/lesson/{lesson.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_lesson.status_code, 200)
+        self.assertIn(b'Prinsip ABC Packing', resp_lesson.data)
+
+        # 3. Member Selesaikan Pelajaran Pertama
+        resp_complete = self.client.post(f'/member/academy/lesson/{lesson.id}/complete')
+        self.assertEqual(resp_complete.status_code, 302)
+        prog = UserLessonProgress.query.filter_by(user_id=member.id, lesson_id=lesson.id).first()
+        self.assertIsNotNone(prog)
+        self.assertTrue(prog.is_completed)
+
+        # 4. Member Buka Kuis Sertifikasi Tingkat 1
+        tier1 = AcademyTier.query.filter_by(order_index=1).first()
+        self.assertIsNotNone(tier1)
+        quiz = tier1.quizzes[0]
+        self.assertIsNotNone(quiz)
+        resp_quiz = self.client.get(f'/member/academy/quiz/{quiz.id}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_quiz.status_code, 200)
+        self.assertIn(b'Ujian Sertifikasi Kesiapan Rimba', resp_quiz.data)
+
+        # 5. Member Mengerjakan Kuis dengan 100% Jawaban Benar
+        form_data = {}
+        for q in quiz.questions:
+            correct_opt = next(opt for opt in q.options if opt.is_correct)
+            form_data[f'question_{q.id}'] = str(correct_opt.id)
+
+        resp_submit = self.client.post(f'/member/academy/quiz/{quiz.id}/submit', data=form_data)
+        self.assertEqual(resp_submit.status_code, 302)
+
+        # Cek Hasil Ujian
+        attempt = UserQuizAttempt.query.filter_by(user_id=member.id, quiz_id=quiz.id).order_by(UserQuizAttempt.id.desc()).first()
+        self.assertIsNotNone(attempt)
+        self.assertTrue(attempt.passed)
+        self.assertEqual(attempt.score, 100.0)
+
+        # Cek Sertifikat Digital Otomatis Terbit
+        cert = UserCertification.query.filter_by(user_id=member.id, tier_id=tier1.id, status='active').first()
+        self.assertIsNotNone(cert)
+        self.assertTrue(cert.certificate_no.startswith('CERT-GIMBAL-01-'))
+        self.assertEqual(cert.score_achieved, 100.0)
+
+        # 6. Member Buka Piagam Sertifikat Digital & QR Code
+        resp_cert = self.client.get(f'/member/academy/certificate/{cert.certificate_no}', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_cert.status_code, 200)
+        self.assertIn(b'PIAGAM KOMPETENSI', resp_cert.data)
+        self.assertIn(member.name.encode('utf-8'), resp_cert.data)
+        self.assertIn(cert.certificate_no.encode('utf-8'), resp_cert.data)
+
+        # 7. Verifikasi Keaslian Sertifikat Publik (/verify-cert/<cert_no>)
+        resp_verify = self.client.get(f'/verify-cert/{cert.certificate_no}')
+        self.assertEqual(resp_verify.status_code, 200)
+        self.assertIn(b'SERTIFIKAT RESMI & TERVERIFIKASI', resp_verify.data)
+        self.assertIn(member.name.encode('utf-8'), resp_verify.data)
+
+        # 8. Cek Badge Terpasang di Properti Member (KTA & Profil)
+        db.session.refresh(member)
+        cert_names = [c.tier.badge_name for c in member.certifications_list]
+        self.assertIn(tier1.badge_name, cert_names)
+
+        # 9. Admin Kontrol: Buka Halaman Admin Akademi
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = admin.id
+
+        resp_admin_acad = self.client.get('/admin/academy', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_admin_acad.status_code, 200)
+        self.assertIn(b'Akademi Rimba', resp_admin_acad.data)
+
+        # 10. Admin Toggle Wajib Sertifikasi untuk Member Tertentu
+        other_user = User.query.filter(User.id != member.id, ~User.role.in_(['admin', 'superadmin'])).first()
+        if not other_user:
+            other_user = member
+
+        initial_state = other_user.is_mandatory_certified
+        resp_toggle = self.client.post(f'/admin/academy/mandate/toggle/{other_user.id}')
+        self.assertEqual(resp_toggle.status_code, 302)
+        db.session.refresh(other_user)
+        self.assertEqual(other_user.is_mandatory_certified, not initial_state)
+
+        # 11. Admin Batch Mandate All Candidates (1-Klik)
+        resp_batch = self.client.post('/admin/academy/mandate/all-candidates')
+        self.assertEqual(resp_batch.status_code, 302)
+
+        # 12. Admin Reset Semua Mandat Wajib
+        resp_clear = self.client.post('/admin/academy/mandate/clear-all')
+        self.assertEqual(resp_clear.status_code, 302)
+
+        print(">>> Test 23: Academy Rimba, SOP Digital, Kuis, Sertifikasi Digital & Penugasan Wajib 100% OK")
 
 if __name__ == '__main__':
     unittest.main()

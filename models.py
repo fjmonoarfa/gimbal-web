@@ -56,6 +56,10 @@ class User(db.Model):
     cloudflare_rule_id = db.Column(db.String(64), nullable=True)
     cloudflare_status = db.Column(db.String(32), default='pending')  # 'active', 'pending_verification', 'disabled'
 
+    # Penugasan Wajib Sertifikasi Kesiapan Operasional / Akademi
+    is_mandatory_certified = db.Column(db.Boolean, default=False)
+    mandatory_tier_id = db.Column(db.Integer, nullable=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -146,6 +150,20 @@ class User(db.Model):
             if latest.payment_date.year == now.year and latest.payment_date.month == now.month:
                 return True
         return False
+
+    @property
+    def certifications_list(self):
+        """Daftar sertifikat keahlian akademi yang telah diraih anggota"""
+        return UserCertification.query.filter_by(user_id=self.id, status='active').order_by(UserCertification.id.desc()).all()
+
+    @property
+    def is_mandatory_certification_pending(self):
+        """Mengecek apakah anggota wajib menyelesaikan sertifikasi awal tapi belum lulus"""
+        if not self.is_mandatory_certified:
+            return False
+        target_tier = self.mandatory_tier_id or 1
+        has_cert = UserCertification.query.filter_by(user_id=self.id, tier_id=target_tier, status='active').first()
+        return has_cert is None
 
 
 def generate_next_nra():
@@ -635,4 +653,243 @@ class Position(db.Model):
     def member_count(self):
         """Menghitung jumlah anggota yang mengemban jabatan ini"""
         return User.query.filter_by(jabatan=self.name).count()
+
+
+# ==============================================================================
+# ACADEMY, E-LEARNING, SOP & SERTIFIKASI KESIAPAN OPERASIONAL
+# ==============================================================================
+
+class AcademyTier(db.Model):
+    """Tingkatan / Jenjang Pendidikan Keanggotaan (Level 1: Calon, Level 2: Pra-Penuh, Level 3: Senior)"""
+    __tablename__ = 'academy_tiers'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    slug = db.Column(db.String(50), unique=True, nullable=False)
+    badge_name = db.Column(db.String(100), nullable=False)
+    badge_icon = db.Column(db.String(50), default='fa-compass')
+    badge_color = db.Column(db.String(30), default='#10b981')
+    description = db.Column(db.Text, nullable=True)
+    order_index = db.Column(db.Integer, default=1)
+    passing_grade = db.Column(db.Integer, default=75)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    courses = db.relationship('AcademyCourse', backref='tier', cascade='all, delete-orphan', order_by='AcademyCourse.order_index')
+    quizzes = db.relationship('AcademyQuiz', backref='tier', cascade='all, delete-orphan')
+
+    @property
+    def total_lessons(self):
+        return sum(len(c.lessons) for c in self.courses)
+
+    @property
+    def title(self):
+        return self.name
+
+    @title.setter
+    def title(self, val):
+        self.name = val
+
+    @property
+    def passing_score(self):
+        return self.passing_grade
+
+    @passing_score.setter
+    def passing_score(self, val):
+        self.passing_grade = val
+
+    @property
+    def target_audience(self):
+        if self.order_index == 1:
+            return 'Calon Anggota & Diksar'
+        elif self.order_index == 2:
+            return 'Menuju Anggota Penuh'
+        return 'Komandan Lapangan & Instruktur'
+
+
+class AcademyCourse(db.Model):
+    """Mata Diklat / Kursus Pelatihan Spesifik (misal: SOP Navigasi, Survival, PPGD)"""
+    __tablename__ = 'academy_courses'
+
+    id = db.Column(db.Integer, primary_key=True)
+    tier_id = db.Column(db.Integer, db.ForeignKey('academy_tiers.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(50), default='diksar') # 'sop', 'diksar', 'survival', 'ppgd', 'navigasi', 'manajemen'
+    description = db.Column(db.Text, nullable=True)
+    thumbnail = db.Column(db.String(256), nullable=True)
+    target_duration_mins = db.Column(db.Integer, default=30)
+    order_index = db.Column(db.Integer, default=1)
+    is_published = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    lessons = db.relationship('AcademyLesson', backref='course', cascade='all, delete-orphan', order_by='AcademyLesson.order_index')
+    quiz = db.relationship('AcademyQuiz', backref='course', uselist=False, cascade='all, delete-orphan')
+
+
+class AcademyLesson(db.Model):
+    """Bab / Unit Materi Pelajaran Pembelajaran (Teks Panduan, PDF SOP, Video, Peta)"""
+    __tablename__ = 'academy_lessons'
+
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('academy_courses.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    content_type = db.Column(db.String(30), default='article') # 'article', 'pdf_doc', 'video', 'map_link'
+    content_body = db.Column(db.Text, nullable=True)
+    media_url = db.Column(db.String(500), nullable=True)
+    doc_id = db.Column(db.Integer, db.ForeignKey('documents.id'), nullable=True)
+    map_repo_id = db.Column(db.Integer, db.ForeignKey('map_repositories.id'), nullable=True)
+    order_index = db.Column(db.Integer, default=1)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    doc = db.relationship('Document', foreign_keys=[doc_id])
+    map_repo = db.relationship('MapRepository', foreign_keys=[map_repo_id])
+
+    @property
+    def content(self):
+        return self.content_body or ''
+
+    @content.setter
+    def content(self, val):
+        self.content_body = val
+
+    @property
+    def video_url(self):
+        return self.media_url
+
+    @video_url.setter
+    def video_url(self, val):
+        self.media_url = val
+
+    @property
+    def duration_minutes(self):
+        return (self.course.target_duration_mins if self.course else 15) or 15
+
+    @duration_minutes.setter
+    def duration_minutes(self, val):
+        pass
+
+    @property
+    def summary(self):
+        if not self.content_body:
+            return ''
+        import re
+        clean = re.sub(r'<[^>]+>', ' ', self.content_body).strip()
+        return (clean[:90] + '...') if len(clean) > 90 else clean
+
+    @summary.setter
+    def summary(self, val):
+        pass
+
+
+class AcademyQuiz(db.Model):
+    """Ujian / Kuis Sertifikasi Kesiapan Lapangan"""
+    __tablename__ = 'academy_quizzes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('academy_courses.id'), nullable=True)
+    tier_id = db.Column(db.Integer, db.ForeignKey('academy_tiers.id'), nullable=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    passing_score = db.Column(db.Integer, default=75) # Minimal persen benar (0-100)
+    time_limit_mins = db.Column(db.Integer, default=20)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    questions = db.relationship('QuizQuestion', backref='quiz', cascade='all, delete-orphan', order_by='QuizQuestion.order_index')
+    attempts = db.relationship('UserQuizAttempt', backref='quiz', cascade='all, delete-orphan')
+
+    @property
+    def time_limit_minutes(self):
+        return self.time_limit_mins or 20
+
+    @time_limit_minutes.setter
+    def time_limit_minutes(self, val):
+        self.time_limit_mins = val
+
+
+class QuizQuestion(db.Model):
+    """Butir Soal Evaluasi / Ujian"""
+    __tablename__ = 'quiz_questions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('academy_quizzes.id'), nullable=False)
+    question_text = db.Column(db.Text, nullable=False)
+    question_type = db.Column(db.String(20), default='multiple_choice')
+    explanation = db.Column(db.Text, nullable=True)
+    points = db.Column(db.Integer, default=10)
+    order_index = db.Column(db.Integer, default=1)
+
+    options = db.relationship('QuizOption', backref='question', cascade='all, delete-orphan', order_by='QuizOption.order_index')
+
+
+class QuizOption(db.Model):
+    """Opsi Pilihan Jawaban Soal (A, B, C, D)"""
+    __tablename__ = 'quiz_options'
+
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('quiz_questions.id'), nullable=False)
+    option_text = db.Column(db.Text, nullable=False)
+    is_correct = db.Column(db.Boolean, default=False)
+    order_index = db.Column(db.Integer, default=1)
+
+
+class UserLessonProgress(db.Model):
+    """Rekam Jejak Bacaan / Bab yang Telah Diselesaikan Anggota"""
+    __tablename__ = 'user_lesson_progress'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    lesson_id = db.Column(db.Integer, db.ForeignKey('academy_lessons.id'), nullable=False)
+    is_completed = db.Column(db.Boolean, default=True)
+    completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    lesson = db.relationship('AcademyLesson', foreign_keys=[lesson_id])
+
+
+class UserQuizAttempt(db.Model):
+    """Riwayat Pengerjaan Kuis Anggota"""
+    __tablename__ = 'user_quiz_attempts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('academy_quizzes.id'), nullable=False)
+    score = db.Column(db.Float, default=0.0) # 0 - 100
+    passed = db.Column(db.Boolean, default=False)
+    total_questions = db.Column(db.Integer, default=0)
+    correct_answers = db.Column(db.Integer, default=0)
+    answers_json = db.Column(db.Text, nullable=True)
+    completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+
+
+class UserCertification(db.Model):
+    """Sertifikat Kesiapan Lapangan & Lencana Keahlian Resmi GIMBAL"""
+    __tablename__ = 'user_certifications'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    tier_id = db.Column(db.Integer, db.ForeignKey('academy_tiers.id'), nullable=False)
+    certificate_no = db.Column(db.String(64), unique=True, nullable=False)
+    status = db.Column(db.String(20), default='active') # 'active', 'expired', 'revoked'
+    score_achieved = db.Column(db.Float, default=100.0)
+    issued_at = db.Column(db.DateTime, default=datetime.utcnow)
+    valid_until = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+    tier = db.relationship('AcademyTier', foreign_keys=[tier_id])
+
+    @property
+    def certificate_number(self):
+        return self.certificate_no
+
+    @certificate_number.setter
+    def certificate_number(self, val):
+        self.certificate_no = val
+
 

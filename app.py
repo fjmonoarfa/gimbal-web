@@ -16,7 +16,9 @@ except ImportError:
 from models import (
     db, User, Dues, DuesPayment, Activity, ActivityParticipant,
     ActivityFieldLog, GalleryItem, SystemSetting, Position, ChatMessage, MapRepository,
-    Sponsor, SponsorProduct
+    Sponsor, SponsorProduct,
+    AcademyTier, AcademyCourse, AcademyLesson, AcademyQuiz, QuizQuestion, QuizOption,
+    UserLessonProgress, UserQuizAttempt, UserCertification
 )
 from cloudflare_email import sync_cloudflare_email_routing, clean_username_for_alias
 from helpers import (
@@ -117,7 +119,9 @@ def init_database_and_defaults():
                     ('last_seen', 'DATETIME'),
                     ('gimbal_alias_email', 'VARCHAR(128)'),
                     ('cloudflare_rule_id', 'VARCHAR(64)'),
-                    ('cloudflare_status', "VARCHAR(32) DEFAULT 'pending'")
+                    ('cloudflare_status', "VARCHAR(32) DEFAULT 'pending'"),
+                    ('is_mandatory_certified', 'BOOLEAN DEFAULT 0'),
+                    ('mandatory_tier_id', 'INTEGER')
                 ]
                 for col, col_type in user_cols:
                     try:
@@ -364,6 +368,555 @@ def init_database_and_defaults():
                 is_active=True
             )
             db.session.add(d)
+            db.session.commit()
+
+        # Inisialisasi Kurikulum & SOP Akademi jika masih kosong
+        if AcademyTier.query.count() == 0:
+            # Level 1: Calon Anggota & Diksar
+            t1 = AcademyTier(
+                name='Level 1 - Tingkat Dasar (Calon Anggota & Diksar)',
+                slug='level-1-dasar',
+                badge_name='Brevet Kesiapan Rimba & SAR Dasar',
+                badge_icon='fa-shield-halved',
+                badge_color='#10b981',
+                order_index=1,
+                passing_grade=75,
+                description='Kualifikasi wajib bagi seluruh calon anggota dan anggota muda KPAB GIMBAL untuk memastikan kesiapan fisik, mental, etika rimba, dan standar keselamatan operasional sebelum diterjunkan ke lapangan.'
+            )
+            db.session.add(t1)
+            db.session.flush()
+
+            c1_1 = AcademyCourse(
+                tier_id=t1.id,
+                title='SOP Packing & Perlengkapan Lapangan (Carrier & Layering)',
+                category='diksar',
+                description='Tata cara menyusun beban ransel, distribusi gravitasi carrier, perlindungan anti-air, serta sistem pakaian tiga lapis penangkal cuaca ekstrem.',
+                order_index=1,
+                target_duration_mins=25
+            )
+            c1_2 = AcademyCourse(
+                tier_id=t1.id,
+                title='Pertolongan Pertama Gawat Darurat (PPGD) & Anti-Hipotermia',
+                category='ppgd',
+                description='Protokol penanganan darurat hipotermia akut di pegunungan, pembalutan luka fraktur/dislokasi, dan evakuasi mandiri.',
+                order_index=2,
+                target_duration_mins=35
+            )
+            c1_3 = AcademyCourse(
+                tier_id=t1.id,
+                title='Dasar Navigasi Darat (Peta Topografi & Kompas Prisma)',
+                category='navigasi',
+                description='Membaca morfologi garis kontur, menghitung interval kontur peta RBI, serta teknik bidik kompas resection dan intersection.',
+                order_index=3,
+                target_duration_mins=30
+            )
+            db.session.add_all([c1_1, c1_2, c1_3])
+            db.session.flush()
+
+            # Lessons Level 1
+            l1_1_1 = AcademyLesson(
+                course_id=c1_1.id,
+                title='Prinsip ABC Packing & Manajemen Titik Berat Ransel',
+                content_type='article',
+                content_body="""### Prinsip Dasar Packing Ransel Petualang (Prinsip ABC)
+Dalam penjelajahan rimba dan gunung lebat tropis, carrier bukan sekadar wadah pembawa barang, melainkan penopang keselamatan fisik tulang belakang anggota.
+
+#### 1. Aturan ABC Packing:
+- **A - Accessibility (Kemudahan Akses):** Letakkan peralatan darurat yang sewaktu-waktu dibutuhkan (Jas hujan ponco, P3K, survival kit, senter/headlamp) di kantong atas (*top lid*) atau bagian yang paling mudah dijangkau tanpa membongkar ransel.
+- **B - Balance (Keseimbangan):** Pastikan beban kiri dan kanan seimbang sempurna. Carrier yang berat sebelah akan menguras energi otot dan berisiko fatal terpeleset di igir jurang.
+- **C - Compactness (Kerapatan & Kekompakan):** Manfaatkan setiap rongga kosong. Masukkan kaus kaki atau nesting ke dalam ruang kosong sepatu cadangan atau panci. Hindari menggantung nesting, matras, atau sandal di luar carrier karena rawan tersangkut duri rotan hutan basah.
+
+#### 2. Distribusi Titik Berat Gravitasi:
+- **Bagian Bawah:** Barang ringan namun bervolume besar (Sleeping bag, pakaian tidur kering, matras tiup).
+- **Bagian Tengah Menempel ke Punggung:** Barang paling berat (Bahan makanan kaleng/beras, air cadangan, tenda/flysheet, kompor/gas).
+- **Bagian Atas & Luar:** Barang berbobot sedang (Pakaian ganti, jaket isolasi, piring makan).
+
+#### 3. Waterproofing Wajib:
+Gunakan **trash bag tebal (polyethylene)** sebagai pelapis dalam (*inner liner*) carrier sebelum memasukkan barang apapun. Jangan hanya mengandalkan rain cover luar!""",
+                order_index=1
+            )
+            l1_1_2 = AcademyLesson(
+                course_id=c1_1.id,
+                title='Sistem Tiga Lapis Pakaian (3-Layering System) Mencegah Hipotermia',
+                content_type='article',
+                content_body="""### Sistem Pakaian Tiga Lapis (Layering System)
+Di hutan tropis pegunungan seperti Tilongkabila dan Batusinggo, ancaman pembunuh nomor satu bukanlah satwa liar, melainkan **Hipotermia** akibat angin dingin dan pakaian basah.
+
+#### Layer 1: Base Layer (Pengatur Kelembapan Kulit)
+- **Fungsi:** Mengalirkan keringat menjauh dari kulit (*moisture wicking*) agar badan tetap kering.
+- **Bahan Wajib:** Polyester, nylon teknis, atau wol merino.
+- **PANTANGAN MUTLAK:** Dilarang keras memakai kaos katun dan celana jeans denim tebal! Katun menyerap air hingga 27 kali lipat bobotnya dan menahan dingin ke kulit (*cotton kills*).
+
+#### Layer 2: Mid Layer (Penjaga Suhu Panas Tubuh / Insulation)
+- **Fungsi:** Memerangkap udara hangat yang dihasilkan oleh radiasi tubuh.
+- **Bahan:** Jaket fleece (polar), jaket bulu angsa (*down jacket*), atau jaket sintetis primaloft.
+
+#### Layer 3: Outer Layer (Pelindung Angin & Badai / Hardshell)
+- **Fungsi:** Menahan terpaan angin badai kencang (*windproof*) dan guyuran hujan lebat (*waterproof*).
+- **Bahan:** Jaket membran waterproof (Gore-Tex, Taslan coating) dengan ventilasi ketiak (*pit zips*).""",
+                order_index=2
+            )
+            l1_2_1 = AcademyLesson(
+                course_id=c1_2.id,
+                title='SOP Penanganan Hipotermia Akut di Ketinggian (Burrito Wrap Protocol)',
+                content_type='article',
+                content_body="""### Protokol Tanggap Darurat Hipotermia KPAB GIMBAL
+Hipotermia terjadi saat suhu inti tubuh manusia turun di bawah 35°C.
+
+#### Tahapan & Gejala:
+1. **Ringan (35°C - 32°C):** Menggigil tak terkendali, bicara terbata-bata (*mumbles*), koordinasi tangan kaku (*fumbles*), langkah kaki tersandung (*stumbles*).
+2. **Sedang - Berat (< 32°C):** Berhenti menggigil, delirium/halusinasi, tindakan membuka baju karena rasa panas semu (*paradoxical undressing*), penurunan kesadaran hingga koma.
+
+#### Langkah Penyelamatan Cepat (Golden Rules):
+1. **Cegah Kehilangan Panas Lanjutan:**
+   - Segera bawa korban masuk ke dalam tenda darurat terlindung dari terpaan angin.
+   - Ganti seluruh pakaian basah dengan pakaian kering tebal.
+2. **Isolasi dari Tanah:**
+   - Jangan letakkan korban langsung di atas tanah dingin. Alasi dengan minimal 2 lapis matras busa atau foil thermal blanket.
+3. **Teknik Bungkusan Burrito (Burrito Wrap):**
+   - Masukkan korban ke dalam sleeping bag hangat.
+   - Tempelkan botol air hangat (yang dibungkus kaos kaki tebal) pada area titik nadi besar tubuh: **Ketiak (*axilla*), pangkal paha (*groin*), dan leher**.
+   - JANGAN menggosok atau memijat kaki/tangan korban karena dapat memompa darah dingin asam dari ujung kaki kembali ke jantung yang memicu henti jantung (*cardiac arrest*).
+4. **Rehidrasi Hangat Manis:**
+   - Jika korban masih sadar penuh dan dapat menelan, berikan minuman hangat bergula tinggi (teh manis, jahe manis).""",
+                order_index=1
+            )
+            l1_2_2 = AcademyLesson(
+                course_id=c1_2.id,
+                title='Penanganan Fraktur, Dislokasi & Pemasangan Bidai Darurat',
+                content_type='article',
+                content_body="""### Bidai Darurat & Penanganan Cedera Tulang
+Ketika anggota mengalami patah tulang (*fraktur*) atau dislokasi sendi di lokasi yang jauh dari fasilitas medis:
+
+#### 1. Prinsip Pembidaian (Splinting):
+- Bidai harus mencakup **dua sendi**, yaitu satu sendi di atas patahan tulang dan satu sendi di bawahnya.
+- Jangan pernah mencoba meluruskan atau memaksa mendorong tulang yang mencuat keluar (*open fracture*). Tutup dengan kassa steril yang dibasahi larutan antiseptik/infus.
+- Periksa denyut nadi distal, sensasi rasa, dan sirkulasi jari (*capillary refill time*) sebelum dan sesudah bidai dipasang.
+
+#### 2. Material Alam & Alat Petualang yang Dapat Dijadikan Bidai:
+- Trekking pole (tongkat pendaki) yang diatur panjangnya.
+- Dahan kayu atau bilah bambu lurus yang dilapisi busa matras.
+- Gulungan matras spons tebal dilipat membentuk huruf U menopang kaki.
+- Ikat bidai menggunakan kain mitella segitiga atau potongan webbing tubular.""",
+                order_index=2
+            )
+            l1_3_1 = AcademyLesson(
+                course_id=c1_3.id,
+                title='Membaca Garis Kontur, Interval Ketinggian & Morfologi Medan',
+                content_type='article',
+                content_body="""### Membaca Peta Topografi Rupa Bumi Indonesia (RBI)
+Peta topografi menggambarkan relief permukaan bumi 3 dimensi ke atas lembaran kertas 2 dimensi menggunakan garis kontur (*contour lines*).
+
+#### 1. Sifat-Sifat Garis Kontur:
+- Garis kontur menghubungkan titik-titik yang memiliki ketinggian sama di atas permukaan laut.
+- Garis kontur tidak pernah saling berpotongan atau bercabang.
+- **Renggang:** Menunjukkan lereng landai (*gentle slope*).
+- **Rapat:** Menunjukkan lereng curam atau tebing terjal (*cliff*).
+
+#### 2. Menghitung Interval Kontur (IK):
+Rumus standar peta topografi geospasial:
+IK = 1 / 2000 x Skala Peta
+- Peta skala 1 : 25.000 memiliki Interval Kontur = 25.000 / 2.000 = 12.5 meter.
+- Peta skala 1 : 50.000 memiliki Interval Kontur = 50.000 / 2.000 = 25 meter.
+
+#### 3. Morfologi Bentang Alam:
+- **Punggungan (Ridge):** Garis kontur berbentuk huruf V atau U yang ujung lancipnya menunjuk ke arah ketinggian yang lebih rendah.
+- **Lembahan / Alur Sungai (Valley):** Garis kontur berbentuk V yang ujung lancipnya menunjuk ke arah ketinggian yang lebih tinggi.""",
+                order_index=1
+            )
+            l1_3_2 = AcademyLesson(
+                course_id=c1_3.id,
+                title='Teknik Resection & Intersection Menggunakan Kompas Bidik Prisma',
+                content_type='article',
+                content_body="""### Orientasi Lapangan: Resection & Intersection
+
+#### 1. Resection (Menentukan Posisi Kita di Peta):
+Teknik untuk mengetahui koordinat posisi kita sendiri saat tersesat di lapangan dengan membidik minimal 2 tanda medan yang dikenal:
+1. Bidik tanda medan A yang mencolok (misal: puncak gunung yang diketahui di peta), catat sudut bidikan kompas (Azimuth A).
+2. Hitung **Back-Azimuth (Sudut Balik)**:
+   - Jika sudut < 180°: tambahkan 180°
+   - Jika sudut > 180°: kurangkan 180°
+3. Tarik garis lurus sudut balik dari tanda medan A pada peta.
+4. Bidik tanda medan B (misal: tanjung atau puncak kedua), hitung sudut baliknya, dan tarik garis kedua di peta.
+5. **Titik temu perpotongan kedua garis** tersebut adalah posisi kita berdiri di atas peta.
+
+#### 2. Intersection (Menentukan Posisi Sasaran Jauh):
+Teknik untuk mengetahui posisi koordinat objek yang tidak terjangkau (misal: titik asap atau korban yang terlihat di lereng seberang) dengan mengamati objek tersebut dari dua titik berbeda yang koordinatnya telah kita ketahui di peta.""",
+                order_index=2
+            )
+            db.session.add_all([l1_1_1, l1_1_2, l1_2_1, l1_2_2, l1_3_1, l1_3_2])
+            db.session.flush()
+
+            # Quiz Tier 1
+            q1 = AcademyQuiz(
+                tier_id=t1.id,
+                title='Ujian Sertifikasi Kesiapan Rimba & SAR Dasar (Level 1)',
+                description='Evaluasi komprehensif uji kompetensi packing ransel, penanganan medis darurat, anti-hipotermia, dan navigasi peta kompas. Syarat mutlak kelulusan Diksar KPAB GIMBAL.',
+                passing_score=75,
+                time_limit_mins=15,
+                is_active=True
+            )
+            db.session.add(q1)
+            db.session.flush()
+
+            # Questions Level 1
+            qq1 = QuizQuestion(
+                quiz_id=q1.id,
+                question_text='Menurut kaidah ABC Packing ransel ekspedisi, di manakah letak ideal perlengkapan berat seperti beras, tenda basah, dan air cadangan?',
+                points=15,
+                order_index=1,
+                explanation='Beban berat wajib diletakkan di bagian tengah sedekat mungkin dengan punggung dan di atas pinggul agar pusat gravitasi sejajar dengan tulang belakang.'
+            )
+            db.session.add(qq1)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq1.id, option_text='Di bagian dasar ransel paling bawah', is_correct=False, order_index=1),
+                QuizOption(question_id=qq1.id, option_text='Di bagian tengah menempel sedekat mungkin ke punggung', is_correct=True, order_index=2),
+                QuizOption(question_id=qq1.id, option_text='Di kantong atas (top lid) carrier', is_correct=False, order_index=3),
+                QuizOption(question_id=qq1.id, option_text='Digantung di luar sisi kiri carrier', is_correct=False, order_index=4)
+            ])
+
+            qq2 = QuizQuestion(
+                quiz_id=q1.id,
+                question_text='Mengapa pakaian berbahan katun (seperti kaos katun biasa dan celana jeans) sangat dilarang digunakan saat mendaki gunung berhawa dingin?',
+                points=15,
+                order_index=2,
+                explanation='Katun menahan air dan keringat sangat lama dan kehilangan daya isolasi saat basah, menyebabkan hilangnya panas tubuh secara drastis (cotton kills).'
+            )
+            db.session.add(qq2)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq2.id, option_text='Karena katun mudah terbakar saat didekatkan ke api unggun', is_correct=False, order_index=1),
+                QuizOption(question_id=qq2.id, option_text='Karena katun menyerap keringat/air lama dan mengalirkan dingin ke tubuh memicu hipotermia', is_correct=True, order_index=2),
+                QuizOption(question_id=qq2.id, option_text='Karena serat katun mudah dimakan serangga hutan tropis', is_correct=False, order_index=3),
+                QuizOption(question_id=qq2.id, option_text='Karena katun membuat warna pakaian cepat memudar di bawah terik matahari', is_correct=False, order_index=4)
+            ])
+
+            qq3 = QuizQuestion(
+                quiz_id=q1.id,
+                question_text='Tindakan apa yang PALING BERBAHAYA dan HARUS DIHINDARI saat menangani korban hipotermia berat?',
+                points=20,
+                order_index=3,
+                explanation='Menggosok atau merendam kaki/tangan korban dapat memicu afterdrop dan memompa darah asam/dingin kembali ke organ vital jantung yang menyebabkan ventrikel fibrilasi atau henti jantung mendadak.'
+            )
+            db.session.add(qq3)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq3.id, option_text='Mengganti pakaian basah korban dengan pakaian kering di dalam tenda', is_correct=False, order_index=1),
+                QuizOption(question_id=qq3.id, option_text='Menggosok keras tangan dan kaki korban atau memaksa merendamnya di air panas mendadak', is_correct=True, order_index=2),
+                QuizOption(question_id=qq3.id, option_text='Menaruh botol air hangat di ketiak dan pangkal paha korban', is_correct=False, order_index=3),
+                QuizOption(question_id=qq3.id, option_text='Membungkus korban dengan matras dan kantung tidur (burrito wrap)', is_correct=False, order_index=4)
+            ])
+
+            qq4 = QuizQuestion(
+                quiz_id=q1.id,
+                question_text='Pada peta topografi Rupa Bumi Indonesia (RBI) dengan skala 1 : 25.000, berapakah nilai Interval Kontur (IK) antar garis kontur?',
+                points=15,
+                order_index=4,
+                explanation='IK dihitung dengan rumus 1/2000 x Skala = 25.000 / 2.000 = 12.5 meter.'
+            )
+            db.session.add(qq4)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq4.id, option_text='50 meter', is_correct=False, order_index=1),
+                QuizOption(question_id=qq4.id, option_text='25 meter', is_correct=False, order_index=2),
+                QuizOption(question_id=qq4.id, option_text='12.5 meter', is_correct=True, order_index=3),
+                QuizOption(question_id=qq4.id, option_text='10 meter', is_correct=False, order_index=4)
+            ])
+
+            qq5 = QuizQuestion(
+                quiz_id=q1.id,
+                question_text='Jika Anda membidik puncak Gunung Tilongkabila dengan kompas bidik prisma dan memperoleh sudut Azimuth 40°, berapakah sudut Back-Azimuth (sudut balik)-nya?',
+                points=20,
+                order_index=5,
+                explanation='Karena sudut bidik awal 40° (< 180°), maka Back-Azimuth dihitung dengan menambahkan 180°: 40° + 180° = 220°.'
+            )
+            db.session.add(qq5)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq5.id, option_text='140°', is_correct=False, order_index=1),
+                QuizOption(question_id=qq5.id, option_text='220°', is_correct=True, order_index=2),
+                QuizOption(question_id=qq5.id, option_text='320°', is_correct=False, order_index=3),
+                QuizOption(question_id=qq5.id, option_text='200°', is_correct=False, order_index=4)
+            ])
+
+            qq6 = QuizQuestion(
+                quiz_id=q1.id,
+                question_text='Manakah dari tanda berikut yang mencirikan bentang alam "Punggungan" (Ridge) pada peta topografi kontur?',
+                points=15,
+                order_index=6,
+                explanation='Punggungan dicirikan dengan garis kontur berbentuk huruf V atau U yang ujung lengkungannya menunjuk ke arah ketinggian yang lebih rendah (menuruni bukit).'
+            )
+            db.session.add(qq6)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq6.id, option_text='Bentuk garis kontur U atau V yang ujung lancipnya menunjuk ke arah ketinggian lebih rendah', is_correct=True, order_index=1),
+                QuizOption(question_id=qq6.id, option_text='Bentuk garis kontur V yang ujungnya menunjuk ke arah ketinggian lebih tinggi', is_correct=False, order_index=2),
+                QuizOption(question_id=qq6.id, option_text='Garis kontur yang membentuk lingkaran tertutup dengan garis bergerigi ke dalam', is_correct=False, order_index=3),
+                QuizOption(question_id=qq6.id, option_text='Garis kontur yang lurus sejajar tanpa kelokan', is_correct=False, order_index=4)
+            ])
+
+            # Level 2: Pra-Penuh (Lanjutan)
+            t2 = AcademyTier(
+                name='Level 2 - Tingkat Lanjutan (Menuju Anggota Penuh)',
+                slug='level-2-lanjutan',
+                badge_name='Brevet Navigator Rimba & Survival Lapangan',
+                badge_icon='fa-mountain-sun',
+                badge_color='#3b82f6',
+                order_index=2,
+                passing_grade=80,
+                description='Kualifikasi penjelajahan mandiri rimba lebat, penguasaan peta digital GeoPDF Avenza, teknik bertahan hidup tanpa logistik (survival), serta Search and Rescue (ESAR) jalur terisolasi.'
+            )
+            db.session.add(t2)
+            db.session.flush()
+
+            c2_1 = AcademyCourse(
+                tier_id=t2.id,
+                title='Navigasi Digital & GeoPDF Studio Lapangan',
+                category='navigasi',
+                description='Integrasi peta topografi GeoPDF resolusi tinggi di smartphone dengan aplikasi Avenza Maps secara offline tanpa sinyal internet.',
+                order_index=1,
+                target_duration_mins=30
+            )
+            c2_2 = AcademyCourse(
+                tier_id=t2.id,
+                title='Jungle Survival & Shelter Darurat Hutan Tropis',
+                category='survival',
+                description='Teknik mencari sumber air murni di alam, identifikasi flora konsumsi hutan Sulawesi/Gorontalo, serta shelter bivak cepat tanggap badai.',
+                order_index=2,
+                target_duration_mins=40
+            )
+            db.session.add_all([c2_1, c2_2])
+            db.session.flush()
+
+            l2_1 = AcademyLesson(
+                course_id=c2_1.id,
+                title='Pemanfaatan Peta Topografi GeoPDF Offline di Avenza Maps',
+                content_type='article',
+                content_body="""### Navigasi Geospatial Offline dengan GeoPDF
+KPAB GIMBAL memfasilitasi setiap anggota dengan generator peta cetak & digital standar ISO 32000 melalui GeoPDF Studio (mapgen.gimbal.my.id).
+
+#### 1. Keunggulan Format GeoPDF:
+- Mengandung metadata spasial georeferensi langsung (*geotagged projection*) di dalam berkas PDF.
+- Dapat dibuka langsung di aplikasi smartphone (Avenza Maps) tanpa membutuhkan koneksi internet atau sinyal seluler.
+- GPS internal smartphone akan menampilkan titik biru posisi anggota secara akurat di atas garis kontur peta resolusi tinggi 300 DPI.
+
+#### 2. Prosedur Lapangan:
+1. Unduh berkas GeoPDF dari Studio Peta GIMBAL sebelum ekspedisi dimulai.
+2. Impor berkas ke Avenza Maps saat masih berada di Basecamp berfasilitas WiFi.
+3. Aktifkan GPS smartphone saat berada di titik awal (*starting point*).""",
+                order_index=1
+            )
+            l2_2 = AcademyLesson(
+                course_id=c2_2.id,
+                title='Sumber Air Darurat & Tumbuhan Konsumsi Hutan Basah',
+                content_type='article',
+                content_body="""### Jungle Survival: Water & Food Procurement
+
+#### 1. Sumber Air Bersih Darurat:
+- **Rotan Air (*Calamus sp.*):** Potong batang rotan miring pada bagian atas terlebih dahulu, kemudian potong bagian bawah dekat akar. Air yang menetes jernih dan dapat langsung diminum tanpa dimasak.
+- **Pohon Pisang Hutan:** Tebang pohon pisang liar setinggi 30 cm dari tanah, buat cekungan di tengah tunggul, buang getah pahit lapis pertama, biarkan terisi air bersih dalam 15-30 menit.
+- **Kondensasi Embun Tumbuhan:** Bungkus daun lebat menggunakan kantong plastik bening transparan di bawah sinar matahari.
+
+#### 2. Aturan Uji Makanan Tumbuhan Liar (Universal Edibility Test):
+1. Jangan memakan jamur liar berpayung dengan cincin di batangnya.
+2. Hindari getah putih kental seperti susu (kecuali nangka/ficus yang telah teruji).
+3. Gosokkan sedikit getah daun pada punggung tangan dan bibir, tunggu 15 menit. Jika timbul rasa terbakar, gatal, atau mati rasa, jangan dikonsumsi!""",
+                order_index=1
+            )
+            db.session.add_all([l2_1, l2_2])
+            db.session.flush()
+
+            # Quiz Tier 2
+            q2 = AcademyQuiz(
+                tier_id=t2.id,
+                title='Ujian Kualifikasi Navigator Rimba & Survival Lapangan (Level 2)',
+                description='Uji kompetensi navigasi digital GPS/GeoPDF, penentuan posisi koordinat UTM, manajemen air darurat, dan survival rimba.',
+                passing_score=80,
+                time_limit_mins=20,
+                is_active=True
+            )
+            db.session.add(q2)
+            db.session.flush()
+
+            qq2_1 = QuizQuestion(
+                quiz_id=q2.id,
+                question_text='Bagaimana cara yang benar memotong batang tanaman rotan di hutan tropis agar mengeluarkan air minum darurat jernih?',
+                points=25,
+                order_index=1,
+                explanation='Potong bagian atas terlebih dahulu agar udara masuk membuka tarikan gravitasi kapiler, kemudian potong bagian bawah.'
+            )
+            db.session.add(qq2_1)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq2_1.id, option_text='Potong bagian atas terlebih dahulu baru potong bagian bawah dekat akar', is_correct=True, order_index=1),
+                QuizOption(question_id=qq2_1.id, option_text='Potong langsung dari akarnya tanpa memotong atas', is_correct=False, order_index=2),
+                QuizOption(question_id=qq2_1.id, option_text='Bakar batang rotan dengan api unggun terlebih dahulu', is_correct=False, order_index=3),
+                QuizOption(question_id=qq2_1.id, option_text='Kupas kulit luar rotan kemudian remas serabutnya', is_correct=False, order_index=4)
+            ])
+
+            qq2_2 = QuizQuestion(
+                quiz_id=q2.id,
+                question_text='Apa keistimewaan utama dokumen peta berformat GeoPDF (ISO 32000) dibanding format gambar JPEG/PNG biasa saat digunakan di lapangan?',
+                points=25,
+                order_index=2,
+                explanation='GeoPDF menyimpan metadata koordinat proyeksi peta secara tertanam sehingga GPS smartphone dapat langsung memetakan posisi tanpa sinyal internet di aplikasi seperti Avenza Maps.'
+            )
+            db.session.add(qq2_2)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq2_2.id, option_text='Ukurannya selalu lebih kecil dari 10 Kilobyte', is_correct=False, order_index=1),
+                QuizOption(question_id=qq2_2.id, option_text='Memiliki metadata spasial terkalibrasi sehingga posisi GPS muncul akurat di Avenza Maps tanpa sinyal seluler', is_correct=True, order_index=2),
+                QuizOption(question_id=qq2_2.id, option_text='Dapat menyala sendiri dalam kondisi gelap gulita', is_correct=False, order_index=3),
+                QuizOption(question_id=qq2_2.id, option_text='Tidak bisa dibuka di komputer biasa', is_correct=False, order_index=4)
+            ])
+
+            qq2_3 = QuizQuestion(
+                quiz_id=q2.id,
+                question_text='Jika seorang petualang tersesat dan kehabisan air namun menemukan tanaman dengan getah putih pekat seperti susu dan berbau almond pahit, apa tindakannya?',
+                points=25,
+                order_index=3,
+                explanation='Getah putih susu dan bau almond pahit pada tanaman liar umumnya mengindikasikan senyawa alkaloid beracun atau asam hidrosianat yang sangat mematikan.'
+            )
+            db.session.add(qq2_3)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq2_3.id, option_text='Dilarang keras dikonsumsi karena indikasi kuat mengandung racun sianida/alkaloid', is_correct=True, order_index=1),
+                QuizOption(question_id=qq2_3.id, option_text='Dapat langsung diminum karena getah putih kaya akan protein nabati', is_correct=False, order_index=2),
+                QuizOption(question_id=qq2_3.id, option_text='Direbus selama 2 menit lalu diminum', is_correct=False, order_index=3),
+                QuizOption(question_id=qq2_3.id, option_text='Diteteskan ke mata sebagai obat penahan kantuk', is_correct=False, order_index=4)
+            ])
+
+            qq2_4 = QuizQuestion(
+                quiz_id=q2.id,
+                question_text='Pada metode pencarian korban tersesat (ESAR), teknik sapuan jalur terkoordinasi berjarak seragam dengan panduan kompas disebut metode apa?',
+                points=25,
+                order_index=4,
+                explanation='Line Search (Sweep Search) adalah teknik pencarian sistematis di mana personil berjajar dengan interval jarak terukur menyapu area medan.'
+            )
+            db.session.add(qq2_4)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq2_4.id, option_text='Line Sweep Search (Sapuan Garis Berbanjar)', is_correct=True, order_index=1),
+                QuizOption(question_id=qq2_4.id, option_text='Random Roaming (Pencarian Acak Bebas)', is_correct=False, order_index=2),
+                QuizOption(question_id=qq2_4.id, option_text='Bivouac Waiting (Menunggu di Bivak)', is_correct=False, order_index=3),
+                QuizOption(question_id=qq2_4.id, option_text='Helicopter Hoist', is_correct=False, order_index=4)
+            ])
+
+            # Level 3: Senior (Komandan Lapangan & Instruktur)
+            t3 = AcademyTier(
+                name='Level 3 - Tingkat Senior (Komandan Lapangan & Instruktur)',
+                slug='level-3-senior',
+                badge_name='Wing Komandan Ekspedisi & Master Rescue',
+                badge_icon='fa-award',
+                badge_color='#f59e0b',
+                order_index=3,
+                passing_grade=85,
+                description='Kualifikasi tertinggi keanggotaan KPAB GIMBAL untuk memimpin operasi ekspedisi skala besar, Incident Command System (ICS), analisis risiko RAMS, dan evakuasi tebing terjal (Vertical Rescue).'
+            )
+            db.session.add(t3)
+            db.session.flush()
+
+            c3_1 = AcademyCourse(
+                tier_id=t3.id,
+                title='Incident Command System (ICS) & Manajemen Risiko RAMS',
+                category='manajemen',
+                description='Manajemen komando darurat lapangan, alur komunikasi posko pangkalan, serta matriks keputusan Go / No-Go ekspedisi.',
+                order_index=1,
+                target_duration_mins=45
+            )
+            c3_2 = AcademyCourse(
+                tier_id=t3.id,
+                title='Vertical Rescue & Mechanical Advantage (Sistem Katrol)',
+                category='vertical',
+                description='Teknik evakuasi tebing curam, pembuatan multiple equalized anchors, dan sistem hauling 3:1 Z-Rig.',
+                order_index=2,
+                target_duration_mins=45
+            )
+            db.session.add_all([c3_1, c3_2])
+            db.session.flush()
+
+            l3_1 = AcademyLesson(
+                course_id=c3_1.id,
+                title='Struktur Komando Posko ICS & Matriks Keputusan RAMS',
+                content_type='article',
+                content_body="""### Incident Command System (ICS) & Analisis Risiko Ekspedisi
+Sebagai Komandan Lapangan (*Incident Commander*), keselamatan seluruh personel regu berada di pundak Anda.
+
+#### 1. Struktur Komando Dasar:
+- **Incident Commander (IC):** Pemegang komando tertinggi yang mengambil keputusan taktis dan Go / No-Go.
+- **Safety Officer:** Bertanggung jawab memantau faktor bahaya cuaca, kestabilan tebing, dan kelelahan fisik anggota regu. Berhak menghentikan operasi secara sepihak jika ancaman bahaya jiwa muncul.
+- **Operations Section:** Regu pelaksana di medan lapangan (Searcher, Rescuer, Navigator).
+- **Logistics Section:** Penjamin pasokan ransum makanan, bahan bakar, baterai radio, dan tali-temali.
+
+#### 2. RAMS Matrix (Risk Assessment and Management System):
+Tingkat Risiko dihitung berdasarkan:
+Risk Score = Likelihood (Kemungkinan Terjadi) x Consequence (Tingkat Keparahan)
+Jika skor berada pada level **Extreme Red (Merah Ekstrem)**, ekspedisi wajib dialihkan ke jalur alternatif (*Bailout Route*) atau dibatalkan.""",
+                order_index=1
+            )
+            db.session.add(l3_1)
+            db.session.flush()
+
+            q3 = AcademyQuiz(
+                tier_id=t3.id,
+                title='Ujian Komando Operasi Ekspedisi & Manajemen Risiko Senior (Level 3)',
+                description='Sertifikasi kualifikasi Komandan Lapangan. Nilai minimal 85% untuk berhak memimpin ekspedisi resmi dan melatih calon anggota KPAB GIMBAL.',
+                passing_score=85,
+                time_limit_mins=25,
+                is_active=True
+            )
+            db.session.add(q3)
+            db.session.flush()
+
+            qq3_1 = QuizQuestion(
+                quiz_id=q3.id,
+                question_text='Dalam struktur Incident Command System (ICS), siapakah pejabat operasi yang memiliki wewenang menghentikan kegiatan lapangan secara mutlak jika menemukan kondisi bahaya yang mengancam keselamatan jiwa?',
+                points=35,
+                order_index=1,
+                explanation='Safety Officer memegang mandat independen untuk menghentikan operasi secara instan jika mendeteksi bahaya keselamatan jiwa tanpa harus menunggu persetujuan birokratis.'
+            )
+            db.session.add(qq3_1)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq3_1.id, option_text='Safety Officer (Petugas Keselamatan Operasi)', is_correct=True, order_index=1),
+                QuizOption(question_id=qq3_1.id, option_text='Seksi Konsumsi / Logistik Makanan', is_correct=False, order_index=2),
+                QuizOption(question_id=qq3_1.id, option_text='Humas Publikasi Dokumentasi', is_correct=False, order_index=3),
+                QuizOption(question_id=qq3_1.id, option_text='Sopir Kendaraan Angkutan', is_correct=False, order_index=4)
+            ])
+
+            qq3_2 = QuizQuestion(
+                quiz_id=q3.id,
+                question_text='Pada sistem penarikan tandu tebing (Vertical Rescue), sistem katrol mekanis sederhana yang memberikan keuntungan mekanis 3 banding 1 dikenal dengan nama apa?',
+                points=35,
+                order_index=2,
+                explanation='Sistem 3:1 Z-Rig (atau Piggyback 3:1) adalah sistem hauling standar paling populer dalam Vertical Rescue untuk menaikkan tandu evakuasi dengan sepertiga tenaga tarikan.'
+            )
+            db.session.add(qq3_2)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq3_2.id, option_text='Z-Rig Hauling System (3:1 Mechanical Advantage)', is_correct=True, order_index=1),
+                QuizOption(question_id=qq3_2.id, option_text='Single Pulley Direct 1:1', is_correct=False, order_index=2),
+                QuizOption(question_id=qq3_2.id, option_text='Static Belay Knot', is_correct=False, order_index=3),
+                QuizOption(question_id=qq3_2.id, option_text='Prusik Loop Friction Only', is_correct=False, order_index=4)
+            ])
+
+            qq3_3 = QuizQuestion(
+                quiz_id=q3.id,
+                question_text='Kapan seorang Komandan Ekspedisi diwajibkan mengambil keputusan "Bailout / No-Go" (pembatalan/evakuasi keluar jalur)?',
+                points=30,
+                order_index=3,
+                explanation='Ketika tingkat risiko keselamatan regu melampaui batas toleransi risiko (RAMS skor ekstrem), seperti badai petir berkepanjangan di punggungan terbuka, hipotermia anggota ganda, atau cedera struktural fatal.'
+            )
+            db.session.add(qq3_3)
+            db.session.flush()
+            db.session.add_all([
+                QuizOption(question_id=qq3_3.id, option_text='Ketika analisis risiko RAMS mencapai level ekstrem membahayakan jiwa anggota regu', is_correct=True, order_index=1),
+                QuizOption(question_id=qq3_3.id, option_text='Hanya jika baterai ponsel habis', is_correct=False, order_index=2),
+                QuizOption(question_id=qq3_3.id, option_text='Jika tidak ada pemandangan awan matahari terbit', is_correct=False, order_index=3),
+                QuizOption(question_id=qq3_3.id, option_text='Ketika anggota regu merasa bosan', is_correct=False, order_index=4)
+            ])
+
             db.session.commit()
 
 try:

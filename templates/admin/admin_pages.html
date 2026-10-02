@@ -3728,3 +3728,977 @@
 
 </div>
 {% endmacro %}
+
+
+<!-- ============================================================== -->
+<!-- 14. PUSAT KENDALI AKADEMI, SOP DIGITAL & KEPATUHAN SERTIFIKASI -->
+<!-- ============================================================== -->
+{% macro admin_academy(data) %}
+{% set user = data.user %}
+{% set active_tab = data.active_tab or 'kurikulum' %}
+{% set tiers = data.tiers %}
+{% set all_courses = data.all_courses %}
+{% set all_docs = data.all_docs %}
+{% set all_maps = data.all_maps %}
+{% set members = data.members %}
+{% set certifications = data.certifications %}
+{% set recent_attempts = data.recent_attempts %}
+
+<div class="space-y-6" x-data="{ tab: '{{ active_tab }}' }">
+
+    <!-- Top Header Card (Sesuai Warna Utama Tema) -->
+    <div class="theme-profile-header-card p-6 sm:p-8 rounded-2xl border border-orange-500/40 text-white shadow-xl relative overflow-hidden" style="background: var(--brand-600, #ea580c) !important;">
+        <div class="absolute -right-6 -bottom-6 opacity-15 text-white text-9xl pointer-events-none">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div class="relative z-10 max-w-3xl space-y-2">
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 bg-white/20 text-white text-[10px] font-black uppercase tracking-wider rounded shadow-xs backdrop-blur-sm border border-white/30">
+                    Manajemen Admin
+                </span>
+                <span class="text-orange-100 text-xs font-mono font-bold">Portal SOP & Sertifikasi</span>
+            </div>
+            <h1 class="text-xl sm:text-3xl font-black font-heading tracking-tight text-white">
+                Akademi Rimba, SOP Digital & Kepatuhan Sertifikasi
+            </h1>
+            <p class="text-xs sm:text-sm text-orange-100 leading-relaxed">
+                Kelola kurikulum pembelajaran, butir soal ujian sertifikasi, dan tegakkan kewajiban pelatihan dasar bagi seluruh anggota sebelum terjun ke lapangan.
+            </p>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-bold">
+        <button type="button" @click="tab = 'kurikulum'"
+                :class="tab === 'kurikulum' ? 'bg-orange-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer">
+            <i class="fas fa-book-reader"></i>
+            <span>Kurikulum & Modul SOP</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">{{ tiers|length }} Tingkat</span>
+        </button>
+        <button type="button" @click="tab = 'kepatuhan'"
+                :class="tab === 'kepatuhan' ? 'bg-orange-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer">
+            <i class="fas fa-user-check"></i>
+            <span>Kepatuhan & Wajib Sertifikasi</span>
+            {% if data.pending_mandatory_count > 0 %}
+            <span class="px-2 py-0.5 rounded-full text-[10px] bg-rose-500 text-white font-black animate-pulse">
+                {{ data.pending_mandatory_count }} Pending
+            </span>
+            {% endif %}
+        </button>
+        <button type="button" @click="tab = 'riwayat'"
+                :class="tab === 'riwayat' ? 'bg-orange-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer">
+            <i class="fas fa-history"></i>
+            <span>Riwayat Sertifikat & Ujian</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">{{ certifications|length }} Piagam</span>
+        </button>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- TAB 1: KURIKULUM & MODUL SOP (CRUD TIER, COURSE, LESSON, QUIZ) -->
+    <!-- ============================================================== -->
+    <div x-show="tab === 'kurikulum'" class="space-y-6">
+
+        <!-- Top Action Buttons Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
+            <div class="flex items-center gap-2 text-xs text-slate-600">
+                <i class="fas fa-info-circle text-orange-600"></i>
+                <span>Susunan hierarki: <strong>Tingkatan (Tier) &rarr; Kursus &rarr; Bab Materi (SOP) &rarr; Ujian Kelulusan</strong></span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="document.getElementById('modal-add-tier').classList.remove('hidden')"
+                        class="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Tambah Tingkat (Tier)</span>
+                </button>
+                <button type="button" onclick="document.getElementById('modal-add-course').classList.remove('hidden')"
+                        class="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fas fa-plus"></i>
+                    <span>Tambah Kursus</span>
+                </button>
+                <button type="button" onclick="document.getElementById('modal-add-lesson').classList.remove('hidden')"
+                        class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Tambah Bab SOP</span>
+                </button>
+                <button type="button" onclick="document.getElementById('modal-add-quiz').classList.remove('hidden')"
+                        class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fas fa-file-signature"></i>
+                    <span>Tambah Ujian Sertifikasi</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tree View of Tiers, Courses, Lessons & Quizzes -->
+        <div class="space-y-6">
+            {% for tier in tiers %}
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="admin-tier-{{ tier.id }}">
+                
+                <!-- Tier Header Bar -->
+                <div class="p-5 sm:p-6 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-12 h-12 rounded-xl text-white flex items-center justify-center text-xl shadow-md shrink-0"
+                             style="background-color: {{ tier.badge_color or '#f97316' }};">
+                            <i class="fas {{ tier.badge_icon or 'fa-award' }}"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider text-white"
+                                      style="background-color: {{ tier.badge_color or '#f97316' }};">
+                                    Urutan #{{ tier.order_index }}
+                                </span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700">
+                                    {{ tier.target_audience }}
+                                </span>
+                                <span class="text-xs font-bold text-amber-700">Passing Grade: {{ tier.passing_score }}%</span>
+                            </div>
+                            <h3 class="text-base sm:text-lg font-black text-slate-900 font-heading mt-1 flex items-center gap-2">
+                                <span>{{ tier.title }}</span>
+                                <span class="text-xs font-mono px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
+                                    Brevet: {{ tier.badge_name }}
+                                </span>
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">{{ tier.description }}</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 shrink-0">
+                        <form action="/admin/academy/tier/delete/{{ tier.id }}" method="POST"
+                              onsubmit="return confirm('Hapus tingkatan ini beserta seluruh kursus dan materi di dalamnya?')">
+                            <button type="submit" class="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs transition cursor-pointer" title="Hapus Tier">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Courses List inside Tier -->
+                <div class="p-5 sm:p-6 space-y-6">
+                    {% for course in tier.courses %}
+                    <div class="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+                        <div class="p-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">
+                                    <i class="fas {{ course.icon or 'fa-book' }}"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs sm:text-sm font-bold text-slate-800 font-heading">{{ course.title }}</h4>
+                                    <p class="text-[11px] text-slate-500">{{ course.description }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                                    {{ course.lessons|length }} Materi
+                                </span>
+                                <form action="/admin/academy/course/delete/{{ course.id }}" method="POST"
+                                      onsubmit="return confirm('Hapus kursus ini?')">
+                                    <button type="submit" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 text-xs" title="Hapus Kursus">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Lessons in Course -->
+                        <div class="divide-y divide-slate-100">
+                            {% for lesson in course.lessons %}
+                            <div class="p-3.5 sm:px-5 flex items-center justify-between hover:bg-slate-50/80 transition text-xs">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[10px]">
+                                        {{ lesson.order_index }}
+                                    </span>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-slate-800">{{ lesson.title }}</span>
+                                            {% if lesson.doc %}
+                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                                <i class="fas fa-file-pdf"></i> SOP: {{ lesson.doc.title|truncate(25) }}
+                                            </span>
+                                            {% endif %}
+                                            {% if lesson.map_repo %}
+                                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200">
+                                                <i class="fas fa-map-marked-alt"></i> Peta: {{ lesson.map_repo.title|truncate(25) }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                        <p class="text-[10px] text-slate-400">
+                                            Durasi: {{ lesson.duration_minutes }} Menit
+                                            {% if lesson.summary %} &bull; {{ lesson.summary|truncate(60) }}{% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-2">
+                                    <a href="/member/academy/lesson/{{ lesson.id }}" target="_blank"
+                                       class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition">
+                                        Lihat
+                                    </a>
+                                    <form action="/admin/academy/lesson/delete/{{ lesson.id }}" method="POST"
+                                          onsubmit="return confirm('Hapus materi ini?')">
+                                        <button type="submit" class="p-1.5 rounded text-rose-500 hover:bg-rose-50 text-xs">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="p-4 text-center text-slate-400 italic text-xs">
+                                Belum ada bab materi di kursus ini.
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <!-- Quizzes in Tier -->
+                    {% for quiz in tier.quizzes %}
+                    <div class="p-5 rounded-xl border border-amber-300 bg-amber-50/40 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-black shrink-0">
+                                    <i class="fas fa-file-signature"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white">
+                                            Ujian Sertifikasi Tingkat
+                                        </span>
+                                        <span class="text-xs font-bold text-amber-800">
+                                            Passing: {{ quiz.passing_score }}% &bull; Waktu: {{ quiz.time_limit_minutes }} Menit
+                                        </span>
+                                    </div>
+                                    <h4 class="text-sm font-black text-slate-900 font-heading mt-0.5">{{ quiz.title }}</h4>
+                                    <p class="text-xs text-slate-600">{{ quiz.description }}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button type="button" onclick="document.getElementById('modal-add-question-{{ quiz.id }}').classList.remove('hidden')"
+                                        class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer">
+                                    <i class="fas fa-plus"></i> Tambah Soal
+                                </button>
+                                <form action="/admin/academy/quiz/delete/{{ quiz.id }}" method="POST"
+                                      onsubmit="return confirm('Hapus ujian ini?')">
+                                    <button type="submit" class="p-2 rounded-lg text-rose-600 hover:bg-rose-100 text-xs">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Questions List in Quiz -->
+                        <div class="space-y-2 pt-2 border-t border-amber-200/60">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                Daftar Butir Soal ({{ quiz.questions|length }} Soal):
+                            </span>
+                            <div class="space-y-2 text-xs">
+                                {% for q in quiz.questions %}
+                                <div class="p-3 bg-white rounded-lg border border-slate-200 flex items-start justify-between gap-3">
+                                    <div class="flex items-start gap-2.5">
+                                        <span class="w-5 h-5 rounded-full bg-slate-100 text-slate-700 font-bold text-[10px] flex items-center justify-center shrink-0">
+                                            {{ loop.index }}
+                                        </span>
+                                        <div>
+                                            <p class="font-bold text-slate-800">{{ q.question_text }}</p>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
+                                                {% for opt in q.options %}
+                                                <div class="p-1.5 rounded text-[11px] flex items-center gap-1.5 {% if opt.is_correct %}bg-emerald-50 text-emerald-800 font-bold border border-emerald-200{% else %}bg-slate-50 text-slate-600{% endif %}">
+                                                    <i class="fas {% if opt.is_correct %}fa-check-circle text-emerald-600{% else %}fa-circle text-slate-300 text-[8px]{% endif %}"></i>
+                                                    <span>{{ opt.option_text }}</span>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <form action="/admin/academy/question/delete/{{ q.id }}" method="POST"
+                                          onsubmit="return confirm('Hapus butir soal ini?')">
+                                        <button type="submit" class="text-rose-400 hover:text-rose-600 p-1">
+                                            <i class="fas fa-trash-alt text-xs"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                {% else %}
+                                <div class="p-4 bg-white rounded-lg border border-dashed border-slate-200 text-center text-slate-400 italic text-xs">
+                                    Belum ada soal pada ujian ini. Silakan klik tombol "Tambah Soal".
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+
+    <!-- ============================================================== -->
+    <!-- TAB 2: KEPATUHAN & WAJIB SERTIFIKASI (1-CLICK MANDATE SYSTEM) -->
+    <!-- ============================================================== -->
+    <div x-show="tab === 'kepatuhan'" class="space-y-6">
+
+        <!-- STATS KEPATUHAN ANGGOTA -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Anggota</span>
+                <div class="flex items-center justify-between mt-1">
+                    <span class="text-2xl font-black text-slate-800 font-heading">{{ data.total_members }}</span>
+                    <i class="fas fa-users text-slate-300 text-xl"></i>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-1">Anggota Aktif & Calon</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Lulus Level 1 (Dasar)</span>
+                <div class="flex items-center justify-between mt-1">
+                    <span class="text-2xl font-black text-emerald-600 font-heading">{{ data.certified_level1_count }}</span>
+                    <i class="fas fa-shield-alt text-emerald-300 text-xl"></i>
+                </div>
+                <p class="text-[11px] text-emerald-700 mt-1">Memiliki Brevet SAR Dasar</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                <span class="text-[10px] font-bold text-amber-600 uppercase tracking-wider block">Ditugaskan Wajib</span>
+                <div class="flex items-center justify-between mt-1">
+                    <span class="text-2xl font-black text-amber-600 font-heading">{{ data.mandatory_active_count }}</span>
+                    <i class="fas fa-user-clock text-amber-300 text-xl"></i>
+                </div>
+                <p class="text-[11px] text-amber-700 mt-1">Status Mandat Aktif</p>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                <span class="text-[10px] font-bold text-rose-600 uppercase tracking-wider block">Belum Lulus (Pending)</span>
+                <div class="flex items-center justify-between mt-1">
+                    <span class="text-2xl font-black text-rose-600 font-heading">{{ data.pending_mandatory_count }}</span>
+                    <i class="fas fa-exclamation-triangle text-rose-300 text-xl"></i>
+                </div>
+                <p class="text-[11px] text-rose-700 mt-1">Wajib namun belum sertifikasi</p>
+            </div>
+        </div>
+
+        <!-- 1-CLICK BATCH MANDATE CONTROL BAR (Sesuai Warna Utama Tema) -->
+        <div class="theme-profile-header-card p-5 sm:p-6 rounded-2xl text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-orange-500/40" style="background: var(--brand-600, #ea580c) !important;">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-white/20 text-white backdrop-blur-sm border border-white/30">
+                        Penegakan Standar
+                    </span>
+                    <span class="text-xs text-amber-200 font-bold">1-Click Mandate Automation</span>
+                </div>
+                <h3 class="text-base sm:text-lg font-black font-heading text-white">
+                    Instruksi Wajib Sertifikasi Level 1
+                </h3>
+                <p class="text-xs text-orange-100 max-w-xl">
+                    Kunci penugasan lapangan dengan mewajibkan seluruh calon anggota & anggota baru untuk menyelesaikan Brevet Kesiapan Rimba & SAR Dasar secara otomatis.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                <form action="/admin/academy/mandate/all-candidates" method="POST"
+                      onsubmit="return confirm('Wajibkan semua calon anggota & anggota yang belum tersertifikasi Level 1?')">
+                    <button type="submit"
+                            class="px-5 py-3 rounded-xl bg-white text-orange-700 hover:bg-orange-50 font-black text-xs shadow-md transition flex items-center gap-2 cursor-pointer">
+                        <i class="fas fa-bolt text-amber-500"></i>
+                        <span>Wajibkan Semua Calon Anggota (1-Klik)</span>
+                    </button>
+                </form>
+
+                <form action="/admin/academy/mandate/clear-all" method="POST"
+                      onsubmit="return confirm('Hapus seluruh status penugasan wajib pada semua anggota?')">
+                    <button type="submit"
+                            class="px-4 py-3 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs transition border border-white/30 cursor-pointer">
+                        Reset Status Wajib
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TABEL ANGGOTA & KEPATUHAN SERTIFIKASI -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" x-data="{ search: '', filterStatus: 'all' }">
+            <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50">
+                <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <i class="fas fa-list-check text-orange-600"></i>
+                    <span>Daftar Seluruh Anggota & Status Sertifikasi</span>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <input type="text" x-model="search" placeholder="Cari nama atau NRA..."
+                           class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs w-full sm:w-64 focus:ring-orange-500 focus:border-orange-500">
+                    <select x-model="filterStatus" class="px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
+                        <option value="all">Semua Status</option>
+                        <option value="pending">Hanya yang Wajib (Pending)</option>
+                        <option value="certified">Sudah Lulus Level 1</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                        <tr>
+                            <th class="p-4">Anggota</th>
+                            <th class="p-4">Status & NRA</th>
+                            <th class="p-4">Sertifikasi Level 1</th>
+                            <th class="p-4 text-center">Status Wajib (Mandate)</th>
+                            <th class="p-4">Brevet Dimiliki</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for m in members %}
+                        {% set is_l1_passed = false %}
+                        {% for c in m.certifications_list %}
+                            {% if c.tier.order_index == 1 %}
+                                {% set is_l1_passed = true %}
+                            {% endif %}
+                        {% endfor %}
+
+                        <tr class="hover:bg-slate-50/80 transition"
+                            x-show="(search === '' || '{{ m.name|lower }}'.includes(search.toLowerCase()) || '{{ m.nra or '' }}'.toLowerCase().includes(search.toLowerCase())) &&
+                                    (filterStatus === 'all' || (filterStatus === 'pending' && {{ 'true' if m.is_mandatory_certification_pending else 'false' }}) || (filterStatus === 'certified' && {{ 'true' if is_l1_passed else 'false' }}))">
+                            <td class="p-4">
+                                <div class="flex items-center gap-3">
+                                    <img src="{{ m.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}"
+                                         alt="{{ m.name }}" class="w-9 h-9 rounded-lg object-cover border border-slate-200">
+                                    <div>
+                                        <div class="font-bold text-slate-900">{{ m.name }}</div>
+                                        <div class="text-[10px] text-slate-400 font-mono">{{ m.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-4">
+                                {% if m.status == 'active' %}
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800">
+                                    {{ m.nra or 'Aktif' }}
+                                </span>
+                                {% else %}
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                                    Calon Anggota
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="p-4">
+                                {% if is_l1_passed %}
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Lulus Level 1</span>
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">
+                                    <i class="far fa-circle"></i>
+                                    <span>Belum Ujian</span>
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="p-4 text-center">
+                                <form action="/admin/academy/mandate/toggle/{{ m.id }}" method="POST">
+                                    {% if m.is_mandatory_certified %}
+                                    <button type="submit"
+                                            class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-[11px] shadow-2xs transition flex items-center justify-center gap-1.5 mx-auto cursor-pointer"
+                                            title="Klik untuk menonaktifkan kewajiban">
+                                        <i class="fas fa-exclamation-circle text-amber-300"></i>
+                                        <span>WAJIB (Aktif)</span>
+                                    </button>
+                                    {% else %}
+                                    <button type="submit"
+                                            class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-[11px] transition flex items-center justify-center gap-1 mx-auto cursor-pointer"
+                                            title="Klik untuk mewajibkan anggota ini">
+                                        <span>Tidak Wajib</span>
+                                    </button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                            <td class="p-4">
+                                <div class="flex flex-wrap gap-1">
+                                    {% for cert in m.certifications_list %}
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold text-white shadow-2xs"
+                                          style="background-color: {{ cert.tier.badge_color or '#f97316' }};"
+                                          title="{{ cert.tier.title }}">
+                                        <i class="fas {{ cert.tier.badge_icon or 'fa-award' }}"></i>
+                                        <span>{{ cert.tier.badge_name }}</span>
+                                    </span>
+                                    {% else %}
+                                    <span class="text-slate-400 text-[11px] italic">-</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================== -->
+    <!-- TAB 3: RIWAYAT SERTIFIKAT & PERCOBAAN UJIAN -->
+    <!-- ============================================================== -->
+    <div x-show="tab === 'riwayat'" class="space-y-6">
+        
+        <!-- Tabel Sertifikat Resmi yang Telah Terbit -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
+                    <i class="fas fa-certificate text-amber-500 text-sm"></i>
+                    <span>Daftar Piagam Sertifikasi Kompetensi Resmi Terbit</span>
+                </div>
+                <span class="text-xs text-slate-500 font-semibold">{{ certifications|length }} Sertifikat</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                        <tr>
+                            <th class="p-4">No. Sertifikat</th>
+                            <th class="p-4">Nama Anggota</th>
+                            <th class="p-4">Brevet Kompetensi</th>
+                            <th class="p-4">Skor</th>
+                            <th class="p-4">Tanggal Terbit</th>
+                            <th class="p-4">Status</th>
+                            <th class="p-4 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for c in certifications %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="p-4 font-mono font-bold text-slate-900">
+                                {{ c.certificate_no }}
+                            </td>
+                            <td class="p-4 font-bold text-slate-800">
+                                {{ c.user.name }} ({{ c.user.nra or 'Calon' }})
+                            </td>
+                            <td class="p-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold text-white shadow-2xs"
+                                      style="background-color: {{ c.tier.badge_color or '#f97316' }};">
+                                    <i class="fas {{ c.tier.badge_icon or 'fa-award' }}"></i>
+                                    <span>{{ c.tier.badge_name }}</span>
+                                </span>
+                            </td>
+                            <td class="p-4 font-bold text-emerald-600">
+                                {{ c.score_achieved }}%
+                            </td>
+                            <td class="p-4 text-slate-500">
+                                {{ c.issued_at.strftime('%d/%m/%Y %H:%M') }}
+                            </td>
+                            <td class="p-4">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase {% if c.status == 'active' %}bg-emerald-100 text-emerald-800{% else %}bg-rose-100 text-rose-800{% endif %}">
+                                    {{ c.status }}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="/member/academy/certificate/{{ c.certificate_no }}" target="_blank"
+                                       class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] transition">
+                                        Buka Piagam
+                                    </a>
+                                    {% if c.status == 'active' %}
+                                    <form action="/admin/academy/cert/revoke/{{ c.id }}" method="POST"
+                                          onsubmit="return confirm('Cabut sertifikat ini?')">
+                                        <button type="submit" class="p-1 rounded text-rose-500 hover:bg-rose-50 text-[10px] font-bold" title="Cabut Sertifikat">
+                                            Cabut
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="p-8 text-center text-slate-400 italic">
+                                Belum ada sertifikat kompetensi yang diterbitkan.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tabel Log Percobaan Ujian Terakhir -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
+                    <i class="fas fa-file-signature text-orange-600 text-sm"></i>
+                    <span>Log 50 Percobaan Ujian Terakhir</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                        <tr>
+                            <th class="p-4">Waktu</th>
+                            <th class="p-4">Anggota</th>
+                            <th class="p-4">Ujian</th>
+                            <th class="p-4">Skor</th>
+                            <th class="p-4">Jawaban Benar</th>
+                            <th class="p-4">Hasil</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for att in recent_attempts %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="p-4 text-slate-500 font-mono text-[11px]">
+                                {{ att.completed_at.strftime('%d/%m/%Y %H:%M') }}
+                            </td>
+                            <td class="p-4 font-bold text-slate-800">
+                                {{ att.user.name }}
+                            </td>
+                            <td class="p-4 text-slate-700">
+                                {{ att.quiz.title }}
+                            </td>
+                            <td class="p-4 font-bold {% if att.passed %}text-emerald-600{% else %}text-rose-600{% endif %}">
+                                {{ att.score }}%
+                            </td>
+                            <td class="p-4 text-slate-600">
+                                {{ att.correct_answers }} dari {{ att.total_questions }}
+                            </td>
+                            <td class="p-4">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase {% if att.passed %}bg-emerald-100 text-emerald-800{% else %}bg-rose-100 text-rose-800{% endif %}">
+                                    {% if att.passed %}Lulus{% else %}Belum Lulus{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-slate-400 italic">
+                                Belum ada log percobaan pengerjaan ujian.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ============================================================== -->
+    <!-- MODALS UNTUK CRUD KURIKULUM AKADEMI -->
+    <!-- ============================================================== -->
+
+    <!-- Modal Tambah Tingkat (Tier) -->
+    <div id="modal-add-tier" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="text-sm font-black text-slate-900 font-heading">Tambah Tingkatan (Tier) Baru</h3>
+                <button type="button" onclick="document.getElementById('modal-add-tier').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="/admin/academy/tier/create" method="POST" class="space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Nama Tingkatan (Title)</label>
+                    <input type="text" name="title" required placeholder="Contoh: Tingkat Dasar (Diksar)"
+                           class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Deskripsi</label>
+                    <textarea name="description" rows="2" placeholder="Penjelasan fokus kurikulum tingkat ini..."
+                              class="w-full px-3 py-2 rounded-lg border border-slate-200"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Nama Lencana / Brevet</label>
+                        <input type="text" name="badge_name" required placeholder="Brevet Kesiapan SAR"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Target Peserta</label>
+                        <input type="text" name="target_audience" required placeholder="Calon Anggota"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Urutan</label>
+                        <input type="number" name="order_index" value="{{ tiers|length + 1 }}" required
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Warna Badge</label>
+                        <input type="color" name="badge_color" value="#059669"
+                               class="w-full h-9 rounded-lg border border-slate-200 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Passing %</label>
+                        <input type="number" name="passing_score" value="80" required
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    </div>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">FontAwesome Icon</label>
+                    <input type="text" name="badge_icon" value="fa-shield-alt" placeholder="fa-shield-alt"
+                           class="w-full px-3 py-2 rounded-lg border border-slate-200 font-mono">
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('modal-add-tier').classList.add('hidden')"
+                            class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow">
+                        Simpan Tier
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Kursus -->
+    <div id="modal-add-course" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="text-sm font-black text-slate-900 font-heading">Tambah Kursus Baru</h3>
+                <button type="button" onclick="document.getElementById('modal-add-course').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="/admin/academy/course/create" method="POST" class="space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Pilih Tingkatan (Tier)</label>
+                    <select name="tier_id" required class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                        {% for t in tiers %}
+                        <option value="{{ t.id }}">Level {{ t.order_index }}: {{ t.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Judul Kursus</label>
+                    <input type="text" name="title" required placeholder="Contoh: Manajemen Perlengkapan & Packing"
+                           class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Deskripsi Singkat</label>
+                    <textarea name="description" rows="2" placeholder="Tujuan kursus..."
+                              class="w-full px-3 py-2 rounded-lg border border-slate-200"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Urutan</label>
+                        <input type="number" name="order_index" value="1" required
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">FontAwesome Icon</label>
+                        <input type="text" name="icon" value="fa-hiking" placeholder="fa-hiking"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200 font-mono">
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('modal-add-course').classList.add('hidden')"
+                            class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow">
+                        Simpan Kursus
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Bab Materi / SOP -->
+    <div id="modal-add-lesson" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
+        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="text-sm font-black text-slate-900 font-heading">Tambah Bab Materi / SOP Digital</h3>
+                <button type="button" onclick="document.getElementById('modal-add-lesson').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="/admin/academy/lesson/create" method="POST" class="space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Pilih Kursus</label>
+                    <select name="course_id" required class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                        {% for c in all_courses %}
+                        <option value="{{ c.id }}">{{ c.tier.title }} &rarr; {{ c.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Judul Bab Pelajaran</label>
+                    <input type="text" name="title" required placeholder="Contoh: Prosedur Packing Carrier ABC & Distribusi Beban"
+                           class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Ringkasan Singkat</label>
+                    <input type="text" name="summary" placeholder="Ringkasan 1 kalimat..."
+                           class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Konten Materi / Prosedur SOP (HTML / Teks Lengkap)</label>
+                    <textarea name="content" rows="6" required placeholder="Tuliskan materi prosedur operasional..."
+                              class="w-full px-3 py-2 rounded-lg border border-slate-200 font-sans"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Lampirkan Dokumen SOP (PDF)</label>
+                        <select name="doc_id" class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                            <option value="">-- Tanpa Dokumen PDF --</option>
+                            {% for d in all_docs %}
+                            <option value="{{ d.id }}">{{ d.title }} ({{ d.category }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Lampirkan Peta GPX Jalur</label>
+                        <select name="map_repo_id" class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                            <option value="">-- Tanpa Peta GPX --</option>
+                            {% for m in all_maps %}
+                            <option value="{{ m.id }}">{{ m.title }} ({{ m.region }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Estimasi Durasi (Menit)</label>
+                        <input type="number" name="duration_minutes" value="15" required
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Urutan Bab</label>
+                        <input type="number" name="order_index" value="1" required
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    </div>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">URL Video Edukasi Embed (YouTube / Opsional)</label>
+                    <input type="url" name="video_url" placeholder="https://www.youtube.com/embed/..."
+                           class="w-full px-3 py-2 rounded-lg border border-slate-200 font-mono">
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('modal-add-lesson').classList.add('hidden')"
+                            class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow">
+                        Simpan Materi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Tambah Ujian Sertifikasi -->
+    <div id="modal-add-quiz" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="text-sm font-black text-slate-900 font-heading">Tambah Ujian Sertifikasi</h3>
+                <button type="button" onclick="document.getElementById('modal-add-quiz').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="/admin/academy/quiz/create" method="POST" class="space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Pilih Tingkatan (Tier) Terkait</label>
+                    <select name="tier_id" required class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                        {% for t in tiers %}
+                        <option value="{{ t.id }}">Level {{ t.order_index }}: {{ t.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Judul Ujian</label>
+                    <input type="text" name="title" required placeholder="Contoh: Ujian Kualifikasi Rimba & SAR Dasar"
+                           class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Deskripsi</label>
+                    <textarea name="description" rows="2" placeholder="Penjelasan teknis ujian..."
+                              class="w-full px-3 py-2 rounded-lg border border-slate-200"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Passing Grade (%)</label>
+                        <input type="number" name="passing_score" value="80" required
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Batas Waktu (Menit)</label>
+                        <input type="number" name="time_limit_minutes" value="30" required
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('modal-add-quiz').classList.add('hidden')"
+                            class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg shadow">
+                        Simpan Ujian
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modals Tambah Soal per Quiz -->
+    {% for tier in tiers %}
+    {% for quiz in tier.quizzes %}
+    <div id="modal-add-question-{{ quiz.id }}" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="text-sm font-black text-slate-900 font-heading">Tambah Butir Soal Ujian</h3>
+                    <p class="text-[10px] text-slate-500">{{ quiz.title }}</p>
+                </div>
+                <button type="button" onclick="document.getElementById('modal-add-question-{{ quiz.id }}').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form action="/admin/academy/question/create/{{ quiz.id }}" method="POST" class="space-y-4 text-xs">
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Pertanyaan / Kasus Lapangan</label>
+                    <textarea name="question_text" rows="3" required placeholder="Tuliskan pertanyaan..."
+                              class="w-full px-3 py-2 rounded-lg border border-slate-200"></textarea>
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="font-bold text-slate-700 block">Pilihan Jawaban (Pilih radio untuk jawaban yang BENAR):</label>
+                    
+                    <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center gap-2">
+                        <input type="radio" name="correct_opt" value="0" checked class="w-4 h-4 text-emerald-600">
+                        <input type="text" name="option_0" required placeholder="Pilihan Jawaban A (Kunci Benar)"
+                               class="w-full px-2.5 py-1.5 rounded border border-slate-200 bg-white">
+                    </div>
+
+                    <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center gap-2">
+                        <input type="radio" name="correct_opt" value="1" class="w-4 h-4 text-emerald-600">
+                        <input type="text" name="option_1" required placeholder="Pilihan Jawaban B"
+                               class="w-full px-2.5 py-1.5 rounded border border-slate-200 bg-white">
+                    </div>
+
+                    <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center gap-2">
+                        <input type="radio" name="correct_opt" value="2" class="w-4 h-4 text-emerald-600">
+                        <input type="text" name="option_2" required placeholder="Pilihan Jawaban C"
+                               class="w-full px-2.5 py-1.5 rounded border border-slate-200 bg-white">
+                    </div>
+
+                    <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center gap-2">
+                        <input type="radio" name="correct_opt" value="3" class="w-4 h-4 text-emerald-600">
+                        <input type="text" name="option_3" required placeholder="Pilihan Jawaban D"
+                               class="w-full px-2.5 py-1.5 rounded border border-slate-200 bg-white">
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('modal-add-question-{{ quiz.id }}').classList.add('hidden')"
+                            class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow">
+                        Simpan Soal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+    {% endfor %}
+
+</div>
+{% endmacro %}

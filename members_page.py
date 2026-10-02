@@ -1,5 +1,6 @@
 import os
 import io
+import json
 import base64
 import qrcode
 from datetime import datetime, timedelta
@@ -9,7 +10,9 @@ from models import (
     db, User, Dues, DuesPayment, Document, Activity,
     ActivityParticipant, GalleryItem, Post, PostComment,
     PostLike, ChatMessage, SystemSetting, MapRepository, PostMedia,
-    Sponsor, SponsorProduct
+    Sponsor, SponsorProduct,
+    AcademyTier, AcademyCourse, AcademyLesson, AcademyQuiz, QuizQuestion, QuizOption,
+    UserLessonProgress, UserQuizAttempt, UserCertification
 )
 from helpers import get_current_user, login_required, check_member_access, render_gimbal_page, render_gimbal_modal
 
@@ -1343,4 +1346,268 @@ def member_business_toggle_share(sponsor_id):
 def member_business_share_timeline(sponsor_id):
     """Kompatibilitas alias untuk toggle publikasi usaha anggota"""
     return member_business_toggle_share(sponsor_id)
+
+
+# ==============================================================================
+# PORTAL AKADEMI, SOP DIGITAL & SERTIFIKASI KESIAPAN LAPANGAN (MEMBER)
+# ==============================================================================
+
+@members_bp.route('/member/academy')
+@login_required
+def member_academy():
+    """Beranda Portal E-Learning & Kurikulum SOP Digital Anggota"""
+    user = get_current_user()
+    access_guard = check_member_access(user)
+    if access_guard:
+        return access_guard
+
+    tiers = AcademyTier.query.filter_by(is_active=True).order_by(AcademyTier.order_index.asc()).all()
+    
+    # Progress bacaan materi anggota
+    completed_progress = UserLessonProgress.query.filter_by(user_id=user.id, is_completed=True).all()
+    completed_lesson_ids = set(p.lesson_id for p in completed_progress)
+    
+    # Sertifikasi resmi yang diraih anggota
+    certifications = UserCertification.query.filter_by(user_id=user.id, status='active').all()
+    certified_tier_ids = set(c.tier_id for c in certifications)
+
+    # Riwayat ujian terakhir
+    recent_attempts = UserQuizAttempt.query.filter_by(user_id=user.id).order_by(UserQuizAttempt.id.desc()).limit(10).all()
+
+    # Target tier wajib
+    mandatory_tier = None
+    if user.is_mandatory_certified:
+        target_id = user.mandatory_tier_id or 1
+        mandatory_tier = db.session.get(AcademyTier, target_id)
+
+    data = {
+        'user': user,
+        'tiers': tiers,
+        'completed_lesson_ids': completed_lesson_ids,
+        'certified_tier_ids': certified_tier_ids,
+        'certifications': certifications,
+        'recent_attempts': recent_attempts,
+        'mandatory_tier': mandatory_tier,
+        'is_mandatory_pending': user.is_mandatory_certification_pending
+    }
+    return render_gimbal_page('member/member_pages.html', 'member_academy', data, active_page='member_academy')
+
+
+@members_bp.route('/member/academy/lesson/<int:lesson_id>')
+@login_required
+def member_academy_lesson(lesson_id):
+    """Pembaca Materi / SOP Digital (Teks SOP, PDF Reader, Video Embed & Peta GPX)"""
+    user = get_current_user()
+    access_guard = check_member_access(user)
+    if access_guard:
+        return access_guard
+
+    lesson = db.session.get(AcademyLesson, lesson_id)
+    if not lesson:
+        flash("Materi pelajaran tidak ditemukan.", "error")
+        return redirect('/member/academy')
+
+    course = lesson.course
+    tier = course.tier
+
+    # Cari materi sebelum & sesudah dalam kursus
+    all_lessons = list(course.lessons)
+    current_idx = all_lessons.index(lesson) if lesson in all_lessons else 0
+    prev_lesson = all_lessons[current_idx - 1] if current_idx > 0 else None
+    next_lesson = all_lessons[current_idx + 1] if current_idx < len(all_lessons) - 1 else None
+
+    # Status baca anggota
+    prog = UserLessonProgress.query.filter_by(user_id=user.id, lesson_id=lesson.id).first()
+    is_completed = bool(prog and prog.is_completed)
+
+    data = {
+        'user': user,
+        'lesson': lesson,
+        'course': course,
+        'tier': tier,
+        'prev_lesson': prev_lesson,
+        'next_lesson': next_lesson,
+        'is_completed': is_completed
+    }
+    return render_gimbal_page('member/member_pages.html', 'member_lesson_view', data, active_page='member_academy')
+
+
+@members_bp.route('/member/academy/lesson/<int:lesson_id>/complete', methods=['POST'])
+@login_required
+def member_academy_lesson_complete(lesson_id):
+    """Menandai bab materi / SOP telah dipelajari dan diselesaikan anggota"""
+    user = get_current_user()
+    lesson = db.session.get(AcademyLesson, lesson_id)
+    if not lesson:
+        return jsonify({'success': False, 'message': 'Materi tidak ditemukan'}), 404
+
+    prog = UserLessonProgress.query.filter_by(user_id=user.id, lesson_id=lesson.id).first()
+    if not prog:
+        prog = UserLessonProgress(user_id=user.id, lesson_id=lesson.id, is_completed=True, completed_at=datetime.utcnow())
+        db.session.add(prog)
+        db.session.commit()
+
+    flash(f"Materi '{lesson.title}' telah berhasil diselesaikan!", "success")
+    
+    # Cari next lesson jika ada
+    all_lessons = list(lesson.course.lessons)
+    current_idx = all_lessons.index(lesson) if lesson in all_lessons else 0
+    if current_idx < len(all_lessons) - 1:
+        next_l = all_lessons[current_idx + 1]
+        return redirect(f"/member/academy/lesson/{next_l.id}")
+    
+    # Jika bab terakhir dalam kursus, cek apakah kursus ini atau tier punya kuis
+    quiz = lesson.course.quiz or lesson.course.tier.quizzes[0] if lesson.course.tier.quizzes else None
+    if quiz:
+        return redirect(f"/member/academy/quiz/{quiz.id}")
+
+    return redirect('/member/academy')
+
+
+@members_bp.route('/member/academy/quiz/<int:quiz_id>')
+@login_required
+def member_academy_quiz(quiz_id):
+    """Lembar Ujian / Kuis Sertifikasi Kesiapan Operasional"""
+    user = get_current_user()
+    access_guard = check_member_access(user)
+    if access_guard:
+        return access_guard
+
+    quiz = db.session.get(AcademyQuiz, quiz_id)
+    if not quiz:
+        flash("Ujian sertifikasi tidak ditemukan.", "error")
+        return redirect('/member/academy')
+
+    # Riwayat pengerjaan sebelumnya
+    attempts = UserQuizAttempt.query.filter_by(user_id=user.id, quiz_id=quiz.id).order_by(UserQuizAttempt.id.desc()).all()
+    latest_attempt = attempts[0] if attempts else None
+    
+    # Cek apakah sudah lulus
+    has_passed = any(a.passed for a in attempts)
+    user_cert = UserCertification.query.filter_by(user_id=user.id, tier_id=quiz.tier_id, status='active').first() if quiz.tier_id else None
+
+    is_exam_mode = request.args.get('exam') == '1' or request.args.get('retake') == '1'
+
+    data = {
+        'user': user,
+        'quiz': quiz,
+        'attempts': attempts,
+        'latest_attempt': latest_attempt,
+        'has_passed': has_passed,
+        'user_cert': user_cert,
+        'is_exam_mode': is_exam_mode
+    }
+    return render_gimbal_page('member/member_pages.html', 'member_quiz_view', data, active_page='member_academy')
+
+
+@members_bp.route('/member/academy/quiz/<int:quiz_id>/submit', methods=['POST'])
+@login_required
+def member_academy_quiz_submit(quiz_id):
+    """Kalkulasi Hasil Ujian, Penilaian Jawaban & Penerbitan Sertifikat Digital Otomatis"""
+    user = get_current_user()
+    quiz = db.session.get(AcademyQuiz, quiz_id)
+    if not quiz:
+        flash("Ujian tidak ditemukan.", "error")
+        return redirect('/member/academy')
+
+    total_questions = len(quiz.questions)
+    if total_questions == 0:
+        flash("Ujian ini belum memiliki butir soal.", "warning")
+        return redirect(f"/member/academy/quiz/{quiz.id}")
+
+    correct_count = 0
+    total_points_earned = 0
+    max_possible_points = sum(q.points for q in quiz.questions) or 100
+    user_answers = {}
+
+    for q in quiz.questions:
+        ans_opt_id = request.form.get(f'question_{q.id}')
+        if ans_opt_id and ans_opt_id.isdigit():
+            chosen_opt = db.session.get(QuizOption, int(ans_opt_id))
+            if chosen_opt and chosen_opt.question_id == q.id:
+                user_answers[str(q.id)] = chosen_opt.id
+                if chosen_opt.is_correct:
+                    correct_count += 1
+                    total_points_earned += q.points
+
+    score_percentage = round((total_points_earned / max_possible_points) * 100, 1)
+    passed = score_percentage >= quiz.passing_score
+
+    attempt = UserQuizAttempt(
+        user_id=user.id,
+        quiz_id=quiz.id,
+        score=score_percentage,
+        passed=passed,
+        total_questions=total_questions,
+        correct_answers=correct_count,
+        answers_json=json.dumps(user_answers),
+        completed_at=datetime.utcnow()
+    )
+    db.session.add(attempt)
+    db.session.flush()
+
+    # Jika Lulus Ujian Sertifikasi Tingkat
+    new_cert = None
+    if passed and quiz.tier_id:
+        existing_cert = UserCertification.query.filter_by(
+            user_id=user.id,
+            tier_id=quiz.tier_id,
+            status='active'
+        ).first()
+
+        if not existing_cert:
+            tier = quiz.tier
+            cert_no = f"CERT-GIMBAL-{tier.order_index:02d}-{user.id:04d}-{datetime.utcnow().strftime('%y%m%d')}"
+            new_cert = UserCertification(
+                user_id=user.id,
+                tier_id=tier.id,
+                certificate_no=cert_no,
+                status='active',
+                score_achieved=score_percentage,
+                issued_at=datetime.utcnow()
+            )
+            db.session.add(new_cert)
+
+    db.session.commit()
+
+    if passed:
+        flash(f"LULUS! Selamat, Anda meraih skor {score_percentage}% pada ujian '{quiz.title}'. Lencana keahlian resmi telah disematkan di profil Anda!", "success")
+    else:
+        flash(f"Skor Anda {score_percentage}%. Batas minimal kelulusan adalah {quiz.passing_score}%. Silakan pelajari kembali materi dan coba lagi.", "warning")
+
+    return redirect(f"/member/academy/quiz/{quiz.id}")
+
+
+@members_bp.route('/member/academy/certificate/<cert_no>')
+def member_academy_certificate(cert_no):
+    """Tampilan Resmi Piagam Sertifikat Digital & Verifikasi QR Code"""
+    cert = UserCertification.query.filter_by(certificate_no=cert_no).first_or_404()
+    verify_url = f"{request.host_url}verify-cert/{cert.certificate_no}"
+    
+    qr_img = qrcode.make(verify_url)
+    buf = io.BytesIO()
+    qr_img.save(buf, format='PNG')
+    qr_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+
+    data = {
+        'cert': cert,
+        'user': cert.user,
+        'tier': cert.tier,
+        'qr_base64': qr_base64,
+        'verify_url': verify_url
+    }
+    return render_gimbal_page('member/member_pages.html', 'member_certificate_view', data, active_page='member_academy')
+
+
+@members_bp.route('/verify-cert/<cert_no>')
+def verify_cert_public(cert_no):
+    """Halaman Verifikasi Publik Keaslian Sertifikat Kesiapan Lapangan"""
+    cert = UserCertification.query.filter_by(certificate_no=cert_no).first()
+    data = {
+        'cert': cert,
+        'cert_no': cert_no,
+        'is_valid': bool(cert and cert.status == 'active')
+    }
+    return render_template('components/modals.html', modal_type='verify_cert_public', data=data)
+
 

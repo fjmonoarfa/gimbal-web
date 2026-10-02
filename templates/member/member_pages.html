@@ -28,6 +28,38 @@
         {% endif %}
     {% endwith %}
 
+    <!-- MANDATORY CERTIFICATION WARNING BANNER -->
+    {% if user.is_mandatory_certification_pending %}
+    <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-900 via-rose-800 to-amber-900 text-white shadow-xl border-2 border-rose-500/80 relative overflow-hidden animate-pulse">
+        <div class="absolute -right-6 -bottom-6 opacity-15 text-white text-8xl pointer-events-none">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-rose-600 text-white flex items-center justify-center text-xl shadow-md shrink-0 border border-white/20">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white shadow-2xs">Kewajiban Mutlak</span>
+                        <span class="text-[11px] text-amber-200 font-bold">Instruksi Dewan Pengurus</span>
+                    </div>
+                    <h3 class="text-sm sm:text-base font-black font-heading mt-0.5 text-white">Wajib Sertifikasi: Level 1 (Brevet Kesiapan Rimba & SAR Dasar)</h3>
+                    <p class="text-xs text-rose-100 max-w-2xl leading-relaxed mt-1">
+                        Anda telah ditugaskan untuk menyelesaikan seluruh modul pembelajaran dasar & lulus ujian sertifikasi kesiapan lapangan sebelum diterjunkan ke kegiatan ekspedisi resmi KPAB GIMBAL.
+                    </p>
+                </div>
+            </div>
+            <a href="/member/academy"
+               hx-get="/member/academy" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+               class="px-4 py-2.5 bg-white hover:bg-amber-50 text-rose-900 font-extrabold text-xs rounded-xl shadow-lg transition flex items-center gap-2 shrink-0 cursor-pointer">
+                <span>Mulai Pelatihan Sekarang</span>
+                <i class="fas fa-arrow-right text-[10px]"></i>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- WELCOME / STATUS HERO BANNER -->
     {% if user.status == 'pending' %}
         <!-- Kondisi PENDING: Calon Anggota Menunggu Verifikasi -->
@@ -149,6 +181,19 @@
                     </div>
                 </div>
 
+                {% if user.certifications_list %}
+                <div class="pt-2 border-t border-orange-700/30 flex flex-wrap gap-1.5 my-1">
+                    {% for cert in user.certifications_list %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold text-white shadow-xs border border-white/20"
+                          style="background-color: {{ cert.tier.badge_color or '#f97316' }};"
+                          title="{{ cert.tier.title }} (No: {{ cert.certificate_number }})">
+                        <i class="fas {{ cert.tier.badge_icon or 'fa-award' }} text-[8px]"></i>
+                        <span>{{ cert.tier.badge_name }}</span>
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <div class="pt-2.5 border-t border-orange-700/40 flex items-center justify-between text-[11px]">
                     <span class="text-orange-300 font-medium">Anggota Aktif</span>
                     <a href="/member/kta" 
@@ -159,7 +204,57 @@
                 </div>
             </div>
 
-            <!-- 1b. KARTU PROMOSI GEOPDF STUDIO MAPS -->
+            <!-- 1b. KARTU AKADEMI RIMBA & SERTIFIKASI -->
+            {% if current_user.member_status == 'active' %}
+            <div class="bg-gradient-to-br from-emerald-900 via-emerald-850 to-teal-950 p-4 rounded-lg border border-emerald-500/40 text-white shadow-lg relative overflow-hidden group"
+                 hx-get="/member/academy" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                 style="cursor:pointer;">
+                <div class="absolute -right-3 -bottom-3 opacity-15 text-emerald-400 text-6xl group-hover:scale-110 transition-transform pointer-events-none">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="relative z-10 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2 py-0.5 bg-emerald-600 text-white text-[9px] font-black tracking-wider uppercase rounded shadow-xs">Akademi Rimba</span>
+                        {% if data.user_certifications %}
+                        <span class="text-[10px] text-emerald-300 font-bold flex items-center gap-1">
+                            <i class="fas fa-award text-amber-400"></i>
+                            {{ data.user_certifications|length }} Sertifikat
+                        </span>
+                        {% else %}
+                        <span class="text-[10px] text-emerald-300 font-mono font-bold">SOP & Diksar</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-black font-heading text-white flex items-center gap-1.5">
+                            <i class="fas fa-book-open text-emerald-400"></i> Pelatihan & Sertifikasi
+                        </h4>
+                        {% if data.user_certifications %}
+                        <div class="flex flex-wrap gap-1 mt-1.5">
+                            {% for cert in data.user_certifications[:2] %}
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-700/60 text-emerald-100 text-[9px] font-bold rounded">
+                                <i class="fas {{ cert.tier.badge_icon or 'fa-award' }} text-amber-400 text-[8px]"></i>
+                                {{ cert.tier.badge_name }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-[11px] text-emerald-200 leading-snug mt-1">
+                            Ikuti kurikulum diksar, SOP kebencanaan & raih sertifikasi internal GIMBAL.
+                        </p>
+                        {% endif %}
+                    </div>
+                    <button type="button"
+                            hx-get="/member/academy" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                            class="inline-flex items-center justify-center gap-1.5 w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded shadow transition">
+                        <i class="fas fa-graduation-cap text-[10px]"></i>
+                        <span>{% if data.user_certifications %}Lanjutkan Belajar{% else %}Mulai Pelatihan{% endif %}</span>
+                        <i class="fas fa-chevron-right text-[9px]"></i>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 1c. KARTU PROMOSI GEOPDF STUDIO MAPS -->
             <div class="bg-gradient-to-br from-stone-900 via-stone-850 to-orange-950 p-4 rounded-lg border border-orange-500/40 text-white shadow-lg relative overflow-hidden group">
                 <div class="absolute -right-3 -bottom-3 opacity-15 text-orange-400 text-6xl group-hover:scale-110 transition-transform pointer-events-none">
                     <i class="fas fa-layer-group"></i>
@@ -1225,6 +1320,25 @@
                         <p class="text-xs font-semibold text-orange-200">Seumur Hidup</p>
                     </div>
                 </div>
+
+                <!-- Brevet / Lencana Sertifikasi Lapangan -->
+                {% if user.certifications_list %}
+                <div class="pt-2.5 border-t border-orange-800/40">
+                    <p class="text-[9px] text-orange-300 uppercase tracking-wider font-bold mb-1.5 flex items-center gap-1">
+                        <i class="fas fa-shield-alt text-amber-400"></i> Brevet & Kompetensi Resmi:
+                    </p>
+                    <div class="flex flex-wrap gap-1.5">
+                        {% for cert in user.certifications_list %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black text-white shadow-sm border border-white/20"
+                              style="background: linear-gradient(135deg, {{ cert.tier.badge_color or '#f97316' }}, #0f172a);"
+                              title="{{ cert.tier.title }} (No: {{ cert.certificate_number }})">
+                            <i class="fas {{ cert.tier.badge_icon or 'fa-award' }} text-amber-300 text-[10px]"></i>
+                            <span>{{ cert.tier.badge_name }}</span>
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
 
                 <!-- Kontak Darurat pada KTA -->
                 <div class="pt-2 border-t border-orange-800/40 text-[11px] text-slate-300">
@@ -2314,6 +2428,752 @@
         </div>
     </div>
     {% endif %}
+
+</div>
+{% endmacro %}
+
+
+<!-- ============================================================== -->
+<!-- 8. PORTAL AKADEMI & SOP DIGITAL ANGGOTA (E-LEARNING & SERTIFIKASI) -->
+<!-- ============================================================== -->
+{% macro member_academy(data) %}
+{% set user = data.user %}
+{% set tiers = data.tiers %}
+{% set completed_ids = data.completed_lesson_ids %}
+{% set certified_tier_ids = data.certified_tier_ids %}
+
+<div class="space-y-6">
+
+    <!-- Top Header Banner (Sesuai Warna Utama Tema) -->
+    <div class="theme-profile-header-card p-6 sm:p-8 rounded-2xl border border-orange-500/40 text-white shadow-xl relative overflow-hidden" style="background: var(--brand-600, #ea580c) !important;">
+        <div class="absolute -right-8 -bottom-8 opacity-15 text-white text-9xl pointer-events-none">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div class="relative z-10 max-w-3xl space-y-2">
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 bg-white/20 text-white text-[10px] font-black uppercase tracking-wider rounded-md shadow-xs backdrop-blur-sm border border-white/30">
+                    Akademi Rimba KPAB GIMBAL
+                </span>
+                <span class="text-orange-100 text-xs font-mono font-bold">Standard Operating Procedure</span>
+            </div>
+            <h1 class="text-xl sm:text-3xl font-black font-heading tracking-tight text-white">
+                Pusat Pelatihan & Ujian Sertifikasi Kompetensi
+            </h1>
+            <p class="text-xs sm:text-sm text-orange-100 leading-relaxed">
+                Pelajari SOP kebencanaan, navigasi darat & teknik survival rimba. Raih lencana brevet resmi pada profil dan Kartu Tanda Anggota (KTA) digital Anda.
+            </p>
+        </div>
+    </div>
+
+    <!-- MANDATORY CERTIFICATION WARNING BANNER (Jika diwajibkan oleh Admin) -->
+    {% if data.is_mandatory_pending %}
+    <div class="p-5 rounded-2xl bg-gradient-to-r from-rose-900 via-rose-800 to-amber-900 text-white shadow-xl border-2 border-rose-500/80 relative overflow-hidden animate-pulse">
+        <div class="flex items-start gap-3.5 relative z-10">
+            <div class="w-12 h-12 rounded-xl bg-rose-600 text-white flex items-center justify-center text-xl shadow-md shrink-0 border border-white/20">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white">Kewajiban Khusus</span>
+                    <span class="text-[11px] text-amber-200 font-bold">Instruksi Dewan Pengurus</span>
+                </div>
+                <h3 class="text-sm sm:text-base font-black font-heading mt-0.5">
+                    Wajib Diselesaikan: {{ data.mandatory_tier.title if data.mandatory_tier else 'Level 1 - Tingkat Dasar' }}
+                </h3>
+                <p class="text-xs text-rose-100 max-w-2xl leading-relaxed mt-1">
+                    Anda diwajibkan menyelesaikan seluruh materi modul serta lulus ujian sertifikasi pada tingkat ini untuk pemenuhan syarat operasional lapangan resmi.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- RINGKASAN BREVET & LENCANA RESMI ANGGOTA -->
+    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-shield-alt text-orange-600 text-base"></i>
+                <h2 class="text-sm font-black text-slate-800 font-heading uppercase tracking-wide">
+                    Lencana & Brevet Keahlian Anda
+                </h2>
+            </div>
+            <span class="text-xs text-slate-500 font-medium">
+                {{ user.certifications_list|length }} dari {{ tiers|length }} Brevet Diraih
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {% for tier in tiers %}
+            {% set user_cert = None %}
+            {% for c in data.certifications %}
+                {% if c.tier_id == tier.id and c.status == 'active' %}
+                    {% set user_cert = c %}
+                {% endif %}
+            {% endfor %}
+
+            <div class="p-4 rounded-xl border relative overflow-hidden transition {% if user_cert %}bg-gradient-to-br from-orange-600 via-orange-500 to-amber-600 border-amber-300 text-white shadow-md{% else %}bg-slate-50 border-slate-200/80 text-slate-400{% endif %}">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-inner shrink-0 {% if user_cert %}text-white border border-white/20{% else %}bg-slate-200 text-slate-400{% endif %}"
+                         style="{% if user_cert %}background-color: {{ tier.badge_color or '#f97316' }};{% endif %}">
+                        <i class="fas {{ tier.badge_icon or 'fa-award' }}"></i>
+                    </div>
+                    <div class="flex-1 overflow-hidden">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[9px] font-bold uppercase tracking-wider {% if user_cert %}text-amber-400{% else %}text-slate-400{% endif %}">
+                                Tingkat {{ tier.order_index }}
+                            </span>
+                            {% if user_cert %}
+                            <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-emerald-500 text-white">TERVERIFIKASI</span>
+                            {% endif %}
+                        </div>
+                        <h4 class="text-xs font-black truncate {% if user_cert %}text-white{% else %}text-slate-700{% endif %}">
+                            {{ tier.badge_name }}
+                        </h4>
+                        <p class="text-[10px] truncate {% if user_cert %}text-orange-100{% else %}text-slate-400{% endif %}">
+                            {{ tier.target_audience }}
+                        </p>
+                    </div>
+                </div>
+
+                {% if user_cert %}
+                <div class="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[10px]">
+                    <span class="font-mono text-amber-300 font-bold truncate max-w-[130px]" title="{{ user_cert.certificate_no }}">
+                        {{ user_cert.certificate_no }}
+                    </span>
+                    <a href="/member/academy/certificate/{{ user_cert.certificate_no }}" target="_blank"
+                       class="px-2 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-black tracking-wide transition flex items-center gap-1">
+                        <i class="fas fa-certificate text-[9px]"></i> Lihat Piagam
+                    </a>
+                </div>
+                {% else %}
+                <div class="mt-3 pt-2.5 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-400">
+                    <span>Belum Tersertifikasi</span>
+                    <span class="font-medium text-slate-500">Passing {{ tier.passing_score }}%</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- KURIKULUM & MATERI PER TINGKATAN -->
+    <div class="space-y-6">
+        {% for tier in tiers %}
+        {% set is_tier_certified = tier.id in certified_tier_ids %}
+        
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="tier-{{ tier.id }}">
+            <!-- Header Tingkat -->
+            <div class="p-5 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r {% if is_tier_certified %}from-emerald-50/50 via-white to-white{% else %}from-orange-50/40 via-white to-white{% endif %}">
+                <div class="flex items-start gap-3.5">
+                    <div class="w-12 h-12 rounded-xl text-white flex items-center justify-center text-xl shadow-md shrink-0"
+                         style="background-color: {{ tier.badge_color or '#f97316' }};">
+                        <i class="fas {{ tier.badge_icon or 'fa-award' }}"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider text-white"
+                                  style="background-color: {{ tier.badge_color or '#f97316' }};">
+                                Level {{ tier.order_index }}
+                            </span>
+                            <span class="text-xs text-slate-500 font-semibold">{{ tier.target_audience }}</span>
+                            {% if is_tier_certified %}
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                                <i class="fas fa-check-circle"></i> Brevet Diraih
+                            </span>
+                            {% endif %}
+                        </div>
+                        <h3 class="text-base sm:text-lg font-black text-slate-900 font-heading mt-1">
+                            {{ tier.title }}
+                        </h3>
+                        <p class="text-xs text-slate-600 max-w-2xl mt-0.5 leading-relaxed">
+                            {{ tier.description }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="text-left sm:text-right shrink-0">
+                    <span class="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">Syarat Sertifikasi</span>
+                    <span class="text-xs font-bold text-slate-700">Skor Minimal {{ tier.passing_score }}%</span>
+                </div>
+            </div>
+
+            <!-- Kursus & Modul di dalam Tingkat ini -->
+            <div class="p-5 sm:p-6 space-y-6">
+                {% for course in tier.courses %}
+                <div class="rounded-xl border border-slate-200/90 overflow-hidden bg-slate-50/50">
+                    <div class="p-4 bg-white border-b border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">
+                                <i class="fas {{ course.icon or 'fa-book-open' }}"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs sm:text-sm font-bold text-slate-800 font-heading">{{ course.title }}</h4>
+                                <p class="text-[11px] text-slate-500">{{ course.description }}</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                            {{ course.lessons|length }} Materi
+                        </span>
+                    </div>
+
+                    <!-- Daftar Pelajaran -->
+                    <div class="divide-y divide-slate-200/60 bg-white">
+                        {% for lesson in course.lessons %}
+                        {% set is_done = lesson.id in completed_ids %}
+                        <div class="p-3.5 sm:px-5 flex items-center justify-between hover:bg-orange-50/30 transition group">
+                            <div class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs shrink-0 {% if is_done %}bg-emerald-100 text-emerald-600{% else %}bg-slate-100 text-slate-400{% endif %}">
+                                    <i class="fas {% if is_done %}fa-check{% else %}fa-circle-notch text-[9px]{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <a href="/member/academy/lesson/{{ lesson.id }}"
+                                           hx-get="/member/academy/lesson/{{ lesson.id }}" hx-target="#main-content" hx-push-url="true"
+                                           class="text-xs font-bold text-slate-800 group-hover:text-orange-600 transition cursor-pointer">
+                                            {{ lesson.title }}
+                                        </a>
+                                        {% if lesson.doc_id %}
+                                        <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-100 text-rose-700 border border-rose-200" title="Ada Dokumen SOP PDF">
+                                            <i class="fas fa-file-pdf"></i> SOP PDF
+                                        </span>
+                                        {% endif %}
+                                        {% if lesson.map_repo_id %}
+                                        <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200" title="Ada Peta Rute GPX">
+                                            <i class="fas fa-map-marked-alt"></i> Peta GPX
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-[10px] text-slate-400">
+                                        Estimasi: {{ lesson.duration_minutes }} Menit
+                                        {% if lesson.summary %} &bull; {{ lesson.summary|truncate(60) }}{% endif %}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <a href="/member/academy/lesson/{{ lesson.id }}"
+                               hx-get="/member/academy/lesson/{{ lesson.id }}" hx-target="#main-content" hx-push-url="true"
+                               class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shrink-0 {% if is_done %}bg-slate-100 hover:bg-slate-200 text-slate-700{% else %}bg-orange-600 hover:bg-orange-700 text-white shadow-xs{% endif %}">
+                                <span>{% if is_done %}Baca Ulang{% else %}Pelajari{% endif %}</span>
+                                <i class="fas fa-chevron-right text-[9px]"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Ujian Sertifikasi Tingkat -->
+                {% for quiz in tier.quizzes %}
+                <div class="p-5 rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-50/70 via-orange-50/40 to-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-black shadow-sm shrink-0">
+                            <i class="fas fa-file-signature"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-amber-600 text-white">Ujian Resmi</span>
+                                <span class="text-xs text-amber-800 font-bold">Passing Grade: {{ quiz.passing_score }}%</span>
+                            </div>
+                            <h4 class="text-sm font-black text-slate-900 font-heading mt-0.5">{{ quiz.title }}</h4>
+                            <p class="text-xs text-slate-600 mt-0.5">
+                                {{ quiz.description or 'Uji pemahaman materi untuk meraih lencana brevet resmi.' }}
+                                ({{ quiz.questions|length }} Butir Soal)
+                            </p>
+                        </div>
+                    </div>
+
+                    <a href="/member/academy/quiz/{{ quiz.id }}"
+                       hx-get="/member/academy/quiz/{{ quiz.id }}" hx-target="#main-content" hx-push-url="true"
+                       class="px-5 py-2.5 rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-2 shrink-0 {% if is_tier_certified %}bg-emerald-600 hover:bg-emerald-700 text-white{% else %}bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white{% endif %}">
+                        <i class="fas {% if is_tier_certified %}fa-certificate{% else %}fa-play{% endif %}"></i>
+                        <span>{% if is_tier_certified %}Lihat Hasil / Sertifikat{% else %}Mulai Ujian Sertifikasi{% endif %}</span>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endmacro %}
+
+
+<!-- ============================================================== -->
+<!-- 9. VIEW PEMBACA MATERI & SOP DIGITAL ANGGOTA -->
+<!-- ============================================================== -->
+{% macro member_lesson_view(data) %}
+{% set lesson = data.lesson %}
+{% set course = data.course %}
+{% set tier = data.tier %}
+{% set prev_l = data.prev_lesson %}
+{% set next_l = data.next_lesson %}
+{% set is_completed = data.is_completed %}
+
+<div class="space-y-6 max-w-4xl mx-auto">
+
+    <!-- Breadcrumb & Top Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+        <a href="/member/academy"
+           hx-get="/member/academy" hx-target="#main-content" hx-push-url="true"
+           class="inline-flex items-center gap-1.5 font-bold text-slate-600 hover:text-orange-600 transition">
+            <i class="fas fa-arrow-left"></i>
+            <span>Kembali ke Kurikulum Akademi</span>
+        </a>
+        <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded text-[10px] font-black text-white"
+                  style="background-color: {{ tier.badge_color or '#f97316' }};">
+                Level {{ tier.order_index }}: {{ tier.badge_name }}
+            </span>
+            <span class="text-slate-400 font-semibold">&bull; {{ course.title }}</span>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
+        
+        <!-- Header Materi -->
+        <div class="p-6 sm:p-8 border-b border-slate-100 bg-gradient-to-b from-orange-50/30 to-white">
+            <div class="flex items-center gap-2 text-xs text-orange-600 font-bold uppercase tracking-wider mb-2">
+                <i class="fas fa-book-reader"></i> Modul Pembelajaran Lapangan
+            </div>
+            <h1 class="text-xl sm:text-2xl font-black text-slate-900 font-heading">
+                {{ lesson.title }}
+            </h1>
+            <div class="flex flex-wrap items-center gap-4 text-xs text-slate-500 mt-2 font-medium">
+                <span><i class="far fa-clock text-slate-400 mr-1"></i> Estimasi {{ lesson.duration_minutes }} Menit</span>
+                <span><i class="fas fa-layer-group text-slate-400 mr-1"></i> {{ course.title }}</span>
+                {% if is_completed %}
+                <span class="text-emerald-600 font-bold flex items-center gap-1">
+                    <i class="fas fa-check-circle"></i> Materi Telah Diselesaikan
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Video Embed (Jika Ada) -->
+        {% if lesson.video_url %}
+        <div class="p-6 border-b border-slate-100 bg-black/95">
+            <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg border border-stone-800">
+                <iframe class="w-full h-full" src="{{ lesson.video_url }}" title="{{ lesson.title }}" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Integrasi Lampiran Dokumen SOP PDF & Peta GPX -->
+        {% if lesson.doc or lesson.map_repo %}
+        <div class="p-5 sm:p-6 bg-slate-50 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {% if lesson.doc %}
+            <div class="p-4 rounded-xl bg-white border border-rose-200 shadow-2xs flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-lg font-bold shrink-0">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <span class="text-[9px] font-black uppercase text-rose-600 tracking-wider">Dokumen SOP Resmi</span>
+                        <h4 class="text-xs font-bold text-slate-800 truncate">{{ lesson.doc.title }}</h4>
+                        <p class="text-[10px] text-slate-400">{{ lesson.doc.category }}</p>
+                    </div>
+                </div>
+                <a href="/documents/download/{{ lesson.doc.id }}" target="_blank"
+                   class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold shadow-xs transition shrink-0 flex items-center gap-1">
+                    <i class="fas fa-download"></i> Unduh
+                </a>
+            </div>
+            {% endif %}
+
+            {% if lesson.map_repo %}
+            <div class="p-4 rounded-xl bg-white border border-blue-200 shadow-2xs flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-lg font-bold shrink-0">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <span class="text-[9px] font-black uppercase text-blue-600 tracking-wider">Peta GPX Jalur</span>
+                        <h4 class="text-xs font-bold text-slate-800 truncate">{{ lesson.map_repo.title }}</h4>
+                        <p class="text-[10px] text-slate-400">{{ lesson.map_repo.region }}</p>
+                    </div>
+                </div>
+                <a href="https://mapgen.gimbal.my.id" target="_blank"
+                   class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold shadow-xs transition shrink-0 flex items-center gap-1">
+                    <i class="fas fa-external-link-alt"></i> Buka Peta
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Isi Teks Pelajaran & Prosedur SOP -->
+        <div class="p-6 sm:p-10 prose prose-slate max-w-none text-slate-800 leading-relaxed text-sm sm:text-base border-b border-slate-100">
+            <div class="space-y-4">
+                {{ lesson.content | safe }}
+            </div>
+        </div>
+
+        <!-- Tombol Selesai & Navigasi Antar Bab -->
+        <div class="p-6 sm:p-8 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            {% if prev_l %}
+            <a href="/member/academy/lesson/{{ prev_l.id }}"
+               hx-get="/member/academy/lesson/{{ prev_l.id }}" hx-target="#main-content" hx-push-url="true"
+               class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-2">
+                <i class="fas fa-chevron-left text-[10px]"></i>
+                <span>Bab Sebelumnya</span>
+            </a>
+            {% else %}
+            <div></div>
+            {% endif %}
+
+            <form action="/member/academy/lesson/{{ lesson.id }}/complete" method="POST">
+                <button type="submit"
+                        class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-check-circle"></i>
+                    <span>{% if is_completed %}Sudah Diselesaikan (Lanjut){% else %}Tandai Selesai & Lanjut &rarr;{% endif %}</span>
+                </button>
+            </form>
+
+            {% if next_l %}
+            <a href="/member/academy/lesson/{{ next_l.id }}"
+               hx-get="/member/academy/lesson/{{ next_l.id }}" hx-target="#main-content" hx-push-url="true"
+               class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-2">
+                <span>Bab Berikutnya</span>
+                <i class="fas fa-chevron-right text-[10px]"></i>
+            </a>
+            {% else %}
+            <div></div>
+            {% endif %}
+        </div>
+
+    </div>
+
+</div>
+{% endmacro %}
+
+
+<!-- ============================================================== -->
+<!-- 10. VIEW UJIAN & KUIS SERTIFIKASI ANGGOTA -->
+<!-- ============================================================== -->
+{% macro member_quiz_view(data) %}
+{% set quiz = data.quiz %}
+{% set attempts = data.attempts %}
+{% set latest = data.latest_attempt %}
+{% set has_passed = data.has_passed %}
+{% set user_cert = data.user_cert %}
+{% set is_exam_mode = data.is_exam_mode %}
+
+<div class="space-y-6 max-w-3xl mx-auto">
+
+    <!-- Top Bar -->
+    <a href="/member/academy"
+       hx-get="/member/academy" hx-target="#main-content" hx-push-url="true"
+       class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-orange-600 transition">
+        <i class="fas fa-arrow-left"></i>
+        <span>Kembali ke Kurikulum Akademi</span>
+    </a>
+
+    <!-- Flash message -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="space-y-2">
+            {% for category, message in messages %}
+            <div class="p-4 rounded-xl border text-xs font-bold flex items-center justify-between {% if category == 'success' %}bg-emerald-50 border-emerald-300 text-emerald-900{% else %}bg-amber-50 border-amber-300 text-amber-900{% endif %}">
+                <div class="flex items-center gap-2">
+                    <i class="fas {% if category == 'success' %}fa-check-circle text-emerald-600{% else %}fa-exclamation-triangle text-amber-600{% endif %} text-base"></i>
+                    <span>{{ message }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    {% if not is_exam_mode %}
+    <!-- OVERVIEW / INSTRUCTIONS CARD -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
+        <div class="theme-profile-header-card p-6 sm:p-8 text-white relative border-b border-orange-500/30" style="background: var(--brand-600, #ea580c) !important;">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-white/20 text-white backdrop-blur-sm border border-white/30">
+                    Ujian Sertifikasi
+                </span>
+                <span class="text-orange-100 text-xs font-semibold">Tingkat {{ quiz.tier.order_index }}</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-black font-heading text-white">
+                {{ quiz.title }}
+            </h1>
+            <p class="text-xs text-orange-100 max-w-xl mt-1 leading-relaxed">
+                {{ quiz.description or 'Evaluasi kesiapan pemahaman materi SOP dan kompetensi lapangan.' }}
+            </p>
+        </div>
+
+        <div class="p-6 sm:p-8 space-y-6">
+            <!-- Parameter Ujian -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold block">Jumlah Soal</span>
+                    <span class="text-base font-black text-slate-800">{{ quiz.questions|length }} Soal</span>
+                </div>
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold block">Passing Score</span>
+                    <span class="text-base font-black text-emerald-600">{{ quiz.passing_score }}%</span>
+                </div>
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold block">Batas Waktu</span>
+                    <span class="text-base font-black text-slate-800">{{ quiz.time_limit_minutes }} Menit</span>
+                </div>
+                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold block">Pengerjaan Anda</span>
+                    <span class="text-base font-black text-slate-800">{{ attempts|length }} Kali</span>
+                </div>
+            </div>
+
+            <!-- Status Kelulusan Anda -->
+            {% if has_passed %}
+            <div class="p-5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-2xl shadow-sm shrink-0">
+                        <i class="fas fa-medal"></i>
+                    </div>
+                    <div>
+                        <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-emerald-600 text-white">Status: LULUS</span>
+                        <h3 class="text-sm font-black text-emerald-950 font-heading mt-0.5">
+                            Selamat! Anda Berhak Menggunakan Brevet {{ quiz.tier.badge_name }}
+                        </h3>
+                        {% if user_cert %}
+                        <p class="text-xs text-emerald-800 font-mono font-bold mt-0.5">
+                            No. Sertifikat: {{ user_cert.certificate_no }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if user_cert %}
+                <a href="/member/academy/certificate/{{ user_cert.certificate_no }}" target="_blank"
+                   class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs shadow transition flex items-center gap-1.5 shrink-0">
+                    <i class="fas fa-certificate"></i> Buka Piagam
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Riwayat Percobaan -->
+            {% if attempts %}
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Riwayat Percobaan Terakhir</h4>
+                <div class="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden text-xs">
+                    {% for a in attempts[:5] %}
+                    <div class="p-3 flex items-center justify-between bg-white">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-slate-700">Percobaan #{{ loop.revindex }}</span>
+                            <span class="text-slate-400 text-[11px]">&bull; {{ a.completed_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold {% if a.passed %}text-emerald-600{% else %}text-rose-600{% endif %}">
+                                Skor: {{ a.score }}%
+                            </span>
+                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase {% if a.passed %}bg-emerald-100 text-emerald-800{% else %}bg-rose-100 text-rose-800{% endif %}">
+                                {% if a.passed %}Lulus{% else %}Belum Lulus{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Tombol Aksi Mulai / Ulang Ujian -->
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <a href="/member/academy"
+                   hx-get="/member/academy" hx-target="#main-content" hx-push-url="true"
+                   class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">
+                    Kembali
+                </a>
+                <a href="/member/academy/quiz/{{ quiz.id }}?exam=1"
+                   class="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-black text-xs sm:text-sm shadow-lg transition flex items-center gap-2">
+                    <i class="fas fa-play"></i>
+                    <span>{% if attempts %}Ujian Ulang{% else %}Mulai Ujian Sekarang{% endif %} &rarr;</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- LEMBAR PENGERJAAN SOAL UJIAN (EXAM MODE) -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+        <div class="theme-profile-header-card p-6 text-white border-b border-orange-500/30 flex items-center justify-between" style="background: var(--brand-600, #ea580c) !important;">
+            <div>
+                <span class="text-[10px] text-orange-100 font-bold uppercase tracking-wider">Ujian Sedang Berlangsung</span>
+                <h2 class="text-base sm:text-lg font-black font-heading">{{ quiz.title }}</h2>
+            </div>
+            <div class="px-3 py-1 rounded-lg bg-white/20 border border-white/30 text-white text-xs font-mono font-bold backdrop-blur-sm">
+                {{ quiz.questions|length }} Soal
+            </div>
+        </div>
+
+        <form action="/member/academy/quiz/{{ quiz.id }}/submit" method="POST" class="p-6 sm:p-8 space-y-8">
+            {% for q in quiz.questions %}
+            <div class="space-y-3 p-4 sm:p-5 rounded-xl border border-slate-200 bg-slate-50/50">
+                <div class="flex items-start gap-3">
+                    <span class="w-7 h-7 rounded-lg bg-orange-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                        {{ loop.index }}
+                    </span>
+                    <div class="flex-1">
+                        <p class="text-xs sm:text-sm font-bold text-slate-900 leading-relaxed">
+                            {{ q.question_text }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Pilihan Jawaban -->
+                <div class="space-y-2 pt-2">
+                    {% for opt in q.options %}
+                    <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 bg-white hover:bg-orange-50/50 hover:border-orange-300 cursor-pointer transition text-xs font-medium text-slate-800">
+                        <input type="radio" name="question_{{ q.id }}" value="{{ opt.id }}" required
+                               class="w-4 h-4 text-orange-600 focus:ring-orange-500 border-slate-300">
+                        <span>{{ opt.option_text }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Pernyataan Integritas & Tombol Submit -->
+            <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
+                <label class="flex items-center gap-2 cursor-pointer font-bold">
+                    <input type="checkbox" required class="w-4 h-4 text-amber-600 rounded">
+                    <span>Saya mengerjakan seluruh soal ujian ini dengan jujur dan bersungguh-sungguh demi kesiapan operasional lapangan.</span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                <a href="/member/academy/quiz/{{ quiz.id }}" class="px-4 py-2 bg-slate-100 text-slate-600 font-bold text-xs rounded-lg hover:bg-slate-200">
+                    Batalkan
+                </a>
+                <button type="submit"
+                        class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Kirim Jawaban & Evaluasi Hasil</span>
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+{% endmacro %}
+
+
+<!-- ============================================================== -->
+<!-- 11. VIEW PIAGAM SERTIFIKAT DIGITAL RESMI & VERIFIKASI QR -->
+<!-- ============================================================== -->
+{% macro member_certificate_view(data) %}
+{% set cert = data.cert %}
+{% set user = data.user %}
+{% set tier = data.tier %}
+{% set qr = data.qr_base64 %}
+
+<div class="space-y-6 max-w-4xl mx-auto">
+
+    <!-- Top Action Bar -->
+    <div class="flex items-center justify-between">
+        <a href="/member/academy"
+           class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-orange-600 transition">
+            <i class="fas fa-arrow-left"></i>
+            <span>Kembali ke Portal Akademi</span>
+        </a>
+        <button onclick="window.print()"
+                class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-black rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
+            <i class="fas fa-print"></i>
+            <span>Cetak / Unduh PDF</span>
+        </button>
+    </div>
+
+    <!-- FISIK SERTIFIKAT DIGITAL LUXURY GALA -->
+    <div id="certificate-paper" class="bg-stone-950 text-white rounded-3xl p-8 sm:p-12 border-4 border-amber-500/80 shadow-2xl relative overflow-hidden text-center">
+        
+        <!-- Watermark Ornament Background -->
+        <div class="absolute inset-0 opacity-5 pointer-events-none flex items-center justify-center">
+            <img src="/assets/logo.png" alt="Logo Watermark" class="w-96 h-96 object-contain filter grayscale invert">
+        </div>
+
+        <!-- Frame Border Line -->
+        <div class="border border-amber-400/40 rounded-2xl p-6 sm:p-10 relative z-10 space-y-6">
+            
+            <!-- Header Institusi -->
+            <div class="flex items-center justify-center gap-3">
+                <img src="/assets/logo.png" alt="KPAB GIMBAL" class="w-16 h-16 object-contain drop-shadow">
+                <div class="text-left">
+                    <h2 class="text-lg sm:text-xl font-black font-heading tracking-widest text-amber-400 uppercase">
+                        KPAB GIMBAL
+                    </h2>
+                    <p class="text-[10px] sm:text-xs text-stone-300 font-serif tracking-wider uppercase">
+                        Generasi Indonesia Menyatu Bersama Alam &bull; Provinsi Gorontalo
+                    </p>
+                </div>
+            </div>
+
+            <!-- Judul Piagam -->
+            <div class="pt-4 space-y-1">
+                <span class="text-[10px] sm:text-xs tracking-widest uppercase font-mono text-amber-300">
+                    Sertifikat Kualifikasi Operasional & Standar SOP
+                </span>
+                <h1 class="text-2xl sm:text-4xl font-serif font-black tracking-wide text-white uppercase">
+                    PIAGAM KOMPETENSI
+                </h1>
+                <p class="text-xs text-amber-200/80 font-mono">
+                    Nomor Registrasi: {{ cert.certificate_no }}
+                </p>
+            </div>
+
+            <!-- Diberikan Kepada -->
+            <div class="pt-4 space-y-2">
+                <p class="text-xs sm:text-sm text-stone-400 italic font-serif">Diberikan secara resmi kepada:</p>
+                <h3 class="text-2xl sm:text-3xl font-black font-heading text-amber-300 tracking-wide underline decoration-amber-500/60 underline-offset-8">
+                    {{ user.name }}
+                </h3>
+                <p class="text-xs text-stone-300 font-mono">
+                    NRA: <strong>{{ user.nra or 'Anggota GIMBAL' }}</strong> &bull; Gol. Darah: <strong>{{ user.blood_type or 'O' }}</strong>
+                </p>
+            </div>
+
+            <!-- Kualifikasi yang Diraih -->
+            <div class="pt-4 max-w-2xl mx-auto space-y-2">
+                <p class="text-xs sm:text-sm text-stone-300 leading-relaxed font-serif">
+                    Telah menyelesaikan seluruh modul pembelajaran, penguasaan SOP kebencanaan, navigasi rimba, dan dinyatakan <strong>LULUS</strong> pada Ujian Kualifikasi:
+                </p>
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-300 font-black text-sm sm:text-base">
+                    <i class="fas {{ tier.badge_icon or 'fa-award' }} text-amber-400"></i>
+                    <span>{{ tier.title }} &mdash; {{ tier.badge_name }}</span>
+                </div>
+                <p class="text-xs text-stone-400 font-mono">
+                    Skor Kelulusan: <span class="text-amber-400 font-bold">{{ cert.score_achieved }}%</span>
+                </p>
+            </div>
+
+            <!-- Footer Pengesahan & QR Code -->
+            <div class="pt-8 border-t border-amber-500/30 grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
+                <!-- Dewan Instruktur -->
+                <div class="text-center sm:text-left text-xs space-y-1">
+                    <p class="text-[10px] text-stone-400">Ditetapkan di:</p>
+                    <p class="font-bold text-white">Gorontalo, {{ cert.issued_at.strftime('%d %B %Y') }}</p>
+                    <p class="text-[10px] text-amber-300 font-serif">Dewan Instruktur Akademi</p>
+                </div>
+
+                <!-- QR Code Verifikasi -->
+                <div class="flex flex-col items-center justify-center">
+                    <img src="data:image/png;base64,{{ qr }}" alt="QR Code Verifikasi" class="w-20 h-20 bg-white p-1 rounded-lg shadow-lg">
+                    <span class="text-[9px] text-stone-400 font-mono mt-1">Scan untuk Verifikasi</span>
+                </div>
+
+                <!-- Pengurus Pusat -->
+                <div class="text-center sm:text-right text-xs space-y-1">
+                    <p class="text-[10px] text-stone-400">Mengetahui & Mengesahkan:</p>
+                    <p class="font-bold text-white">Pengurus Pusat KPAB GIMBAL</p>
+                    <p class="text-[10px] text-amber-300 font-serif">Bidang Diklat & Operasional</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
 {% endmacro %}
