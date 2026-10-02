@@ -57,9 +57,15 @@
                     <a href="/#ekspedisi" data-section="ekspedisi"
                        onclick="window.navigateLandingSection(event, 'ekspedisi')"
                        class="landing-nav-item px-3 py-1.5 rounded-lg transition font-medium text-white/90 hover:text-white hover:bg-white/20">Ekspedisi</a>
+                    <a href="/#gimbal-maps" data-section="gimbal-maps"
+                       onclick="window.navigateLandingSection(event, 'gimbal-maps')"
+                       class="landing-nav-item px-3 py-1.5 rounded-lg transition font-medium text-white/90 hover:text-white hover:bg-white/20">GIMBAL Maps</a>
                     <a href="/#galeri" data-section="galeri"
                        onclick="window.navigateLandingSection(event, 'galeri')"
                        class="landing-nav-item px-3 py-1.5 rounded-lg transition font-medium text-white/90 hover:text-white hover:bg-white/20">Galeri</a>
+                    <a href="/#sponsorship" data-section="sponsorship"
+                       onclick="window.navigateLandingSection(event, 'sponsorship')"
+                       class="landing-nav-item px-3 py-1.5 rounded-lg transition font-medium text-white/90 hover:text-white hover:bg-white/20">Sponsorship</a>
                     <a href="/#kode-etik" data-section="kode-etik"
                        onclick="window.navigateLandingSection(event, 'kode-etik')"
                        class="landing-nav-item px-3 py-1.5 rounded-lg transition font-medium text-white/90 hover:text-white hover:bg-white/20">Kode Etik</a>
@@ -221,7 +227,7 @@
                                     @click="adminMenu = false"
                                     onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
                                     class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_repo_maps' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
-                                    hx-get="/admin/repo-maps" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                     hx-get="/admin/repo-maps" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
                                     <div class="flex items-center gap-2.5">
                                         <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
                                             <i class="fas fa-map-marked-alt text-[11px]"></i>
@@ -231,11 +237,26 @@
                                     <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
                                 </a>
 
-                                <!-- 9. Pengaturan & Akses -->
+                                <!-- 9. Sponsorship & Mitra Usaha -->
+                                <a href="/admin/sponsors" data-page="admin_sponsors"
+                                    @click="adminMenu = false"
+                                    onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
+                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_sponsors' or (active_page == 'admin_settings' and (curr_tab == 'sponsors' or request.args.get('tab') == 'sponsors')) %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                    hx-get="/admin/sponsors" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
+                                            <i class="fas fa-handshake text-[11px]"></i>
+                                        </div>
+                                        <span class="text-xs font-semibold">Sponsorship & Mitra</span>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
+                                </a>
+
+                                <!-- 10. Pengaturan & Akses -->
                                 <a href="/admin/settings" data-page="admin_settings"
                                     @click="adminMenu = false"
                                     onclick="window.setActiveAdminNav && window.setActiveAdminNav(this)"
-                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_settings' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
+                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between {% if active_page == 'admin_settings' and (not request.args.get('tab') or request.args.get('tab') != 'sponsors') and active_page != 'admin_sponsors' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}"
                                     hx-get="/admin/settings" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
                                     <div class="flex items-center gap-2.5">
                                         <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center">
@@ -403,6 +424,21 @@
                                     </div>
                                     <i class="fas fa-chevron-right text-[9px] opacity-50 nav-arrow"></i>
                                 </a>
+
+                                <a href="/member/business" data-page="member_business"
+                                    hx-get="/member/business" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
+                                    @click="userDropdown = false"
+                                    onclick="window.setActiveMemberNav && window.setActiveMemberNav(this); window.toggleUserProfileMenu && window.toggleUserProfileMenu(event)"
+                                    class="member-nav-item w-full text-left px-3 py-2 rounded-md transition flex items-center gap-3 {% if active_page == 'member_business' %}active bg-orange-600 text-white font-bold shadow-sm{% else %}text-slate-700 hover:bg-orange-50 hover:text-orange-600{% endif %}">
+                                    <div class="nav-icon-box w-7 h-7 rounded-md flex items-center justify-center">
+                                        <i class="fas fa-store text-xs"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-xs font-semibold leading-tight text-slate-800">Usaha & Lapak Saya</p>
+                                        <p class="text-[10px] text-slate-500 opacity-75">Daftarkan usaha, cafe & diskon KTA</p>
+                                    </div>
+                                    <i class="fas fa-chevron-right text-[9px] opacity-50 nav-arrow"></i>
+                                </a>
                                 {% endif %}
                             </div>
 
@@ -516,6 +552,14 @@
                     hx-get="/admin/gallery" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
                     <i class="fas fa-camera-retro mr-2"></i> Galeri Ekspedisi
                 </a>
+                <a href="/admin/repo-maps" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
+                    hx-get="/admin/repo-maps" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
+                    <i class="fas fa-map-marked-alt mr-2"></i> Repo Peta GIMBAL
+                </a>
+                <a href="/admin/sponsors" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
+                    hx-get="/admin/sponsors" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
+                    <i class="fas fa-handshake mr-2"></i> Sponsorship & Mitra
+                </a>
                 <a href="/admin/settings" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
                     hx-get="/admin/settings" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
                     <i class="fas fa-sliders-h mr-2"></i> Pengaturan & Akses
@@ -548,6 +592,13 @@
                     hx-get="/member/documents" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
                     <i class="fas fa-book-open mr-2 text-orange-400"></i> Arsip Dokumen
                 </a>
+                {% if current_user.status == 'active' %}
+                <a href="/member/business"
+                    class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
+                    hx-get="/member/business" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
+                    <i class="fas fa-store mr-2 text-orange-400"></i> Usaha & Lapak Saya
+                </a>
+                {% endif %}
 
                 <!-- KELOMPOK DATA & PROFIL (MOBILE) -->
                 <div class="px-3 pt-3 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-orange-300 border-t border-orange-800/40 mt-2">
@@ -619,11 +670,23 @@
                         @click="mobileMenu = false">
                         <span class="flex items-center gap-2.5"><i class="fas fa-hiking text-xs w-4 text-center"></i> Ekspedisi</span>
                     </a>
+                    <a href="/#gimbal-maps" data-section="gimbal-maps"
+                        onclick="window.navigateLandingSection(event, 'gimbal-maps')"
+                        class="mobile-landing-nav-item block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800 transition flex items-center justify-between"
+                        @click="mobileMenu = false">
+                        <span class="flex items-center gap-2.5"><i class="fas fa-map-marked-alt text-xs w-4 text-center"></i> GIMBAL Maps</span>
+                    </a>
                     <a href="/#galeri" data-section="galeri"
                         onclick="window.navigateLandingSection(event, 'galeri')"
                         class="mobile-landing-nav-item block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800 transition flex items-center justify-between"
                         @click="mobileMenu = false">
                         <span class="flex items-center gap-2.5"><i class="fas fa-camera text-xs w-4 text-center"></i> Galeri Ekspedisi</span>
+                    </a>
+                    <a href="/#sponsorship" data-section="sponsorship"
+                        onclick="window.navigateLandingSection(event, 'sponsorship')"
+                        class="mobile-landing-nav-item block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800 transition flex items-center justify-between"
+                        @click="mobileMenu = false">
+                        <span class="flex items-center gap-2.5"><i class="fas fa-handshake text-xs w-4 text-center"></i> Sponsorship</span>
                     </a>
                     <a href="/#kode-etik" data-section="kode-etik"
                         onclick="window.navigateLandingSection(event, 'kode-etik')"

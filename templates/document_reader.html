@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ document.title }} - Pembaca Dokumen GIMBAL</title>
+    
+    <!-- Google Fonts & Tailwind CSS CDN -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- ePub.js & JSZip for EPUB reader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+
+    <!-- Mammoth.js for DOCX reader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .reader-prose {
+            font-family: 'Merriweather', serif;
+            line-height: 1.8;
+        }
+        .reader-prose h1, .reader-prose h2, .reader-prose h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            color: inherit;
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+        }
+        .reader-prose p {
+            margin-bottom: 1.25em;
+        }
+        .reader-prose table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5em 0;
+            font-size: 0.9em;
+        }
+        .reader-prose table th, .reader-prose table td {
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            padding: 8px 12px;
+        }
+        .reader-prose img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1.5em auto;
+        }
+
+        /* Reader Themes */
+        body.theme-light {
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        body.theme-light .sheet {
+            background-color: #ffffff;
+            color: #0f172a;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        body.theme-sepia {
+            background-color: #f4ecd8;
+            color: #433422;
+        }
+        body.theme-sepia .sheet {
+            background-color: #fbf0d9;
+            color: #2c2214;
+            box-shadow: 0 10px 25px -5px rgba(67, 52, 34, 0.1);
+        }
+
+        body.theme-dark {
+            background-color: #0b1120;
+            color: #cbd5e1;
+        }
+        body.theme-dark .sheet {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            border-color: #334155;
+        }
+        body.theme-dark .reader-prose table th, body.theme-dark .reader-prose table td {
+            border-color: #475569;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(150, 150, 150, 0.35);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(150, 150, 150, 0.55);
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col theme-light overflow-hidden antialiased select-text">
+
+    <!-- TOP CONTROL BAR -->
+    <header class="h-14 bg-slate-900 border-b border-slate-800 text-white flex items-center justify-between px-3 sm:px-5 shrink-0 z-30 shadow-md">
+        <!-- Left: Back Button & Document Metadata -->
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+            <button type="button" onclick="closeOrBack()" 
+                    class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition shrink-0 cursor-pointer"
+                    title="Tutup / Kembali ke Arsip Dokumen">
+                <i class="fas fa-arrow-left text-sm"></i>
+            </button>
+
+            <div class="w-8 h-8 rounded-lg bg-orange-600/30 border border-orange-500/40 text-orange-400 flex items-center justify-center shrink-0">
+                {% if document.file_type == 'pdf' %}
+                <i class="fas fa-file-pdf text-sm"></i>
+                {% elif document.file_type == 'epub' %}
+                <i class="fas fa-book text-sm"></i>
+                {% elif document.file_type in ['docx', 'doc'] %}
+                <i class="fas fa-file-word text-sm"></i>
+                {% elif document.file_type in ['xlsx', 'xls'] %}
+                <i class="fas fa-file-excel text-sm"></i>
+                {% else %}
+                <i class="fas fa-file-alt text-sm"></i>
+                {% endif %}
+            </div>
+
+            <div class="min-w-0 flex flex-col justify-center">
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xs sm:text-sm font-bold text-white truncate max-w-[200px] sm:max-w-md" title="{{ document.title }}">
+                        {{ document.title }}
+                    </h1>
+                    <span class="hidden sm:inline-flex px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase
+                        {% if document.file_type == 'pdf' %}bg-rose-500/20 text-rose-300 border border-rose-500/30
+                        {% elif document.file_type == 'epub' %}bg-purple-500/20 text-purple-300 border border-purple-500/30
+                        {% elif document.file_type in ['docx', 'doc'] %}bg-blue-500/20 text-blue-300 border border-blue-500/30
+                        {% else %}bg-orange-500/20 text-orange-300 border border-orange-500/30{% endif %}">
+                        .{{ (document.file_type or 'doc')|upper }}
+                    </span>
+                </div>
+                <div class="flex items-center gap-2 text-[10px] text-slate-400">
+                    <span class="capitalize">{{ document.category.replace('_', ' ') }}</span>
+                    <span>•</span>
+                    <span class="font-mono">{{ document.file_size_fmt or 'Berkas Resmi' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Actions & Display Controls -->
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <!-- Theme Switcher (for EPUB/DOCX/TXT) -->
+            <div id="theme-controls" class="flex items-center bg-slate-800/80 p-0.5 rounded-lg border border-slate-700/80 text-xs">
+                <button type="button" onclick="setReaderTheme('light')" class="theme-btn px-2 py-1 rounded text-slate-300 hover:text-white transition" title="Tema Terang (Light)">
+                    <i class="fas fa-sun text-xs"></i>
+                </button>
+                <button type="button" onclick="setReaderTheme('sepia')" class="theme-btn px-2 py-1 rounded text-slate-300 hover:text-white transition" title="Tema Sepia / Hangat">
+                    <i class="fas fa-book-open text-xs text-amber-300"></i>
+                </button>
+                <button type="button" onclick="setReaderTheme('dark')" class="theme-btn px-2 py-1 rounded text-slate-300 hover:text-white transition" title="Tema Gelap (Dark)">
+                    <i class="fas fa-moon text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Font Size Controls (for EPUB/DOCX) -->
+            <div id="font-controls" class="hidden sm:flex items-center bg-slate-800/80 p-0.5 rounded-lg border border-slate-700/80 text-xs">
+                <button type="button" onclick="changeFontSize(-2)" class="px-2 py-1 text-slate-300 hover:text-white transition" title="Perkecil Ukuran Huruf">
+                    <span class="font-bold text-[11px]">A-</span>
+                </button>
+                <button type="button" onclick="changeFontSize(2)" class="px-2 py-1 text-slate-300 hover:text-white transition" title="Perbesar Ukuran Huruf">
+                    <span class="font-bold text-[13px]">A+</span>
+                </button>
+            </div>
+
+            <!-- Fullscreen Toggle -->
+            <button type="button" onclick="toggleFullscreen()" 
+                    class="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                    title="Layar Penuh (Fullscreen)">
+                <i id="fs-icon" class="fas fa-expand text-xs"></i>
+            </button>
+
+            <!-- Download Button -->
+            <a href="{{ document.file_path }}" download
+               class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg transition shadow-sm flex items-center gap-1.5 cursor-pointer"
+               title="Unduh File Asli ke Perangkat">
+                <i class="fas fa-download text-xs"></i>
+                <span class="hidden sm:inline">Unduh</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- MAIN VIEWER VIEWPORT -->
+    <main class="flex-1 relative overflow-hidden flex flex-col justify-center items-center w-full">
+
+        <!-- 1. PDF VIEWER ENGINE -->
+        {% if document.file_type == 'pdf' %}
+        <div class="w-full h-full relative">
+            <iframe id="pdf-frame" src="{{ document.file_path }}#view=FitH" 
+                    class="w-full h-full border-0 bg-stone-100" 
+                    title="{{ document.title }}">
+            </iframe>
+            
+            <noscript>
+                <div class="p-8 text-center">
+                    <p class="text-sm font-semibold mb-3">Browser Anda tidak mendukung pratinjau PDF langsung.</p>
+                    <a href="{{ document.file_path }}" target="_blank" class="px-4 py-2 bg-orange-600 text-white rounded-lg">Buka File PDF</a>
+                </div>
+            </noscript>
+        </div>
+
+        <!-- 2. EPUB VIEWER ENGINE -->
+        {% elif document.file_type == 'epub' %}
+        <div id="epub-container" class="w-full h-full relative flex flex-col">
+            <!-- EPUB Table of Contents Sidebar (Collapsible) -->
+            <div id="epub-toc-drawer" class="absolute inset-y-0 left-0 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl z-20 transform -translate-x-full transition-transform duration-300 flex flex-col">
+                <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <h3 class="font-bold text-xs text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fas fa-list-ul text-orange-600"></i> Daftar Isi
+                    </h3>
+                    <button type="button" onclick="toggleEpubToc()" class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                </div>
+                <div id="epub-toc-list" class="flex-1 overflow-y-auto p-2 text-xs space-y-1">
+                    <p class="text-slate-400 italic text-[11px] p-2">Memuat struktur bab...</p>
+                </div>
+            </div>
+
+            <!-- EPUB Toolbar Sub-bar -->
+            <div class="h-9 px-4 bg-slate-100/90 dark:bg-slate-900/90 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 shrink-0">
+                <button type="button" onclick="toggleEpubToc()" class="px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:text-orange-600 flex items-center gap-1.5 text-[11px] font-semibold cursor-pointer">
+                    <i class="fas fa-bars"></i>
+                    <span>Daftar Bab</span>
+                </button>
+                <div id="epub-chapter-title" class="font-semibold text-[11px] truncate max-w-xs sm:max-w-md text-slate-800 dark:text-slate-200">
+                    Memuat buku elektronik...
+                </div>
+                <div id="epub-page-info" class="font-mono text-[11px] text-slate-500">
+                    -
+                </div>
+            </div>
+
+            <!-- EPUB Canvas Area with Nav Buttons -->
+            <div class="flex-1 relative overflow-hidden flex items-center justify-center">
+                <!-- Prev Button -->
+                <button id="epub-prev" type="button" onclick="renditionPrev()" 
+                        class="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 shadow-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:scale-105 active:scale-95 transition z-10 cursor-pointer"
+                        title="Halaman Sebelumnya (Tombol Panah Kiri)">
+                    <i class="fas fa-chevron-left text-sm"></i>
+                </button>
+
+                <!-- Book Render Target -->
+                <div id="epub-area" class="w-full h-full max-w-4xl mx-auto px-4 sm:px-8"></div>
+
+                <!-- Next Button -->
+                <button id="epub-next" type="button" onclick="renditionNext()" 
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 shadow-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:scale-105 active:scale-95 transition z-10 cursor-pointer"
+                        title="Halaman Selanjutnya (Tombol Panah Kanan)">
+                    <i class="fas fa-chevron-right text-sm"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. DOCX / WORD VIEWER ENGINE -->
+        {% elif document.file_type in ['docx', 'doc'] %}
+        <div id="docx-container" class="w-full h-full overflow-y-auto px-4 py-6">
+            <!-- Loading Indicator -->
+            <div id="docx-loading" class="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
+                <div class="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-xs font-semibold text-slate-500 animate-pulse">Mengonversi dan menyiapkan naskah dokumen...</p>
+            </div>
+
+            <!-- Rendered Sheet Page -->
+            <div id="docx-sheet" class="sheet hidden max-w-4xl mx-auto p-6 sm:p-14 rounded-2xl border border-slate-200 transition-all duration-300">
+                <div class="border-b border-slate-200/70 pb-4 mb-6">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-800 font-mono">Microsoft Word / OpenDocument</span>
+                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 mt-2 font-heading">{{ document.title }}</h1>
+                    {% if document.description %}
+                    <p class="text-xs text-slate-500 mt-1 italic">{{ document.description }}</p>
+                    {% endif %}
+                </div>
+                <article id="docx-content" class="reader-prose text-sm sm:text-base leading-relaxed"></article>
+            </div>
+
+            <!-- Fallback Frame for binary .doc or mammoth errors -->
+            <div id="doc-fallback" class="hidden w-full h-[85vh]">
+                <iframe id="office-frame" src="https://view.officeapps.live.com/op/embed.aspx?src={{ request.url_root.rstrip('/') }}{{ document.file_path }}" 
+                        class="w-full h-full border-0 rounded-xl shadow-lg bg-white"></iframe>
+            </div>
+        </div>
+
+        <!-- 4. TEXT / CODE / MARKDOWN ENGINE -->
+        {% elif document.file_type in ['txt', 'md', 'json', 'csv'] %}
+        <div id="text-container" class="w-full h-full overflow-y-auto p-4 sm:p-8">
+            <div class="sheet max-w-4xl mx-auto p-6 sm:p-10 rounded-2xl border border-slate-200 shadow-sm">
+                <pre id="text-content" class="font-mono text-xs sm:text-sm whitespace-pre-wrap break-words leading-relaxed">Memuat konten teks...</pre>
+            </div>
+        </div>
+
+        <!-- 5. OTHER / GENERIC VIEWER -->
+        {% else %}
+        <div class="p-8 max-w-md mx-auto text-center space-y-4">
+            <div class="w-16 h-16 rounded-2xl bg-orange-100 text-orange-600 mx-auto flex items-center justify-center text-2xl shadow-sm">
+                <i class="fas fa-file-download"></i>
+            </div>
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">{{ document.title }}</h2>
+                <p class="text-xs text-slate-500 mt-1">Berkas format .{{ document.file_type|upper }} ({{ document.file_size_fmt }}). Anda dapat mengunduh atau membuka langsung di perangkat Anda.</p>
+            </div>
+            <a href="{{ document.file_path }}" download
+               class="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-md transition">
+                <i class="fas fa-download"></i>
+                <span>Unduh File Lengkap</span>
+            </a>
+        </div>
+        {% endif %}
+
+    </main>
+
+    <!-- CORE JAVASCRIPT READER ENGINE -->
+    <script>
+        const DOC_TYPE = "{{ document.file_type }}".toLowerCase();
+        const FILE_URL = "{{ document.file_path }}";
+        let currentFontSize = 16;
+        let epubBook = null;
+        let epubRendition = null;
+
+        // Close or Back Handler
+        function closeOrBack() {
+            try {
+                if (window.opener || window.history.length <= 1) {
+                    window.close();
+                } else {
+                    window.history.back();
+                }
+            } catch (e) {
+                window.location.href = '/member/documents';
+            }
+        }
+
+        // Fullscreen Toggle
+        function toggleFullscreen() {
+            const icon = document.getElementById('fs-icon');
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+                if (icon) {
+                    icon.classList.remove('fa-expand');
+                    icon.classList.add('fa-compress');
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    if (icon) {
+                        icon.classList.remove('fa-compress');
+                        icon.classList.add('fa-expand');
+                    }
+                }
+            }
+        }
+
+        // Theme Switcher
+        function setReaderTheme(theme) {
+            document.body.classList.remove('theme-light', 'theme-sepia', 'theme-dark');
+            document.body.classList.add('theme-' + theme);
+
+            if (epubRendition) {
+                if (theme === 'dark') {
+                    epubRendition.themes.override('color', '#cbd5e1');
+                    epubRendition.themes.override('background', '#0b1120');
+                } else if (theme === 'sepia') {
+                    epubRendition.themes.override('color', '#433422');
+                    epubRendition.themes.override('background', '#fbf0d9');
+                } else {
+                    epubRendition.themes.override('color', '#1e293b');
+                    epubRendition.themes.override('background', '#ffffff');
+                }
+            }
+            try { localStorage.setItem('gimbal_reader_theme', theme); } catch(e){}
+        }
+
+        // Font Size Adjuster
+        function changeFontSize(delta) {
+            currentFontSize = Math.min(28, Math.max(12, currentFontSize + delta));
+            
+            // Adjust DOCX sheet
+            const docxContent = document.getElementById('docx-content');
+            if (docxContent) {
+                docxContent.style.fontSize = currentFontSize + 'px';
+            }
+
+            // Adjust TXT
+            const textContent = document.getElementById('text-content');
+            if (textContent) {
+                textContent.style.fontSize = currentFontSize + 'px';
+            }
+
+            // Adjust EPUB
+            if (epubRendition) {
+                epubRendition.themes.fontSize(currentFontSize + 'px');
+            }
+        }
+
+        // 1. INITIALIZE EPUB ENGINE
+        if (DOC_TYPE === 'epub') {
+            try {
+                epubBook = ePub(FILE_URL);
+                epubRendition = epubBook.renderTo("epub-area", {
+                    width: "100%",
+                    height: "100%",
+                    flow: "paginated",
+                    spread: "always"
+                });
+
+                epubRendition.display();
+
+                // Navigation TOC
+                epubBook.loaded.navigation.then(function(nav) {
+                    const tocList = document.getElementById('epub-toc-list');
+                    if (tocList && nav.toc && nav.toc.length > 0) {
+                        tocList.innerHTML = '';
+                        nav.toc.forEach(function(chapter) {
+                            const btn = document.createElement('button');
+                            btn.className = 'w-full text-left p-2 rounded hover:bg-orange-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium truncate block';
+                            btn.textContent = chapter.label;
+                            btn.onclick = function() {
+                                epubRendition.display(chapter.href);
+                                toggleEpubToc();
+                            };
+                            tocList.appendChild(btn);
+                        });
+                    }
+                });
+
+                // Update location / chapter info
+                epubRendition.on('relocated', function(location) {
+                    const pageInfo = document.getElementById('epub-page-info');
+                    if (pageInfo && location.start) {
+                        pageInfo.textContent = 'Posisi: ' + location.start.displayed.page + ' / ' + (location.end.displayed.total || '-');
+                    }
+                    if (epubBook.navigation && location.start) {
+                        const chapter = epubBook.navigation.get(location.start.href);
+                        if (chapter) {
+                            document.getElementById('epub-chapter-title').textContent = chapter.label;
+                        }
+                    }
+                });
+
+                // Keyboard events
+                document.addEventListener('keyup', function(e) {
+                    if (e.key === 'ArrowLeft') renditionPrev();
+                    if (e.key === 'ArrowRight') renditionNext();
+                });
+
+            } catch (err) {
+                console.error("EPUB load error:", err);
+                document.getElementById('epub-chapter-title').textContent = "Format EPUB dapat dibaca langsung dengan aplikasi reader Anda.";
+            }
+        }
+
+        function renditionPrev() {
+            if (epubRendition) epubRendition.prev();
+        }
+
+        function renditionNext() {
+            if (epubRendition) epubRendition.next();
+        }
+
+        function toggleEpubToc() {
+            const drawer = document.getElementById('epub-toc-drawer');
+            if (drawer) {
+                drawer.classList.toggle('-translate-x-full');
+            }
+        }
+
+        // 2. INITIALIZE DOCX ENGINE (via Mammoth.js)
+        if (DOC_TYPE === 'docx' || DOC_TYPE === 'doc') {
+            if (DOC_TYPE === 'docx' && window.mammoth) {
+                fetch(FILE_URL)
+                    .then(response => {
+                        if (!response.ok) throw new Error("HTTP error " + response.status);
+                        return response.arrayBuffer();
+                    })
+                    .then(arrayBuffer => {
+                        return mammoth.convertToHtml({ arrayBuffer: arrayBuffer });
+                    })
+                    .then(result => {
+                        const loading = document.getElementById('docx-loading');
+                        const sheet = document.getElementById('docx-sheet');
+                        const content = document.getElementById('docx-content');
+                        
+                        if (loading) loading.classList.add('hidden');
+                        if (sheet) sheet.classList.remove('hidden');
+                        if (content) content.innerHTML = result.value || "<p class='italic text-slate-400'>Dokumen kosong.</p>";
+                    })
+                    .catch(err => {
+                        console.warn("Mammoth conversion fallback:", err);
+                        document.getElementById('docx-loading').classList.add('hidden');
+                        document.getElementById('doc-fallback').classList.remove('hidden');
+                    });
+            } else {
+                // Older .doc format: direct fallback to office web embed
+                const loading = document.getElementById('docx-loading');
+                if (loading) loading.classList.add('hidden');
+                const fallback = document.getElementById('doc-fallback');
+                if (fallback) fallback.classList.remove('hidden');
+            }
+        }
+
+        // 3. INITIALIZE TEXT ENGINE
+        if (['txt', 'md', 'json', 'csv'].includes(DOC_TYPE)) {
+            fetch(FILE_URL)
+                .then(r => r.text())
+                .then(txt => {
+                    const target = document.getElementById('text-content');
+                    if (target) target.textContent = txt;
+                })
+                .catch(err => {
+                    const target = document.getElementById('text-content');
+                    if (target) target.textContent = "Gagal memuat teks: " + err.message;
+                });
+        }
+
+        // Restore saved theme preference
+        try {
+            const savedTheme = localStorage.getItem('gimbal_reader_theme');
+            if (savedTheme) setReaderTheme(savedTheme);
+        } catch(e){}
+    </script>
+</body>
+</html>

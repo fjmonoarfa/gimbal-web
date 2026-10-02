@@ -217,6 +217,7 @@ class Document(db.Model):
     file_type = db.Column(db.String(20), default='pdf')
     file_size_fmt = db.Column(db.String(30), default='1.2 MB')
     is_public_to_members = db.Column(db.Boolean, default=True)
+    is_shared_to_timeline = db.Column(db.Boolean, default=False)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -236,6 +237,7 @@ class Activity(db.Model):
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(256), nullable=True)
     is_open = db.Column(db.Boolean, default=True)
+    is_shared_to_timeline = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # ROL & Lifecycle Fields
@@ -377,6 +379,59 @@ class GalleryItem(db.Model):
         return json.dumps(items)
 
 
+# ========== SPONSORSHIP & MEMBER BUSINESS DIRECTORY MODELS ========================
+
+class Sponsor(db.Model):
+    """Mitra Sponsor Korporat & Jaringan Usaha Anggota GIMBAL"""
+    __tablename__ = 'sponsors'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    logo_url = db.Column(db.String(256), nullable=False)
+    category = db.Column(db.String(50), default='gear')  # 'corporate', 'gear', 'cafe', 'ethnic_store', 'rental', 'homestay', 'media', 'other'
+    tier = db.Column(db.String(50), default='official_partner')  # 'title_sponsor', 'official_partner', 'community_partner', 'media_partner'
+    description = db.Column(db.Text, nullable=True)
+    promo_badge = db.Column(db.String(80), nullable=True)  # e.g., 'Diskon 15% KTA', 'Official Basecamp'
+    member_benefit = db.Column(db.Text, nullable=True)  # e.g., 'Diskon 15% semua menu kopi dengan KTA GIMBAL'
+    website_url = db.Column(db.String(256), nullable=True)
+    instagram_url = db.Column(db.String(256), nullable=True)
+    whatsapp_number = db.Column(db.String(50), nullable=True)
+    address = db.Column(db.Text, nullable=True)
+    maps_url = db.Column(db.String(512), nullable=True)
+
+    # Ownership: None jika Managed Corporate Sponsor oleh Admin; terisi user_id jika Usaha Milik Anggota
+    owner_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    is_member_business = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String(20), default='active')  # 'pending', 'active', 'rejected', 'inactive'
+    rejection_reason = db.Column(db.Text, nullable=True)
+
+    order_index = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    is_shared_to_timeline = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    owner = db.relationship('User', foreign_keys=[owner_user_id], backref=db.backref('businesses', lazy='dynamic'))
+    products = db.relationship('SponsorProduct', backref='sponsor', cascade='all, delete-orphan', order_by='SponsorProduct.order_index.asc()')
+
+
+class SponsorProduct(db.Model):
+    """Katalog Produk / Menu / Paket Jasa dari Sponsor & Usaha Anggota"""
+    __tablename__ = 'sponsor_products'
+
+    id = db.Column(db.Integer, primary_key=True)
+    sponsor_id = db.Column(db.Integer, db.ForeignKey('sponsors.id'), nullable=False)
+    name = db.Column(db.String(150), nullable=False)
+    price = db.Column(db.Float, default=0.0)
+    discount_price = db.Column(db.Float, nullable=True)  # Harga Spesial Anggota KTA GIMBAL
+    description = db.Column(db.Text, nullable=True)
+    image_url = db.Column(db.String(256), nullable=True)
+    badge = db.Column(db.String(50), nullable=True)  # e.g., 'Best Seller', 'Khas Gorontalo', 'Menu Favorit'
+    is_available = db.Column(db.Boolean, default=True)
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 # ========== SOCIAL & COMMUNITY FEED MODELS (LINI MASA PETUALANG) ==================
 
 class Post(db.Model):
@@ -389,10 +444,17 @@ class Post(db.Model):
     image_url = db.Column(db.String(256), nullable=True)
     location = db.Column(db.String(150), nullable=True)  # e.g., 'Gunung Tilongkabila, Gorontalo'
     activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('documents.id'), nullable=True)
+    map_repo_id = db.Column(db.Integer, db.ForeignKey('map_repositories.id'), nullable=True)
+    sponsor_id = db.Column(db.Integer, db.ForeignKey('sponsors.id'), nullable=True)
+    post_type = db.Column(db.String(30), default='general')  # 'general', 'activity', 'document', 'map', 'sponsor'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', foreign_keys=[user_id])
     activity = db.relationship('Activity', backref=db.backref('posts', lazy='dynamic'))
+    document = db.relationship('Document', backref=db.backref('posts', lazy='dynamic'))
+    map_repo = db.relationship('MapRepository', backref=db.backref('posts', lazy='dynamic'))
+    sponsor = db.relationship('Sponsor', foreign_keys=[sponsor_id], backref=db.backref('posts', lazy='dynamic'))
     comments = db.relationship('PostComment', backref='post', cascade='all, delete-orphan', order_by='PostComment.created_at.asc()')
     likes = db.relationship('PostLike', backref='post', cascade='all, delete-orphan')
     media = db.relationship('PostMedia', backref='post', cascade='all, delete-orphan', order_by='PostMedia.order_index.asc()')
@@ -548,6 +610,7 @@ class MapRepository(db.Model):
     total_waypoints = db.Column(db.Integer, default=0)
     total_distance_km = db.Column(db.Float, default=0.0)
     is_exclusive_member = db.Column(db.Boolean, default=True)
+    is_shared_to_timeline = db.Column(db.Boolean, default=False)
     downloads_count = db.Column(db.Integer, default=0)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

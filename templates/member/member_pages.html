@@ -5,6 +5,29 @@
 {% set user = data.user %}
 <div class="space-y-6">
 
+    <!-- Flash Alerts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="space-y-2 mb-2 animate-fade-in" id="member-flash-messages">
+            {% for category, message in messages %}
+            <div class="p-4 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-xs
+                        {% if category in ['error', 'danger'] %}bg-rose-50 border-rose-200 text-rose-800
+                        {% elif category == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800
+                        {% elif category == 'warning' %}bg-amber-50 border-amber-200 text-amber-800
+                        {% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+                <div class="flex items-center gap-2.5">
+                    <i class="fas {% if category == 'success' %}fa-check-circle text-emerald-600{% elif category in ['error', 'danger'] %}fa-exclamation-circle text-rose-600{% elif category == 'warning' %}fa-exclamation-triangle text-amber-600{% else %}fa-info-circle text-blue-600{% endif %} text-base"></i>
+                    <span>{{ message }}</span>
+                </div>
+                <button type="button" onclick="this.closest('.p-4').remove()" class="text-slate-400 hover:text-slate-700 p-1">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
     <!-- WELCOME / STATUS HERO BANNER -->
     {% if user.status == 'pending' %}
         <!-- Kondisi PENDING: Calon Anggota Menunggu Verifikasi -->
@@ -153,6 +176,108 @@
                 </button>
             </div>
             {% endif %}
+
+            <!-- 1B. KARTU USAHA & LAPAK ANGGOTA (DI ATAS CARD IURAN KAS) -->
+            <div class="bg-white p-4 rounded-lg border border-slate-200/80 shadow-sm space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-500">
+                        {% if data.user_businesses %}Usaha & Lapak Saya{% else %}Usaha & Lapak Anggota{% endif %}
+                    </span>
+                    <i class="fas fa-store text-orange-600 text-xs"></i>
+                </div>
+
+                {% if data.user_businesses %}
+                    <div class="space-y-2">
+                        {% for biz in data.user_businesses %}
+                        <div class="p-2.5 rounded-lg bg-stone-50 border border-stone-200/70 space-y-1.5">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    {% if biz.logo_url %}
+                                    <img src="{{ biz.logo_url }}" alt="{{ biz.name }}" class="w-7 h-7 rounded-md object-cover border border-slate-200 flex-shrink-0">
+                                    {% else %}
+                                    <div class="w-7 h-7 rounded-md bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">
+                                        <i class="fas fa-store"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div class="min-w-0">
+                                        <h4 class="text-xs font-bold text-slate-900 truncate leading-tight">{{ biz.name }}</h4>
+                                        <p class="text-[10px] text-slate-500 capitalize">{{ biz.category|replace('_', ' ') }}</p>
+                                    </div>
+                                </div>
+                                {% if biz.status == 'active' and biz.is_active %}
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 flex-shrink-0">
+                                    <i class="fas fa-check-circle text-[8px]"></i> Aktif
+                                </span>
+                                {% elif biz.status == 'pending' %}
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 flex-shrink-0">
+                                    <i class="fas fa-clock text-[8px]"></i> Review
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-600 flex-shrink-0">
+                                    Nonaktif
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-stone-200/60">
+                                <span><strong class="text-slate-700">{{ biz.products|length }}</strong> Produk</span>
+                                {% if biz.promo_badge %}
+                                <span class="text-orange-700 font-semibold truncate max-w-[130px]">{{ biz.promo_badge }}</span>
+                                {% endif %}
+                            </div>
+
+                            {% if biz.status == 'active' and biz.is_active %}
+                            <div class="pt-1">
+                                {% if biz.is_shared_to_timeline %}
+                                <button type="button"
+                                        hx-post="/member/business/toggle-share/{{ biz.id }}?style=compact"
+                                        hx-swap="outerHTML"
+                                        class="w-full py-1.5 px-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                                        title="Lapak aktif di Linimasa (Klik untuk sembunyikan)">
+                                    <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
+                                    <span>Linimasa: ON</span>
+                                </button>
+                                {% else %}
+                                <button type="button"
+                                        hx-post="/member/business/toggle-share/{{ biz.id }}?style=compact"
+                                        hx-swap="outerHTML"
+                                        class="w-full py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 rounded-lg text-[10px] font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                                        title="Lapak belum di linimasa (Klik untuk aktifkan & terbitkan di puncak linimasa)">
+                                    <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
+                                    <span>Linimasa: OFF</span>
+                                </button>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <a href="/member/business" 
+                       hx-get="/member/business" 
+                       hx-target="#main-content" 
+                       hx-push-url="true"
+                       class="block w-full py-2 px-3 bg-stone-100 hover:bg-orange-50 border border-slate-200 hover:border-orange-300 text-stone-800 hover:text-orange-900 font-bold rounded-lg text-center text-xs transition shadow-2xs">
+                        <i class="fas fa-cog text-orange-600 mr-1"></i> Kelola Lapak & Produk
+                    </a>
+                {% else %}
+                    <div class="space-y-1">
+                        <p class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                            <span>Punya Usaha / Jasa?</span>
+                        </p>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">
+                            Promosikan cafe, rental outdoor gear, atau jasa Anda dengan diskon resmi KTA GIMBAL.
+                        </p>
+                    </div>
+                    <a href="/member/business" 
+                       hx-get="/member/business" 
+                       hx-target="#main-content" 
+                       hx-push-url="true"
+                       class="block w-full py-2 px-3 bg-orange-50 hover:bg-orange-100 border border-orange-200 hover:border-orange-300 text-orange-800 font-bold rounded-lg text-center text-xs transition shadow-2xs flex items-center justify-center gap-1.5">
+                        <i class="fas fa-plus-circle text-orange-600"></i> Daftarkan Usaha Saya
+                    </a>
+                {% endif %}
+            </div>
 
             <!-- 2. STATUS IURAN KAS CEPAT -->
             <div class="bg-white p-4 rounded-lg border border-slate-200/80 shadow-sm space-y-2">
@@ -474,10 +599,244 @@
                         {{ post.content }}
                     </div>
 
-                    <!-- DYNAMIC MOSAIC GRID: Multi Foto & Video Dokumentasi -->
+                    <!-- CARD PREVIEW: AGENDA EKSPEDISI (MENDATANG / LAPANGAN) -->
+                    {% if post.activity and post.activity.phase in ['planning', 'open'] %}
+                    <div class="p-3.5 bg-gradient-to-r from-orange-50/90 to-amber-50/70 rounded-xl border border-orange-200/90 space-y-2.5 shadow-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-orange-600 text-white uppercase tracking-wider shadow-xs">
+                                <i class="fas fa-bullhorn text-[9px]"></i> Agenda Ekspedisi Terbuka
+                            </span>
+                            <span class="text-[11px] font-mono font-bold text-slate-700 bg-white/80 px-2 py-0.5 rounded border border-orange-200/60">
+                                <i class="fas fa-calendar-alt text-orange-600 mr-1"></i> {{ post.activity.activity_date }}
+                            </span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-900">{{ post.activity.title }}</h4>
+                                <p class="text-[11px] text-slate-600 mt-0.5 flex flex-wrap items-center gap-2">
+                                    <span><i class="fas fa-map-marker-alt text-orange-600 mr-1"></i>{{ post.activity.location }}</span>
+                                    <span>•</span>
+                                    <span class="font-medium text-slate-700">Tingkat: {{ post.activity.difficulty }}</span>
+                                    <span>•</span>
+                                    <span class="text-slate-500 font-medium">Manifest: <strong class="text-slate-800">{{ post.activity.total_confirmed }}/{{ post.activity.quota }}</strong> personil</span>
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button type="button"
+                                        hx-post="/member/activity/join/{{ post.activity.id }}"
+                                        hx-swap="none"
+                                        onclick="alert('Pendaftaran trip berhasil dicatat! Tim ekspedisi akan menghubungi WhatsApp Anda.')"
+                                        class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs rounded-lg transition shadow-xs flex items-center gap-1.5 cursor-pointer">
+                                    <i class="fas fa-user-plus text-[10px]"></i>
+                                    <span>Gabung Ekspedisi</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- CARD PREVIEW: DOKUMEN / ARSIP RESMI -->
+                    {% if post.document %}
+                    <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-orange-300 transition shadow-xs">
+                        <div class="flex items-center gap-3">
+                            <span class="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs shrink-0
+                                {% if post.document.file_type in ['pdf'] %}bg-rose-100 text-rose-700 border border-rose-200
+                                {% elif post.document.file_type == 'epub' %}bg-purple-100 text-purple-700 border border-purple-200
+                                {% elif post.document.file_type in ['docx', 'doc'] %}bg-blue-100 text-blue-700 border border-blue-200
+                                {% elif post.document.file_type in ['xlsx', 'xls'] %}bg-emerald-100 text-emerald-700 border border-emerald-200
+                                {% else %}bg-orange-100 text-orange-700 border border-orange-200{% endif %}">
+                                .{{ (post.document.file_type or 'doc')|upper }}
+                            </span>
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-900 leading-snug">{{ post.document.title }}</h4>
+                                <p class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
+                                    <span class="font-semibold capitalize text-orange-800">{{ post.document.category.replace('_', ' ') }}</span>
+                                    <span>•</span>
+                                    <span class="font-mono text-slate-600">{{ post.document.file_size_fmt or '1.5 MB' }}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <a href="/documents/read/{{ post.document.id }}" target="_blank"
+                               class="px-2.5 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5"
+                               title="Buka & Baca Dokumen Fullscreen">
+                                <i class="fas fa-book-open text-[11px]"></i>
+                                <span>Baca</span>
+                            </a>
+                            <a href="{{ post.document.file_path }}" download
+                               class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg transition shadow-xs flex items-center justify-center gap-1.5"
+                               title="Unduh Dokumen">
+                                <i class="fas fa-file-download text-[11px]"></i>
+                                <span>Unduh Dokumen</span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- CARD PREVIEW: BERKAS PETA & GEODATA -->
+                    {% if post.map_repo %}
+                    <div class="p-3.5 bg-slate-900 text-white rounded-xl border border-slate-800 space-y-2.5 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase
+                                    {% if post.map_repo.file_type == 'mbtiles' %}bg-purple-500/20 text-purple-300 border border-purple-400/30
+                                    {% elif post.map_repo.file_type == 'gpx' %}bg-emerald-500/20 text-emerald-300 border border-emerald-400/30
+                                    {% else %}bg-orange-500/20 text-orange-300 border border-orange-400/30{% endif %}">
+                                    .{{ post.map_repo.file_type|upper }}
+                                </span>
+                                <span class="text-xs font-bold text-white">{{ post.map_repo.title }}</span>
+                            </div>
+                            <span class="text-[11px] text-slate-400"><i class="fas fa-map-marker-alt text-orange-400 mr-1"></i> {{ post.map_repo.region }}</span>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800 text-[11px]">
+                            <div class="flex items-center gap-3 text-slate-300 font-mono text-[10px]">
+                                {% if post.map_repo.total_distance_km and post.map_repo.total_distance_km > 0 %}
+                                <span><i class="fas fa-route text-orange-400 mr-1"></i>{{ post.map_repo.total_distance_km }} km</span>
+                                {% endif %}
+                                {% if post.map_repo.total_waypoints and post.map_repo.total_waypoints > 0 %}
+                                <span><i class="fas fa-map-pin text-orange-400 mr-1"></i>{{ post.map_repo.total_waypoints }} POI</span>
+                                {% endif %}
+                                <span><i class="fas fa-file text-orange-400 mr-1"></i>{{ post.map_repo.file_size_fmt }}</span>
+                            </div>
+                            <a href="/api/v1/maps/repo/download/{{ post.map_repo.id }}"
+                               class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg transition shadow-xs flex items-center gap-1.5">
+                                <i class="fas fa-download text-[10px]"></i>
+                                <span>Unduh Peta</span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- CARD PREVIEW: MITRA SPONSOR & LAPAK USAHA ANGGOTA RESMI -->
+                    {% if post.sponsor %}
+                    <div class="p-4 bg-gradient-to-br from-amber-50/70 via-orange-50/50 to-white rounded-xl border border-orange-200 space-y-3 shadow-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider
+                                {% if post.sponsor.is_member_business %}bg-emerald-600 text-white{% else %}bg-orange-600 text-white{% endif %}">
+                                <i class="fas {% if post.sponsor.is_member_business %}fa-store{% else %}fa-handshake{% endif %} text-[9px]"></i>
+                                {{ 'Lapak Anggota Terverifikasi' if post.sponsor.is_member_business else 'Mitra Sponsor Resmi' }}
+                            </span>
+                            {% if post.sponsor.promo_badge %}
+                            <span class="text-[11px] font-bold text-amber-900 bg-amber-100/90 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                                <i class="fas fa-tag text-amber-600"></i> {{ post.sponsor.promo_badge }}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="w-12 h-12 rounded-xl bg-white border border-orange-200 overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+                                {% if post.sponsor.logo_url %}
+                                <img src="{{ post.sponsor.logo_url }}" alt="{{ post.sponsor.name }}" class="w-full h-full object-cover">
+                                {% else %}
+                                <i class="fas fa-store text-orange-400 text-lg"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-black text-slate-900 leading-tight font-heading">{{ post.sponsor.name }}</h4>
+                                <p class="text-xs text-slate-600 mt-0.5 leading-snug">{{ post.sponsor.description }}</p>
+                                {% if post.sponsor.member_benefit %}
+                                <div class="mt-2 p-2 rounded-lg bg-orange-100/70 border border-orange-200 text-orange-950 text-xs font-semibold flex items-center gap-1.5">
+                                    <i class="fas fa-id-card text-orange-600"></i>
+                                    <span>Benefit KTA: <strong>{{ post.sponsor.member_benefit }}</strong></span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Katalog Produk & Layanan Lapak -->
+                        <div class="pt-3 border-t border-orange-200/80 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <p class="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fas fa-shopping-bag text-orange-600"></i>
+                                    <span>Katalog Produk & Layanan ({{ post.sponsor.products|length }})</span>
+                                </p>
+                                {% if post.sponsor.products|length > 0 %}
+                                <span class="text-[10px] text-slate-400">Tersedia untuk anggota & umum</span>
+                                {% endif %}
+                            </div>
+
+                            {% if post.sponsor.products and post.sponsor.products|length > 0 %}
+                            <div class="grid grid-cols-1 gap-2.5">
+                                {% for prod in post.sponsor.products %}
+                                <div class="p-2.5 sm:p-3 bg-white rounded-xl border border-stone-200/80 shadow-2xs hover:border-orange-300 transition flex items-start gap-3">
+                                    <!-- Foto Thumbnail Produk -->
+                                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-stone-100 border border-stone-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                        {% if prod.image_url %}
+                                        <img src="{{ prod.image_url }}" alt="{{ prod.name }}" class="w-full h-full object-cover">
+                                        {% else %}
+                                        <div class="text-stone-300 flex flex-col items-center justify-center">
+                                            <i class="fas fa-box-open text-xl"></i>
+                                            <span class="text-[8px] uppercase mt-0.5 font-bold">Produk</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Informasi, Keterangan & Harga Produk -->
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <h5 class="text-xs sm:text-sm font-bold text-slate-900 leading-snug">{{ prod.name }}</h5>
+                                            {% if prod.badge %}
+                                            <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-900 border border-amber-200 uppercase shrink-0">
+                                                {{ prod.badge }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+
+                                        {% if prod.description %}
+                                        <p class="text-[11px] text-slate-600 mt-1 leading-relaxed line-clamp-2">{{ prod.description }}</p>
+                                        {% endif %}
+
+                                        <div class="flex flex-wrap items-baseline gap-2 mt-2 pt-1.5 border-t border-dashed border-stone-100">
+                                            {% if prod.discount_price and prod.discount_price > 0 %}
+                                            <span class="text-xs sm:text-sm font-black text-orange-600 font-mono">Rp {{ "{:,.0f}".format(prod.discount_price).replace(',', '.') }}</span>
+                                            <span class="text-[10px] text-slate-400 line-through font-mono">Rp {{ "{:,.0f}".format(prod.price).replace(',', '.') }}</span>
+                                            <span class="text-[9px] font-extrabold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-200">Khusus KTA</span>
+                                            {% else %}
+                                            <span class="text-xs sm:text-sm font-bold text-slate-900 font-mono">Rp {{ "{:,.0f}".format(prod.price).replace(',', '.') }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="p-4 bg-white/80 rounded-xl border border-dashed border-orange-200 text-center space-y-1">
+                                <p class="text-xs font-semibold text-slate-700">Belum ada item produk terdaftar di katalog lapak ini.</p>
+                                <p class="text-[10px] text-slate-400">Silakan hubungi pengelola lapak melalui kontak resmi di bawah.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Action CTA: WhatsApp & Maps -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-orange-100 text-xs">
+                            <span class="text-[11px] text-slate-500">
+                                <i class="fas fa-map-marker-alt text-orange-500 mr-1"></i> {{ post.sponsor.address or 'Gorontalo' }}
+                            </span>
+                            <div class="flex items-center gap-2">
+                                {% if post.sponsor.maps_url %}
+                                <a href="{{ post.sponsor.maps_url }}" target="_blank"
+                                   class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition flex items-center gap-1">
+                                    <i class="fas fa-directions text-slate-500 text-[11px]"></i>
+                                    <span>Petunjuk Arah</span>
+                                </a>
+                                {% endif %}
+                                {% if post.sponsor.whatsapp_number %}
+                                <a href="https://wa.me/{{ post.sponsor.whatsapp_number.replace('+', '').replace('-', '').replace(' ', '') }}?text=Halo%20{{ post.sponsor.name }},%20saya%20anggota%20KPAB%20GIMBAL%20ingin%20bertanya%20mengenai%20produk%20/%20layanan."
+                                   target="_blank"
+                                   class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-xs flex items-center gap-1.5">
+                                    <i class="fab fa-whatsapp text-sm"></i>
+                                    <span>Hubungi WhatsApp</span>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- DYNAMIC MOSAIC GRID: Multi Foto & Video Dokumentasi (Hanya untuk postingan non-sponsor) -->
                     {% set m_list = post.media_items %}
                     {% set m_count = m_list|length %}
-                    {% if m_count > 0 %}
+                    {% if not post.sponsor and m_count > 0 %}
                         {% set media_json = [] %}
                         {% for m in m_list %}
                             {% set _ = media_json.append({'media_url': m.media_url, 'media_type': m.media_type, 'caption': (post.content[:150] or 'Dokumentasi Ekspedisi'), 'location': (post.location or (post.activity.title if post.activity else 'KPAB GIMBAL'))}) %}
@@ -666,6 +1025,20 @@
                         <div class="pt-2 flex items-center justify-between border-t border-slate-200/60">
                             <span class="text-[10px] text-slate-400">Kuota: <strong class="text-slate-800">{{ act.quota }}</strong></span>
                             <div class="flex items-center gap-1.5">
+                                {% if not act.is_shared_to_timeline %}
+                                <button type="button"
+                                        hx-post="/member/activity/share-to-timeline/{{ act.id }}"
+                                        hx-swap="outerHTML"
+                                        class="px-2 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold text-[10px] rounded-lg transition cursor-pointer flex items-center gap-1"
+                                        title="Bagikan agenda ekspedisi ini ke Linimasa Komunitas">
+                                    <i class="fas fa-share-nodes text-amber-600"></i>
+                                    <span>Bagikan</span>
+                                </button>
+                                {% else %}
+                                <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                                    <i class="fas fa-check-circle text-emerald-600"></i> Di Linimasa
+                                </span>
+                                {% endif %}
                                 <button type="button"
                                         hx-get="/member/activity/documentation/{{ act.id }}"
                                         hx-target="#modal-container"
@@ -1060,12 +1433,45 @@
                 <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">{{ doc.description }}</p>
             </div>
 
-            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[10px] text-slate-500 font-mono font-bold uppercase">Format: .{{ (doc.file_type or 'pdf')|upper }}</span>
-                <a href="{{ doc.file_path }}" target="_blank" download
-                   class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5">
-                    <i class="fas {% if doc.file_type == 'pdf' %}fa-file-pdf{% elif doc.file_type in ['docx', 'doc'] %}fa-file-word{% elif doc.file_type in ['xlsx', 'xls'] %}fa-file-excel{% elif doc.file_type in ['zip', 'rar'] %}fa-file-archive{% else %}fa-file-alt{% endif %}"></i> Unduh Dokumen
-                </a>
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <span class="text-[10px] text-slate-500 font-mono font-bold uppercase flex items-center gap-1">
+                    <i class="fas {% if doc.file_type == 'pdf' %}fa-file-pdf text-rose-500{% elif doc.file_type == 'epub' %}fa-book text-purple-600{% elif doc.file_type in ['docx', 'doc'] %}fa-file-word text-blue-500{% else %}fa-file-alt text-orange-500{% endif %}"></i>
+                    <span>.{{ (doc.file_type or 'pdf')|upper }}</span>
+                </span>
+                <div class="flex items-center gap-1.5">
+                    {% if data.user and data.user.is_admin %}
+                        {% if doc.is_shared_to_timeline %}
+                        <button type="button"
+                                hx-post="/member/documents/toggle-share/{{ doc.id }}"
+                                hx-swap="outerHTML"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-xs cursor-pointer"
+                                title="Dokumen aktif di Linimasa Anggota (Klik untuk matikan)">
+                            <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
+                            <span>Linimasa: ON</span>
+                        </button>
+                        {% else %}
+                        <button type="button"
+                                hx-post="/member/documents/toggle-share/{{ doc.id }}"
+                                hx-swap="outerHTML"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer"
+                                title="Dokumen belum dibagikan ke Linimasa (Klik untuk bagikan)">
+                            <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
+                            <span>Linimasa: OFF</span>
+                        </button>
+                        {% endif %}
+                    {% endif %}
+                    <a href="/documents/read/{{ doc.id }}" target="_blank"
+                       class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5"
+                       title="Buka & Baca Dokumen di Tab Baru Fullscreen">
+                        <i class="fas {% if doc.file_type == 'pdf' %}fa-file-pdf{% elif doc.file_type == 'epub' %}fa-book{% elif doc.file_type in ['docx', 'doc'] %}fa-file-word{% else %}fa-book-open{% endif %} text-xs"></i>
+                        <span>Baca Dokumen</span>
+                    </a>
+                    <a href="{{ doc.file_path }}" download
+                       class="p-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition flex items-center justify-center"
+                       title="Unduh File Asli ({{ doc.file_size_fmt or 'Berkas' }})">
+                        <i class="fas fa-download text-xs"></i>
+                    </a>
+                </div>
             </div>
         </div>
         {% else %}
@@ -1296,11 +1702,34 @@
                 <span class="text-[10px] text-slate-400">
                     <i class="fas fa-download mr-1"></i> {{ m.downloads_count or 0 }} kali diunduh
                 </span>
-                <a href="/api/v1/maps/repo/download/{{ m.id }}"
-                   class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5">
-                    <i class="fas fa-download text-[11px]"></i>
-                    <span>Unduh Peta</span>
-                </a>
+                <div class="flex items-center gap-1.5">
+                    {% if data.user and (data.user.is_admin or m.uploaded_by == data.user.id) %}
+                        {% if m.is_shared_to_timeline %}
+                        <button type="button"
+                                hx-post="/member/repo-maps/toggle-share/{{ m.id }}"
+                                hx-swap="outerHTML"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-xs cursor-pointer"
+                                title="Peta aktif di Linimasa Anggota (Klik untuk matikan)">
+                            <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
+                            <span>Linimasa: ON</span>
+                        </button>
+                        {% else %}
+                        <button type="button"
+                                hx-post="/member/repo-maps/toggle-share/{{ m.id }}"
+                                hx-swap="outerHTML"
+                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer"
+                                title="Peta belum dibagikan ke Linimasa (Klik untuk bagikan)">
+                            <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
+                            <span>Linimasa: OFF</span>
+                        </button>
+                        {% endif %}
+                    {% endif %}
+                    <a href="/api/v1/maps/repo/download/{{ m.id }}"
+                       class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5">
+                        <i class="fas fa-download text-[11px]"></i>
+                        <span>Unduh Peta</span>
+                    </a>
+                </div>
             </div>
         </div>
         {% endfor %}
@@ -1314,6 +1743,541 @@
         <p class="text-xs text-slate-500 max-w-md mx-auto">
             Arsip peta ekspedisi belum diunggah oleh pengurus. Anggota juga dapat membagikan rute hasil rekam jejak langsung dari aplikasi <b>Gimbal Maps</b>.
         </p>
+    </div>
+    {% endif %}
+
+</div>
+{% endmacro %}
+
+
+<!-- ============================================================================== -->
+<!-- MACRO: USAHA & LAPAK ANGGOTA (MEMBER BUSINESS DIRECTORY & PRODUCT MANAGEMENT)  -->
+<!-- ============================================================================== -->
+{% macro member_business(data) %}
+{% set user = data.user %}
+<div class="space-y-6">
+
+    <!-- Flash Alerts -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="space-y-2">
+            {% for category, message in messages %}
+            <div class="p-4 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-xs
+                        {% if category in ['error', 'danger'] %}bg-rose-50 border-rose-200 text-rose-800
+                        {% elif category == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800
+                        {% else %}bg-amber-50 border-amber-200 text-amber-800{% endif %}">
+                <div class="flex items-center gap-2.5">
+                    <i class="fas {% if category == 'success' %}fa-check-circle text-emerald-600{% elif category in ['error', 'danger'] %}fa-exclamation-circle text-rose-600{% else %}fa-info-circle text-amber-600{% endif %} text-base"></i>
+                    <span>{{ message }}</span>
+                </div>
+                <button type="button" onclick="this.closest('.p-4').remove()" class="text-slate-400 hover:text-slate-700 p-1">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Top Hero Banner: Pedoman Komunitas & Solusi Promosi -->
+    <div class="bg-gradient-to-r from-orange-950 via-stone-900 to-orange-950 text-white rounded-2xl p-6 sm:p-8 border border-orange-800/40 shadow-xl relative overflow-hidden">
+        <div class="absolute -right-8 -bottom-8 opacity-10 text-orange-400 text-9xl pointer-events-none">
+            <i class="fas fa-store"></i>
+        </div>
+        <div class="relative z-10 max-w-3xl space-y-3">
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/20 border border-orange-400/30 rounded-full text-xs font-mono font-bold text-orange-300">
+                <i class="fas fa-shield-alt text-orange-400"></i> DUKUNGAN EKONOMI PETUALANG & KTA GIMBAL
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black font-heading leading-tight">
+                Lapak, Cafe & Usaha Mandiri Anggota
+            </h1>
+            <p class="text-xs sm:text-sm text-stone-300 leading-relaxed font-normal">
+                Punya usaha cafe basecamp, rental alat outdoor, toko kerajinan Karawo, atau homestay pendaki? Daftarkan usaha Anda di sini agar tampil dengan lencana <strong>Usaha Anggota Terverifikasi</strong> dan dapat dibagikan secara resmi ke linimasa dengan kartu katalog produk eksklusif.
+            </p>
+            <div class="p-3 bg-white/10 rounded-xl border border-white/10 flex items-start gap-3 text-xs text-orange-200">
+                <i class="fas fa-robot text-orange-400 text-sm mt-0.5 shrink-0"></i>
+                <p>
+                    <strong>Pemberitahuan Sistem AI:</strong> Postingan direct selling (jualan langsung) di linimasa umum disaring secara otomatis oleh AI Gemini untuk menjaga linimasa tetap nyaman untuk cerita ekspedisi. Promosikan produk Anda lewat fitur lapak resmi ini!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 1: USAHA SAYA YANG TERDAFTAR -->
+    {% if data.my_businesses %}
+    <div class="space-y-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-black text-slate-900 font-heading flex items-center gap-2">
+                    <i class="fas fa-store-alt text-orange-600"></i> Profil Lapak & Usaha Saya
+                </h2>
+                <p class="text-xs text-slate-500">Kelola informasi toko, benefit KTA, dan katalog produk resmi Anda</p>
+            </div>
+            <button type="button"
+                    hx-get="/member/business/edit-modal/{{ data.my_businesses[0].id }}"
+                    hx-target="#modal-container"
+                    class="px-3.5 py-2 bg-orange-50 hover:bg-orange-100 text-orange-800 font-bold text-xs rounded-xl transition flex items-center gap-1.5 border border-orange-200 cursor-pointer shadow-2xs">
+                <i class="fas fa-edit text-orange-600"></i>
+                <span>Edit Profil Usaha</span>
+            </button>
+        </div>
+
+        {% for biz in data.my_businesses %}
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden space-y-5 p-6">
+            <!-- Header Usaha -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+                <div class="flex items-start gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+                        {% if biz.logo_url %}
+                        <img src="{{ biz.logo_url }}" alt="{{ biz.name }}" class="w-full h-full object-cover">
+                        {% else %}
+                        <i class="fas fa-store text-2xl text-slate-400"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h3 class="text-lg font-black text-slate-900 font-heading">{{ biz.name }}</h3>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase
+                                {% if biz.status == 'active' %}bg-emerald-100 text-emerald-800 border border-emerald-200
+                                {% elif biz.status == 'pending' %}bg-amber-100 text-amber-800 border border-amber-200
+                                {% else %}bg-rose-100 text-rose-800 border border-rose-200{% endif %}">
+                                <i class="fas {% if biz.status == 'active' %}fa-check-circle text-emerald-600{% elif biz.status == 'pending' %}fa-clock text-amber-600{% else %}fa-times-circle text-rose-600{% endif %} mr-0.5"></i>
+                                {{ 'Terverifikasi Resmi' if biz.status == 'active' else ('Menunggu Verifikasi' if biz.status == 'pending' else 'Ditolak') }}
+                            </span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800 uppercase">
+                                {{ biz.category_label }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">{{ biz.description or 'Belum ada deskripsi usaha.' }}</p>
+                        <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">
+                            {% if biz.address %}
+                            <span><i class="fas fa-map-marker-alt text-orange-600 mr-1"></i> {{ biz.address }}</span>
+                            {% endif %}
+                            {% if biz.whatsapp_number %}
+                            <span><i class="fab fa-whatsapp text-emerald-600 mr-1"></i> {{ biz.whatsapp_number }}</span>
+                            {% endif %}
+                            {% if biz.promo_badge %}
+                            <span class="font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                <i class="fas fa-tag text-amber-600 mr-1"></i> {{ biz.promo_badge }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap sm:flex-col items-end gap-2 shrink-0">
+                    {% if biz.is_shared_to_timeline %}
+                    <button type="button"
+                            hx-post="/member/business/toggle-share/{{ biz.id }}?style=full"
+                            hx-swap="outerHTML"
+                            class="w-full sm:w-auto px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                            title="Lapak aktif di Linimasa (Klik untuk sembunyikan)">
+                        <i class="fas fa-toggle-on text-emerald-600 text-sm"></i>
+                        <span>Linimasa: ON</span>
+                    </button>
+                    {% else %}
+                    <button type="button"
+                            hx-post="/member/business/toggle-share/{{ biz.id }}?style=full"
+                            hx-swap="outerHTML"
+                            class="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                            title="Lapak belum di linimasa (Klik untuk aktifkan & terbitkan di puncak linimasa)">
+                        <i class="fas fa-toggle-off text-slate-400 text-sm"></i>
+                        <span>Linimasa: OFF</span>
+                    </button>
+                    {% endif %}
+                    <button type="button"
+                            hx-get="/member/business/edit-modal/{{ biz.id }}"
+                            hx-target="#modal-container"
+                            class="w-full sm:w-auto px-3.5 py-1.5 bg-slate-100 hover:bg-orange-50 hover:text-orange-700 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-200 cursor-pointer shadow-2xs">
+                        <i class="fas fa-edit text-orange-600"></i>
+                        <span>Edit Profil Usaha</span>
+                    </button>
+                    {% if biz.maps_url %}
+                    <a href="{{ biz.maps_url }}" target="_blank"
+                       class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-lg transition flex items-center gap-1.5">
+                        <i class="fas fa-directions text-slate-500"></i>
+                        <span>Lihat di Maps</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Benefit Diskon Khusus KTA -->
+            {% if biz.member_benefit %}
+            <div class="p-3.5 bg-gradient-to-r from-orange-50/80 to-amber-50/80 rounded-xl border border-orange-200/80 flex items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                        <i class="fas fa-id-card text-xs"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-orange-950">Benefit Bagi Anggota KTA GIMBAL:</span>
+                        <p class="text-orange-900 mt-0.5 font-medium">{{ biz.member_benefit }}</p>
+                    </div>
+                </div>
+                <span class="px-2.5 py-1 bg-white text-orange-800 font-bold rounded-lg border border-orange-200 shrink-0 text-[11px]">
+                    Tunjukkan KTA Resmi
+                </span>
+            </div>
+            {% endif %}
+
+            <!-- DAFTAR KATALOG PRODUK USAHA -->
+            <div class="space-y-3 pt-2">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+                            <i class="fas fa-box-open text-orange-600"></i> Katalog Produk & Menu ({{ biz.products|length }})
+                        </h4>
+                        <p class="text-[11px] text-slate-500">Produk ini akan tampil di kartu promosi saat dibagikan ke linimasa petualang</p>
+                    </div>
+                    <button type="button"
+                            onclick="document.getElementById('form-add-product-{{ biz.id }}').classList.toggle('hidden')"
+                            class="px-3 py-1.5 bg-slate-100 hover:bg-orange-50 hover:text-orange-700 text-slate-700 font-bold text-xs rounded-lg transition flex items-center gap-1.5 border border-slate-200 cursor-pointer">
+                        <i class="fas fa-plus text-[10px]"></i>
+                        <span>Tambah Produk</span>
+                    </button>
+                </div>
+
+                <!-- Form Tambah Produk (Collapsible) -->
+                <div id="form-add-product-{{ biz.id }}" class="hidden p-4 bg-slate-50 rounded-xl border border-slate-200 animate-fade-in">
+                    <form hx-post="/member/business/product/create/{{ biz.id }}"
+                          hx-target="#main-content"
+                          hx-encoding="multipart/form-data"
+                          class="space-y-3 text-xs">
+                        <h5 class="font-bold text-slate-900">Form Tambah Produk Baru:</h5>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 mb-1">Nama Produk / Jasa / Menu</label>
+                                <input type="text" name="name" required placeholder="Misal: Kopi Robusta Pinogu 250g / Sewa Dome 4P"
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Harga Normal (Rp)</label>
+                                <input type="number" name="price" required placeholder="50000"
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Harga Khusus KTA (Rp)</label>
+                                <input type="number" name="discount_price" placeholder="45000 (Opsional)"
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono font-bold text-orange-600 focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block font-semibold text-slate-700 mb-1">Badge Produk (Opsional)</label>
+                                <input type="text" name="badge" placeholder="Best Seller / KTA Promo / Ready"
+                                       class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-semibold text-slate-700 mb-1">Foto Produk (Opsional)</label>
+                                <input type="file" name="image_file" accept="image/*"
+                                       class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">Keterangan / Deskripsi Singkat</label>
+                            <input type="text" name="description" placeholder="Kualitas terbaik, bahan waterproof, rasa otentik khas pegunungan..."
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-2">
+                            <button type="button" onclick="document.getElementById('form-add-product-{{ biz.id }}').classList.add('hidden')"
+                                    class="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 font-semibold transition">
+                                Batal
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition shadow-xs flex items-center gap-1.5">
+                                <i class="fas fa-save"></i>
+                                <span>Simpan Produk</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Grid Item Produk -->
+                {% if biz.products %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {% for prod in biz.products %}
+                    <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-200/90 flex flex-col justify-between space-y-2 hover:border-orange-300 transition">
+                        <div class="flex items-start gap-3">
+                            <div class="w-12 h-12 rounded-lg bg-white border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                                {% if prod.image_url %}
+                                <img src="{{ prod.image_url }}" alt="{{ prod.name }}" class="w-full h-full object-cover">
+                                {% else %}
+                                <i class="fas fa-box text-slate-300 text-lg"></i>
+                                {% endif %}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-1">
+                                    <h5 class="text-xs font-bold text-slate-900 truncate">{{ prod.name }}</h5>
+                                    {% if prod.badge %}
+                                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-orange-100 text-orange-800 uppercase shrink-0">
+                                        {{ prod.badge }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{{ prod.description or '-' }}</p>
+                                <div class="flex items-baseline gap-2 mt-1">
+                                    {% if prod.discount_price and prod.discount_price > 0 %}
+                                    <span class="text-xs font-black text-orange-600 font-mono">Rp {{ "{:,.0f}".format(prod.discount_price).replace(',', '.') }}</span>
+                                    <span class="text-[10px] text-slate-400 line-through font-mono">Rp {{ "{:,.0f}".format(prod.price).replace(',', '.') }}</span>
+                                    {% else %}
+                                    <span class="text-xs font-bold text-slate-800 font-mono">Rp {{ "{:,.0f}".format(prod.price).replace(',', '.') }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end pt-2 border-t border-slate-200/60">
+                            <form hx-post="/member/business/product/delete/{{ prod.id }}"
+                                  hx-target="#main-content"
+                                  hx-confirm="Hapus produk '{{ prod.name }}' ini?">
+                                <button type="submit" class="text-[11px] text-rose-500 hover:text-rose-700 font-semibold flex items-center gap-1 transition">
+                                    <i class="fas fa-trash-alt text-[10px]"></i> Hapus
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="p-6 bg-slate-50 rounded-xl border border-slate-200 text-center text-slate-400 text-xs italic">
+                    Belum ada produk yang ditambahkan. Klik "Tambah Produk" di atas untuk menambahkan item katalog pertama Anda.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+
+    <!-- SECTION 2: FORM PENDAFTARAN USAHA MANDIRI BARU (DIBATASI 1 USAHA PER ANGGOTA) -->
+    {% if not data.my_businesses %}
+    <div id="form-daftar-usaha" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+        <div class="border-b border-slate-100 pb-4">
+            <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase">Formulir Mandiri</span>
+            <h2 class="text-xl font-black text-slate-900 font-heading mt-1 flex items-center gap-2">
+                <i class="fas fa-store text-orange-600"></i> Daftarkan Usaha & Lapak Anda
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+                Isi rincian usaha Anda di bawah ini. Sesuai kebijakan organisasi, setiap anggota berhak mendaftarkan 1 usaha resmi untuk mendapatkan badge verifikasi dan promosi linimasa.
+            </p>
+        </div>
+
+        <form hx-post="/member/business/register"
+              hx-target="#main-content"
+              hx-encoding="multipart/form-data"
+              class="space-y-5 text-xs">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Nama Usaha / Toko / Lapak / Basecamp <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" name="name" required placeholder="Contoh: Kopi Rimba Hulontalangi / Bivak Outdoor Rental"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Kategori Usaha <span class="text-rose-500">*</span>
+                    </label>
+                    <select name="category" required
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        <option value="cafe">Cafe, Kopi & Kuliner Basecamp</option>
+                        <option value="gear">Toko Perlengkapan Outdoor & Alat Gunung</option>
+                        <option value="rental">Rental Tenda & Alat Camping</option>
+                        <option value="ethnic_store">Toko Kain Karawo & Cinderamata Etnik</option>
+                        <option value="homestay">Homestay, Villa & Penginapan Pendaki</option>
+                        <option value="tour_guide">Pemandu Wisata & Jasa Porter Ekspedisi</option>
+                        <option value="corporate">Layanan / Usaha Lainnya</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Lencana Promo / Teks Penawaran
+                    </label>
+                    <input type="text" name="promo_badge" value="Diskon 10% KTA GIMBAL"
+                           placeholder="Contoh: Diskon 10% KTA GIMBAL / Free Kopi Hangat"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Benefit Khusus untuk Pemegang KTA GIMBAL
+                    </label>
+                    <input type="text" name="member_benefit"
+                           placeholder="Contoh: Tunjukkan KTA aktif di kasir untuk potongan harga 10% & free refill"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Nomor WhatsApp Transaksi / Pemesanan <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" name="whatsapp_number" required placeholder="Contoh: 081234567890"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-mono font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Akun Instagram (Opsional)
+                    </label>
+                    <input type="url" name="instagram_url" placeholder="https://instagram.com/usaha_anda"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Logo / Foto Depan Toko / Plang Usaha
+                    </label>
+                    <input type="file" name="logo_file" accept="image/*"
+                           class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Alamat Lengkap / Lokasi Basecamp
+                    </label>
+                    <input type="text" name="address" placeholder="Contoh: Jl. Trans Sulawesi Km 12, Limboto, Gorontalo"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">
+                        Tautan Google Maps Lokasi
+                    </label>
+                    <input type="url" name="maps_url" placeholder="https://maps.app.goo.gl/..."
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-800 mb-1">
+                    Cerita & Deskripsi Usaha
+                </label>
+                <textarea name="description" rows="3"
+                          placeholder="Ceritakan tentang usaha Anda, jam buka, produk unggulan, suasana tempat, dan mengapa petualang GIMBAL wajib mampir ke sini..."
+                          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"></textarea>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <p class="text-[11px] text-slate-500">
+                    <i class="fas fa-info-circle text-orange-600 mr-1"></i> Data usaha akan langsung tersimpan dan aktif di akun keanggotaan Anda.
+                </p>
+                <button type="submit"
+                        class="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Daftarkan Usaha Saya Sekarang</span>
+                </button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <!-- BANNER KUOTA PENDAFTARAN: SUDAH MEMILIKI 1 USAHA TERDAFTAR -->
+    <div class="p-5 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 rounded-2xl border border-orange-200/90 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0">
+                <i class="fas fa-check-circle text-lg"></i>
+            </div>
+            <div class="space-y-0.5">
+                <h4 class="font-bold text-orange-950 text-sm">Anda Telah Mendaftarkan 1 Lapak Usaha Resmi</h4>
+                <p class="text-orange-900/80 leading-relaxed max-w-2xl">
+                    Sesuai kebijakan organisasi, setiap anggota berhak mengelola 1 profil lapak/usaha aktif (<strong>{{ data.my_businesses[0].name }}</strong>). Anda dapat memperbarui informasi gerai, benefit KTA, atau katalog produk kapan saja menggunakan tombol <strong>Edit Profil Usaha</strong> di atas.
+                </p>
+            </div>
+        </div>
+        <button type="button"
+                hx-get="/member/business/edit-modal/{{ data.my_businesses[0].id }}"
+                hx-target="#modal-container"
+                class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl transition shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer">
+            <i class="fas fa-edit"></i>
+            <span>Edit Profil Usaha</span>
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- SECTION 3: DIREKTORI USAHA & BASECAMP REKAN PETUALANG GIMBAL -->
+    {% if data.all_active_businesses %}
+    <div class="space-y-4 pt-4">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+            <div>
+                <h3 class="text-base font-black text-slate-900 font-heading flex items-center gap-2">
+                    <i class="fas fa-map-marked-alt text-orange-600"></i> Direktori Basecamp & Lapak Mitra Komunitas
+                </h3>
+                <p class="text-xs text-slate-500">Kumpulan cafe, rental gear, dan toko mitra terverifikasi tempat anggota GIMBAL berkumpul dan mendapatkan diskon KTA.</p>
+            </div>
+            <span class="text-xs font-mono font-bold text-slate-400">{{ data.all_active_businesses|length }} Mitra Aktif</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for b in data.all_active_businesses %}
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col justify-between space-y-3 hover:border-orange-300 transition">
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase
+                            {% if b.is_member_business %}bg-emerald-100 text-emerald-800{% else %}bg-orange-100 text-orange-800{% endif %}">
+                            {{ 'Usaha Anggota' if b.is_member_business else 'Mitra Resmi' }}
+                        </span>
+                        {% if b.promo_badge %}
+                        <span class="text-[10px] font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                            {{ b.promo_badge }}
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex items-start gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+                            {% if b.logo_url %}
+                            <img src="{{ b.logo_url }}" alt="{{ b.name }}" class="w-full h-full object-cover">
+                            {% else %}
+                            <i class="fas fa-store text-slate-400"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-xs font-bold text-slate-900 leading-tight truncate">{{ b.name }}</h4>
+                            <p class="text-[11px] text-slate-500 mt-0.5 capitalize">{{ b.category_label }}</p>
+                            <p class="text-[11px] text-slate-600 line-clamp-2 mt-1">{{ b.description or '-' }}</p>
+                        </div>
+                    </div>
+
+                    {% if b.member_benefit %}
+                    <div class="p-2 bg-orange-50/70 rounded-lg border border-orange-100 text-[11px] text-orange-950 font-medium">
+                        <i class="fas fa-id-card text-orange-600 mr-1"></i> {{ b.member_benefit }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                    <span class="text-[10px] text-slate-400 truncate max-w-[120px]">
+                        {{ b.address or 'Gorontalo' }}
+                    </span>
+                    <div class="flex items-center gap-1.5">
+                        {% if b.maps_url %}
+                        <a href="{{ b.maps_url }}" target="_blank" class="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700" title="Buka Google Maps">
+                            <i class="fas fa-directions text-xs"></i>
+                        </a>
+                        {% endif %}
+                        {% if b.whatsapp_number %}
+                        <a href="https://wa.me/{{ b.whatsapp_number.replace('+', '').replace('-', '').replace(' ', '') }}?text=Halo%20{{ b.name }},%20saya%20anggota%20GIMBAL."
+                           target="_blank" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1">
+                            <i class="fab fa-whatsapp"></i> Chat
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
     {% endif %}
 

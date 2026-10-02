@@ -175,9 +175,10 @@
             </div>
 
             <div>
-                <label class="block font-semibold text-slate-700 mb-1">File Dokumen (PDF)</label>
-                <input type="file" name="doc_file" accept=".pdf,.docx,.doc" required
+                <label class="block font-semibold text-slate-700 mb-1">File Dokumen (.PDF, .EPUB, .DOCX, .DOC)</label>
+                <input type="file" name="doc_file" accept=".pdf,.epub,.docx,.doc,.xlsx,.xls,.txt" required
                        class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                <p class="text-[10px] text-slate-400 mt-1">Mendukung format PDF, EPUB eBook, DOCX/Word, Excel, dan Teks.</p>
             </div>
 
             <div>
@@ -247,7 +248,7 @@
                     <span class="text-slate-600 truncate max-w-[200px] font-mono"><i class="fas fa-file-alt mr-1 text-orange-600"></i>{{ document.file_path.split('/')[-1] }}</span>
                     <span class="px-2 py-0.5 bg-orange-100 text-orange-800 font-bold rounded uppercase">.{{ (document.file_type or 'pdf')|upper }} ({{ document.file_size_fmt }})</span>
                 </div>
-                <input type="file" name="doc_file" accept=".pdf,.docx,.doc,.xlsx,.xls,.zip,.rar,.txt"
+                <input type="file" name="doc_file" accept=".pdf,.epub,.docx,.doc,.xlsx,.xls,.zip,.rar,.txt"
                        class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
                 <p class="text-[10px] text-slate-400 mt-1">Kosongkan jika tidak ingin mengganti berkas saat ini.</p>
             </div>
@@ -3092,6 +3093,517 @@
     </div>
 </div>
 {% endif %}
+
+
+<!-- MODAL TAMBAH MITRA SPONSOR BARU (ADMIN) -->
+{% if modal_type == 'create_sponsor' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-create-sponsor">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
+            <div class="w-10 h-10 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center text-lg">
+                <i class="fas fa-handshake"></i>
+            </div>
+            <div>
+                <h2 class="text-base font-bold text-slate-900 font-heading">Tambah Mitra Sponsor / Rekanan Baru</h2>
+                <p class="text-xs text-slate-500">Daftarkan mitra korporat, brand gear, cafe basecamp, atau toko etnik</p>
+            </div>
+        </div>
+
+        <form action="/admin/sponsors/create" method="POST" enctype="multipart/form-data" class="space-y-4 text-xs">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Nama Brand / Usaha / Mitra <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" required placeholder="Contoh: Eiger Adventure / Kopi Rimba Basecamp"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Kategori Kemitraan</label>
+                    <select name="category" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                        <option value="gear">Perlengkapan & Gear Outdoor</option>
+                        <option value="cafe">Cafe & Basecamp Nongkrong</option>
+                        <option value="ethnic_store">Toko Etnik, Tenun & Suvenir</option>
+                        <option value="rental">Rental & Persewaan Alat</option>
+                        <option value="homestay">Homestay & Penginapan</option>
+                        <option value="media">Media & Publikasi</option>
+                        <option value="corporate">Korporasi & CSR Lingkungan</option>
+                        <option value="other">Kategori Lainnya</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Tier / Tingkatan</label>
+                    <select name="tier" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                        <option value="official_partner">Mitra Resmi (Official Partner)</option>
+                        <option value="title_sponsor">Sponsor Utama (Title Sponsor)</option>
+                        <option value="community_partner">Mitra Komunitas / Rekanan</option>
+                        <option value="media_partner">Media Partner</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Label Promosi (Promo Badge)</label>
+                    <input type="text" name="promo_badge" placeholder="Contoh: Diskon 15% KTA / Basecamp Resmi"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Nomor WhatsApp Resmi</label>
+                    <input type="text" name="whatsapp_number" placeholder="Contoh: 081234567890"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Benefit Khusus Anggota KTA GIMBAL</label>
+                    <input type="text" name="member_benefit" placeholder="Contoh: Diskon 15% semua menu kopi & free meeting room"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Deskripsi Singkat Kerjasama / Gerai</label>
+                    <textarea name="description" rows="2" placeholder="Jelaskan bidang usaha atau peran dukungan kemitraan..."
+                              class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Website URL</label>
+                    <input type="url" name="website_url" placeholder="https://..."
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Instagram URL / Akun</label>
+                    <input type="text" name="instagram_url" placeholder="https://instagram.com/..."
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Alamat Fisik Gerai / Toko</label>
+                    <input type="text" name="address" placeholder="Contoh: Jl. Danau Limboto No. 12, Gorontalo"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Tautan Google Maps</label>
+                    <input type="url" name="maps_url" placeholder="https://maps.app.goo.gl/..."
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Unggah Berkas Logo / Banner Mitra</label>
+                    <input type="file" name="logo_file" accept="image/*"
+                           class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Urutan Prioritas (Order Index)</label>
+                    <input type="number" name="order_index" value="0"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-mono font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="flex items-center pt-5">
+                    <label class="inline-flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                        <input type="checkbox" name="is_active" value="1" checked class="w-4 h-4 text-orange-600 rounded">
+                        <span>Aktifkan & Tampilkan di Web</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                        class="px-4 py-2 border border-slate-200 rounded-lg font-bold text-slate-600 hover:bg-slate-50">
+                    Batal
+                </button>
+                <button type="submit" 
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold shadow-md shadow-orange-600/20">
+                    <i class="fas fa-save mr-1"></i> Simpan Mitra
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- MODAL EDIT MITRA SPONSOR (ADMIN) -->
+{% if modal_type == 'edit_sponsor' and sponsor %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-edit-sponsor">
+    <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
+            <img src="{{ sponsor.logo_url }}" class="w-12 h-12 rounded-xl object-contain bg-slate-50 border border-slate-200 p-1">
+            <div>
+                <h2 class="text-base font-bold text-slate-900 font-heading">Edit Mitra: {{ sponsor.name }}</h2>
+                <p class="text-xs text-slate-500">Perbarui profil, informasi kontak, dan diskon kemitraan</p>
+            </div>
+        </div>
+
+        <form action="/admin/sponsors/edit/{{ sponsor.id }}" method="POST" enctype="multipart/form-data" class="space-y-4 text-xs">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Nama Brand / Usaha <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" value="{{ sponsor.name }}" required
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Kategori</label>
+                    <select name="category" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                        <option value="gear" {% if sponsor.category == 'gear' %}selected{% endif %}>Perlengkapan & Gear Outdoor</option>
+                        <option value="cafe" {% if sponsor.category == 'cafe' %}selected{% endif %}>Cafe & Basecamp Nongkrong</option>
+                        <option value="ethnic_store" {% if sponsor.category == 'ethnic_store' %}selected{% endif %}>Toko Etnik, Tenun & Suvenir</option>
+                        <option value="rental" {% if sponsor.category == 'rental' %}selected{% endif %}>Rental & Persewaan Alat</option>
+                        <option value="homestay" {% if sponsor.category == 'homestay' %}selected{% endif %}>Homestay & Penginapan</option>
+                        <option value="media" {% if sponsor.category == 'media' %}selected{% endif %}>Media & Publikasi</option>
+                        <option value="corporate" {% if sponsor.category == 'corporate' %}selected{% endif %}>Korporasi & CSR Lingkungan</option>
+                        <option value="other" {% if sponsor.category == 'other' %}selected{% endif %}>Kategori Lainnya</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Tier / Tingkatan</label>
+                    <select name="tier" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+                        <option value="official_partner" {% if sponsor.tier == 'official_partner' %}selected{% endif %}>Mitra Resmi (Official Partner)</option>
+                        <option value="title_sponsor" {% if sponsor.tier == 'title_sponsor' %}selected{% endif %}>Sponsor Utama (Title Sponsor)</option>
+                        <option value="community_partner" {% if sponsor.tier == 'community_partner' %}selected{% endif %}>Mitra Komunitas / Rekanan</option>
+                        <option value="media_partner" {% if sponsor.tier == 'media_partner' %}selected{% endif %}>Media Partner</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Label Promosi (Promo Badge)</label>
+                    <input type="text" name="promo_badge" value="{{ sponsor.promo_badge or '' }}"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Nomor WhatsApp Resmi</label>
+                    <input type="text" name="whatsapp_number" value="{{ sponsor.whatsapp_number or '' }}"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Benefit Khusus Anggota KTA GIMBAL</label>
+                    <input type="text" name="member_benefit" value="{{ sponsor.member_benefit or '' }}"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Deskripsi Singkat Kerjasama / Gerai</label>
+                    <textarea name="description" rows="2"
+                              class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ sponsor.description or '' }}</textarea>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Website URL</label>
+                    <input type="url" name="website_url" value="{{ sponsor.website_url or '' }}"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Instagram URL</label>
+                    <input type="text" name="instagram_url" value="{{ sponsor.instagram_url or '' }}"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Alamat Fisik Gerai / Toko</label>
+                    <input type="text" name="address" value="{{ sponsor.address or '' }}"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Tautan Google Maps</label>
+                    <input type="url" name="maps_url" value="{{ sponsor.maps_url or '' }}"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Ganti Berkas Logo (Kosongkan jika tidak diubah)</label>
+                    <input type="file" name="logo_file" accept="image/*"
+                           class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Urutan Prioritas</label>
+                    <input type="number" name="order_index" value="{{ sponsor.order_index }}"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-mono font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="flex items-center pt-5">
+                    <label class="inline-flex items-center gap-2 cursor-pointer font-bold text-slate-700">
+                        <input type="checkbox" name="is_active" value="1" {% if sponsor.is_active %}checked{% endif %} class="w-4 h-4 text-orange-600 rounded">
+                        <span>Aktifkan di Web</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                        class="px-4 py-2 border border-slate-200 rounded-lg font-bold text-slate-600 hover:bg-slate-50">
+                    Batal
+                </button>
+                <button type="submit" 
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold shadow-md shadow-orange-600/20">
+                    <i class="fas fa-save mr-1"></i> Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- MODAL EDIT PROFIL USAHA ANGGOTA (MEMBER DASHBOARD) -->
+{% if modal_type == 'edit_member_business' and sponsor %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-edit-member-business">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition cursor-pointer">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
+            <div class="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center p-1">
+                {% if sponsor.logo_url %}
+                <img src="{{ sponsor.logo_url }}" class="w-full h-full object-cover rounded-lg">
+                {% else %}
+                <i class="fas fa-store text-xl text-orange-500"></i>
+                {% endif %}
+            </div>
+            <div>
+                <h2 class="text-base font-bold text-slate-900 font-heading">Edit Profil Lapak: {{ sponsor.name }}</h2>
+                <p class="text-xs text-slate-500">Perbarui informasi toko, nomor kontak, benefit KTA, dan foto gerai</p>
+            </div>
+        </div>
+
+        <form hx-post="/member/business/edit/{{ sponsor.id }}" 
+              hx-target="#main-content" 
+              hx-encoding="multipart/form-data" 
+              onclick="if(event.target.type === 'submit') { setTimeout(() => { document.getElementById('modal-container').innerHTML = ''; }, 300); }"
+              class="space-y-4 text-xs">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Nama Usaha / Gerai / Brand <span class="text-red-500">*</span></label>
+                    <input type="text" name="name" value="{{ sponsor.name }}" required
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Kategori Usaha</label>
+                    <select name="category" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white font-medium">
+                        <option value="cafe" {% if sponsor.category == 'cafe' %}selected{% endif %}>Cafe & Basecamp Kuliner</option>
+                        <option value="gear" {% if sponsor.category == 'gear' %}selected{% endif %}>Perlengkapan Outdoor Gear</option>
+                        <option value="rental" {% if sponsor.category == 'rental' %}selected{% endif %}>Rental Alat Camping & Outdoor</option>
+                        <option value="ethnic_store" {% if sponsor.category == 'ethnic_store' %}selected{% endif %}>Kain Karawo & Kerajinan Etnik</option>
+                        <option value="homestay" {% if sponsor.category == 'homestay' %}selected{% endif %}>Homestay / Penginapan Pendaki</option>
+                        <option value="tour_guide" {% if sponsor.category == 'tour_guide' %}selected{% endif %}>Pemandu Wisata & Jasa Porter</option>
+                        <option value="other" {% if sponsor.category == 'other' %}selected{% endif %}>Kategori Lainnya</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Label Promosi (Promo Badge)</label>
+                    <input type="text" name="promo_badge" value="{{ sponsor.promo_badge or '' }}" placeholder="Misal: Diskon 10% KTA GIMBAL"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Nomor WhatsApp Pemesanan <span class="text-red-500">*</span></label>
+                    <input type="text" name="whatsapp_number" value="{{ sponsor.whatsapp_number or '' }}" required placeholder="085240001111"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Akun Instagram / Medsos</label>
+                    <input type="text" name="instagram_url" value="{{ sponsor.instagram_url or '' }}" placeholder="@basecamp_kopi"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Benefit Nyata Khusus Pemegang KTA GIMBAL</label>
+                    <input type="text" name="member_benefit" value="{{ sponsor.member_benefit or '' }}" placeholder="Misal: Free refill kopi dan diskon 10% sewa tenda bagi anggota ber-KTA aktif"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium text-orange-950 focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Deskripsi Usaha & Cerita Gerai</label>
+                    <textarea name="description" rows="3"
+                              class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ sponsor.description or '' }}</textarea>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Alamat Fisik Gerai / Toko</label>
+                    <input type="text" name="address" value="{{ sponsor.address or '' }}" placeholder="Jl. Pangeran Hidayat No. 12, Gorontalo"
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Tautan Google Maps</label>
+                    <input type="url" name="maps_url" value="{{ sponsor.maps_url or '' }}" placeholder="https://maps.google.com/..."
+                           class="w-full px-3.5 py-2 rounded-lg border border-slate-300 font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Ganti Foto Logo / Gerai (Kosongkan jika tidak diubah)</label>
+                    <input type="file" name="logo_file" accept="image/*"
+                           class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+                <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                        class="px-4 py-2 border border-slate-200 rounded-lg font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                    Batal
+                </button>
+                <button type="submit" 
+                        class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold shadow-md shadow-orange-600/20 transition cursor-pointer">
+                    <i class="fas fa-save mr-1"></i> Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- MODAL PENGATURAN PRODUK SPONSOR / USAHA (ADMIN & MEMBER) -->
+{% if modal_type == 'sponsor_products' and sponsor %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-sponsor-products">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
+            <img src="{{ sponsor.logo_url }}" class="w-12 h-12 rounded-xl object-contain bg-slate-50 border border-slate-200 p-1">
+            <div>
+                <h2 class="text-base font-bold text-slate-900 font-heading">Katalog Produk / Menu: {{ sponsor.name }}</h2>
+                <p class="text-xs text-slate-500">Kelola daftar item produk, harga normal, harga khusus anggota KTA, dan foto produk</p>
+            </div>
+        </div>
+
+        <!-- Form Tambah Produk Baru -->
+        <div class="p-4 bg-orange-50/60 rounded-xl border border-orange-200/80 mb-5">
+            <h3 class="font-bold text-orange-950 text-xs mb-3 flex items-center gap-1.5">
+                <i class="fas fa-plus-circle text-orange-600"></i> Tambah Produk / Menu Baru
+            </h3>
+            <form action="/admin/sponsors/products/create/{{ sponsor.id }}" method="POST" enctype="multipart/form-data" class="space-y-3 text-xs">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                    <div class="md:col-span-2">
+                        <label class="block font-semibold text-slate-700 mb-1">Nama Produk / Menu</label>
+                        <input type="text" name="name" required placeholder="Contoh: Kopi Robusta Rimba 250gr / Tenda Dome 4P"
+                               class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Badge Produk (Opsional)</label>
+                        <input type="text" name="badge" placeholder="Contoh: Best Seller / Khas Gorontalo"
+                               class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Harga Normal (Rp)</label>
+                        <input type="number" name="price" placeholder="45000"
+                               class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-mono font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Harga Diskon KTA (Rp)</label>
+                        <input type="number" name="discount_price" placeholder="38000"
+                               class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-mono font-medium text-emerald-700 focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1">Foto Produk</label>
+                        <input type="file" name="image_file" accept="image/*"
+                               class="w-full text-[11px] text-slate-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:bg-orange-100 file:text-orange-800">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block font-semibold text-slate-700 mb-1">Keterangan Singkat Produk</label>
+                        <input type="text" name="description" placeholder="Varian sangrai medium dark, aroma cokelat & rempah..."
+                               class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end pt-1">
+                    <button type="submit" class="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold text-xs shadow-sm">
+                        <i class="fas fa-plus mr-1"></i> Simpan Produk
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Daftar Produk yang Sudah Ada -->
+        <div>
+            <h3 class="font-bold text-slate-800 text-xs mb-2.5 flex items-center justify-between">
+                <span>Daftar Produk Aktif ({{ sponsor.products|length }})</span>
+            </h3>
+            {% if sponsor.products %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {% for prod in sponsor.products %}
+                <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-xs flex items-center gap-3 relative group">
+                    {% if prod.image_url %}
+                    <img src="{{ prod.image_url }}" class="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-slate-100">
+                    {% else %}
+                    <div class="w-14 h-14 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center flex-shrink-0 text-xl font-bold">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    {% endif %}
+                    <div class="flex-1 min-w-0 pr-6">
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-bold text-slate-900 text-xs truncate">{{ prod.name }}</span>
+                            {% if prod.badge %}
+                            <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[9px] uppercase">{{ prod.badge }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-baseline gap-2 mt-0.5 font-mono">
+                            <span class="text-xs font-bold text-slate-700">Rp {{ "{:,.0f}".format(prod.price).replace(',', '.') }}</span>
+                            {% if prod.discount_price %}
+                            <span class="text-[11px] font-bold text-emerald-600">KTA: Rp {{ "{:,.0f}".format(prod.discount_price).replace(',', '.') }}</span>
+                            {% endif %}
+                        </div>
+                        {% if prod.description %}
+                        <p class="text-[10px] text-slate-500 truncate mt-0.5">{{ prod.description }}</p>
+                        {% endif %}
+                    </div>
+                    <form action="/admin/sponsors/products/delete/{{ prod.id }}" method="POST"
+                          onsubmit="return confirm('Hapus produk {{ prod.name }}?')"
+                          class="absolute top-2.5 right-2.5">
+                        <button type="submit" class="w-6 h-6 rounded-md bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center text-xs transition" title="Hapus Produk">
+                            <i class="fas fa-trash-alt text-[10px]"></i>
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                <i class="fas fa-box-open text-3xl mb-2 text-slate-300"></i>
+                <p class="text-xs font-medium">Belum ada produk atau menu yang ditambahkan untuk mitra ini.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="pt-5 border-t border-slate-100 mt-5 flex justify-end">
+            <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                    class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold text-xs">
+                Selesai / Tutup
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 
 
 

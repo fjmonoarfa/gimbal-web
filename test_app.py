@@ -174,7 +174,41 @@ class GimbalWebTestCase(unittest.TestCase):
         self.assertEqual(created_doc.file_type, 'xlsx')
         self.assertTrue(created_doc.file_path.endswith('.xlsx'))
 
-        print(">>> Test 06: Document CRUD listing, editing & dynamic file_type 100% OK")
+        # 5. Test Create .EPUB Document
+        epub_payload = io.BytesIO(b"PK\x03\x04Dummy EPUB ebook container content")
+        resp_epub = self.client.post('/admin/documents/create', data={
+            'title': 'Buku Panduan Survival Edisi EPUB',
+            'category': 'materi',
+            'description': 'Modul survival rimba dalam format digital ebook EPUB',
+            'is_public_to_members': '1',
+            'doc_file': (epub_payload, 'buku_survival.epub')
+        }, headers={'HX-Request': 'true'})
+        self.assertEqual(resp_epub.status_code, 200)
+
+        epub_doc = Document.query.filter_by(title='Buku Panduan Survival Edisi EPUB').first()
+        self.assertIsNotNone(epub_doc)
+        self.assertEqual(epub_doc.file_type, 'epub')
+        self.assertTrue(epub_doc.file_path.endswith('.epub'))
+
+        # 6. Test Fullscreen Web Reader Endpoint (/documents/read/<id>)
+        resp_reader = self.client.get(f'/documents/read/{epub_doc.id}')
+        self.assertEqual(resp_reader.status_code, 200)
+        self.assertIn(b'Buku Panduan Survival Edisi EPUB', resp_reader.data)
+        self.assertIn(b'epubjs', resp_reader.data)
+        self.assertIn(b'Pembaca Dokumen GIMBAL', resp_reader.data)
+
+        # 7. Test Member Documents Page contains Baca Dokumen
+        resp_mem_docs = self.client.get('/member/documents', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_mem_docs.status_code, 200)
+        self.assertIn(b'Baca Dokumen', resp_mem_docs.data)
+        self.assertIn(b'/documents/read/', resp_mem_docs.data)
+
+        # 8. Test /admin/sponsors Route
+        resp_sponsors = self.client.get('/admin/sponsors', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_sponsors.status_code, 200)
+        self.assertIn(b'Mitra Sponsor', resp_sponsors.data)
+
+        print(">>> Test 06: Document CRUD, .EPUB upload, Web Reader & /admin/sponsors 100% OK")
 
     def test_07_gallery_crud_and_pindown(self):
         with self.client.session_transaction() as sess:
@@ -1309,6 +1343,168 @@ class GimbalWebTestCase(unittest.TestCase):
         self.assertIn(b'Susur Gua', resp_landing.data)
 
         print(">>> Test 21: Multi-media Post, Expedition Documentation Album & Animated Gallery 100% OK")
+
+    def test_22_timeline_share_features(self):
+        """
+        Menguji fitur share linimasa:
+        1. Agenda ekspedisi fase planning/open bisa dishare ke linimasa sebelum mulai
+        2. Fitur toggle share linimasa untuk dokumen (admin & member)
+        3. Fitur toggle share linimasa untuk repo peta geodata (admin & member)
+        4. Verifikasi post type dan rendering di lini masa member
+        """
+        admin = User.query.filter_by(email='admin@gimbal.org').first()
+        member = User.query.filter(User.role == 'member', User.status == 'active').first()
+        if not member:
+            member = User.query.filter_by(email='budi.pendaki@gmail.com').first()
+        if not member:
+            member = User(
+                name="Anggota Aktif Test",
+                email="member.aktif@gmail.com",
+                role="member",
+                status="active"
+            )
+            db.session.add(member)
+            db.session.commit()
+
+        # 1. Agenda ekspedisi fase 'open' (belum mulai)
+        act = Activity(
+            title="Ekspedisi Uji Linimasa Pra-Mulai",
+            category="Pendakian Gunung",
+            difficulty="Menengah",
+            location="Gunung Dapi, Gorontalo Utara",
+            activity_date="12-15 November 2026",
+            description="Uji kesiapan fisik dan survival pra-ekspedisi",
+            quota=15,
+            phase="open",
+            is_open=True
+        )
+        db.session.add(act)
+        db.session.commit()
+
+        # Admin toggle share ON
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = admin.id
+
+        resp_act_share = self.client.post(f'/admin/activity/{act.id}/toggle-share')
+        self.assertEqual(resp_act_share.status_code, 200)
+        self.assertIn(b'Linimasa: ON', resp_act_share.data)
+
+        # Cek Post dibuat dengan post_type='activity'
+        post_act = Post.query.filter_by(activity_id=act.id, post_type='activity').first()
+        self.assertIsNotNone(post_act)
+        self.assertIn("AGENDA EKSPEDISI MENDATANG", post_act.content)
+        self.assertIn("Gunung Dapi", post_act.content)
+
+        # Admin toggle share OFF -> Post terhapus
+        resp_act_unshare = self.client.post(f'/admin/activity/{act.id}/toggle-share')
+        self.assertEqual(resp_act_unshare.status_code, 200)
+        self.assertIn(b'Linimasa: OFF', resp_act_unshare.data)
+        self.assertIsNone(Post.query.filter_by(activity_id=act.id, post_type='activity').first())
+
+        # Member share upcoming activity ke timeline
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = member.id
+
+        resp_member_share = self.client.post(f'/member/activity/share-to-timeline/{act.id}')
+        self.assertEqual(resp_member_share.status_code, 200)
+        self.assertIn(b'Terbagikan ke Linimasa', resp_member_share.data)
+        self.assertTrue(act.is_shared_to_timeline)
+
+        # 2. Fitur toggle share linimasa Dokumen
+        doc = Document(
+            title="SOP Navigasi Rimba & GPS Standar GIMBAL",
+            description="Panduan penggunaan aplikasi Gimbal Maps dan kompas bidik prisma",
+            file_path="/uploads/docs/sop_navigasi_test.pdf",
+            file_type="pdf",
+            file_size_fmt="2.4 MB",
+            category="sop_keselamatan",
+            is_public_to_members=True
+        )
+        db.session.add(doc)
+        db.session.commit()
+
+        # Member biasa tidak bisa toggle share dokumen (403)
+        resp_m_doc_fail = self.client.post(f'/member/documents/toggle-share/{doc.id}')
+        self.assertEqual(resp_m_doc_fail.status_code, 403)
+
+        # Admin toggle share dokumen ON
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = admin.id
+
+        resp_doc_on = self.client.post(f'/admin/documents/toggle-share/{doc.id}')
+        self.assertEqual(resp_doc_on.status_code, 200)
+        self.assertIn(b'Linimasa: ON', resp_doc_on.data)
+
+        # Cek Post dokumen terbentuk
+        post_doc = Post.query.filter_by(document_id=doc.id, post_type='document').first()
+        self.assertIsNotNone(post_doc)
+        self.assertIn("PUBLIKASI DOKUMEN RESMI GIMBAL", post_doc.content)
+        self.assertIn("SOP Navigasi Rimba", post_doc.content)
+
+        # Admin toggle share dokumen OFF -> Post terhapus
+        resp_doc_off = self.client.post(f'/admin/documents/toggle-share/{doc.id}')
+        self.assertEqual(resp_doc_off.status_code, 200)
+        self.assertIn(b'Linimasa: OFF', resp_doc_off.data)
+        self.assertIsNone(Post.query.filter_by(document_id=doc.id, post_type='document').first())
+
+        # Aktifkan kembali via member toggle (oleh admin)
+        resp_m_doc_on = self.client.post(f'/member/documents/toggle-share/{doc.id}')
+        self.assertEqual(resp_m_doc_on.status_code, 200)
+        self.assertIn(b'Linimasa: ON', resp_m_doc_on.data)
+
+        # 3. Fitur toggle share linimasa Repo Peta Geodata
+        repo_map = MapRepository(
+            title="Peta Topografi Tilongkabila 1:25.000",
+            region="Bone Bolango",
+            category="gunung_hutan",
+            file_type="mbtiles",
+            file_path="/uploads/repo_maps/tilongkabila_test.mbtiles",
+            file_size_fmt="18.5 MB",
+            total_distance_km=14.2,
+            total_waypoints=12,
+            uploaded_by=admin.id
+        )
+        db.session.add(repo_map)
+        db.session.commit()
+
+        # Admin toggle share peta ON
+        resp_map_on = self.client.post(f'/admin/repo-maps/toggle-share/{repo_map.id}')
+        self.assertEqual(resp_map_on.status_code, 200)
+        self.assertIn(b'Linimasa: ON', resp_map_on.data)
+
+        post_map = Post.query.filter_by(map_repo_id=repo_map.id, post_type='map').first()
+        self.assertIsNotNone(post_map)
+        self.assertIn("REPO PETA & GEODATA TERBARU", post_map.content)
+        self.assertIn("14.2 km", post_map.content)
+        self.assertIn("12 Waypoints", post_map.content)
+
+        # Member uploader toggle share peta OFF lalu ON
+        resp_map_off = self.client.post(f'/member/repo-maps/toggle-share/{repo_map.id}')
+        self.assertEqual(resp_map_off.status_code, 200)
+        self.assertIn(b'Linimasa: OFF', resp_map_off.data)
+        self.assertIsNone(Post.query.filter_by(map_repo_id=repo_map.id, post_type='map').first())
+
+        resp_map_on2 = self.client.post(f'/member/repo-maps/toggle-share/{repo_map.id}')
+        self.assertEqual(resp_map_on2.status_code, 200)
+        self.assertIn(b'Linimasa: ON', resp_map_on2.data)
+
+        # 4. Rendering Dashboard Lini Masa Member
+        with self.client.session_transaction() as sess:
+            sess['user_id'] = member.id
+
+        resp_dashboard = self.client.get('/member/dashboard', headers={'HX-Request': 'true'})
+        self.assertEqual(resp_dashboard.status_code, 200)
+        # Kartu Agenda Ekspedisi Terbuka
+        self.assertIn(b'Agenda Ekspedisi Terbuka', resp_dashboard.data)
+        self.assertIn(b'Gabung Ekspedisi', resp_dashboard.data)
+        # Kartu Dokumen
+        self.assertIn(b'Unduh Dokumen', resp_dashboard.data)
+        self.assertIn(b'SOP Navigasi Rimba', resp_dashboard.data)
+        # Kartu Peta Repo
+        self.assertIn(b'Unduh Peta', resp_dashboard.data)
+        self.assertIn(b'Tilongkabila', resp_dashboard.data)
+
+        print(">>> Test 22: Timeline Sharing (Pre-Start Activity, Document Toggle, Map Repo Toggle) 100% OK")
 
 if __name__ == '__main__':
     unittest.main()

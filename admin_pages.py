@@ -10,7 +10,7 @@ from models import (
     db, User, Dues, DuesPayment, Document, Activity,
     ActivityParticipant, ActivityFieldLog, GalleryItem, Post, PostMedia,
     PostComment, PostLike, ChatMessage, SystemSetting, AdminAuditLog,
-    MapRepository, Position, generate_next_nra
+    MapRepository, Position, generate_next_nra, Sponsor, SponsorProduct
 )
 from cloudflare_email import delete_cloudflare_email_rule, sync_cloudflare_email_routing
 from helpers import get_current_user, login_required, admin_required, render_gimbal_page
@@ -364,7 +364,7 @@ def admin_toggle_member_status(user_id):
         flash(f"Gagal mengubah status '{member.name}': Anda tidak dapat menonaktifkan akun Anda sendiri.", "error")
         return admin_members()
 
-    if member.email == 'fitra@gimbal.org' or member.role == 'superadmin':
+    if member.role == 'superadmin' and not admin.is_superadmin and member.email != 'fitra@gimbal.org':
         flash(f"Status akun Superadmin dilindungi sistem.", "error")
         return admin_members()
 
@@ -402,12 +402,12 @@ def admin_delete_member(user_id):
         return admin_members()
 
     # 2. Lindungi akun Superadmin
-    if member.email == 'fitra@gimbal.org' or member.role == 'superadmin':
+    if member.role == 'superadmin' and member.email != 'fitra@gimbal.org':
         flash(f"Gagal menghapus '{member.name}': Akun Superadmin dilindungi sistem dan tidak dapat dihapus.", "error")
         return admin_members()
 
     # 3. Batasi jika target adalah admin namun penghapus bukan superadmin
-    if member.is_admin and not admin.is_superadmin:
+    if member.is_admin and not admin.is_superadmin and member.email != 'fitra@gimbal.org':
         flash(f"Gagal menghapus '{member.name}': Akun pengurus admin hanya dapat dikelola atau dihapus oleh Superadmin melalui menu Pengaturan.", "error")
         return admin_members()
         
@@ -416,6 +416,8 @@ def admin_delete_member(user_id):
         # A. Postingan pengguna: Hapus semua komentar & like pada postingan milik pengguna ini terlebih dahulu
         user_posts = Post.query.filter_by(user_id=member.id).all()
         for p in user_posts:
+            GalleryItem.query.filter_by(post_id=p.id).update({'post_id': None})
+            PostMedia.query.filter_by(post_id=p.id).delete()
             PostComment.query.filter_by(post_id=p.id).delete()
             PostLike.query.filter_by(post_id=p.id).delete()
             db.session.delete(p)
@@ -432,6 +434,7 @@ def admin_delete_member(user_id):
         
         # D. Ekspedisi & Partisipasi Kegiatan
         ActivityParticipant.query.filter_by(user_id=member.id).delete()
+        ActivityFieldLog.query.filter_by(user_id=member.id).update({'user_id': None})
         
         # F. Iuran & Keuangan
         DuesPayment.query.filter_by(user_id=member.id).delete()
@@ -442,7 +445,12 @@ def admin_delete_member(user_id):
         Document.query.filter_by(uploaded_by=member.id).update({'uploaded_by': None})
         MapRepository.query.filter_by(uploaded_by=member.id).update({'uploaded_by': None})
         AdminAuditLog.query.filter_by(admin_id=member.id).update({'admin_id': None})
+        Sponsor.query.filter_by(owner_user_id=member.id).update({'owner_user_id': None})
         
+        # Jika akun fitra yang dihapus, simpan flag permanen agar startup app.py tidak membuat ulang
+        if member.email == 'fitra@gimbal.org' or (member.name and member.name.lower() == 'fitra'):
+            SystemSetting.set('fitra_deleted', 'true')
+
         # H. Bersihkan Rule Cloudflare Email Routing jika terpasang
         try:
             delete_cloudflare_email_rule(member)
@@ -681,9 +689,9 @@ def admin_verify_dues(payment_id):
 @admin_bp.route('/admin/settings')
 @login_required
 @admin_required
-def admin_settings(initial_tab=None):
+def admin_settings(initial_tab=None, active_page='admin_settings'):
     """Portal Pengaturan Sistem, Web Admin CRUD, Member Management, Dues, Midtrans, Rekening & Tema"""
-    active_tab = initial_tab or request.args.get('tab', 'organization')
+    active_tab = initial_tab or request.args.get('tab', 'sponsors')
     admins = User.query.filter(User.role.in_(['admin', 'superadmin'])).order_by(User.id.asc()).all()
     members = User.query.order_by(User.id.desc()).all()
     active_dues = Dues.query.filter_by(category='wajib').order_by(Dues.id.desc()).first() or Dues.query.order_by(Dues.id.desc()).first()
@@ -691,6 +699,7 @@ def admin_settings(initial_tab=None):
     all_dues = Dues.query.order_by(Dues.id.desc()).all()
     positions = Position.query.order_by(Position.order_index.asc(), Position.id.asc()).all()
     audit_logs = AdminAuditLog.query.order_by(AdminAuditLog.id.desc()).limit(100).all()
+    sponsors = Sponsor.query.order_by(Sponsor.order_index.asc(), Sponsor.id.desc()).all()
     
     is_prod = SystemSetting.get('midtrans_is_production', 'false').lower() == 'true'
     settings = {
@@ -716,7 +725,8 @@ def admin_settings(initial_tab=None):
         'cloudflare_enabled': (SystemSetting.get('cloudflare_enabled', 'false').lower() == 'true'),
         'cloudflare_api_token': SystemSetting.get('cloudflare_api_token', ''),
         'cloudflare_zone_id': SystemSetting.get('cloudflare_zone_id', ''),
-        'cloudflare_domain': SystemSetting.get('cloudflare_domain', 'gimbal.my.id')
+        'cloudflare_domain': SystemSetting.get('cloudflare_domain', 'gimbal.my.id'),
+        'gemini_api_key': SystemSetting.get('gemini_api_key', os.environ.get('GEMINI_API_KEY', ''))
     }
     data = {
         'active_tab': active_tab,
@@ -726,11 +736,20 @@ def admin_settings(initial_tab=None):
         'active_dues': active_dues,
         'all_dues': all_dues,
         'positions': positions,
+        'sponsors': sponsors,
         'dues_enabled': dues_enabled,
         'settings': settings,
         'audit_logs': audit_logs
     }
-    return render_gimbal_page('admin/admin_pages.html', 'admin_settings', data, active_page='admin_settings')
+    return render_gimbal_page('admin/admin_pages.html', 'admin_settings', data, active_page=active_page)
+
+
+@admin_bp.route('/admin/sponsors')
+@login_required
+@admin_required
+def admin_sponsors():
+    """Portal Utama Sponsorship & Mitra Resmi Organisasi"""
+    return admin_settings(initial_tab='sponsors', active_page='admin_sponsors')
 
 
 @admin_bp.route('/admin/settings/cloudflare', methods=['POST'])
@@ -755,11 +774,16 @@ def admin_settings_cloudflare():
     SystemSetting.set('cloudflare_zone_id', zone_id, 'Zone ID Cloudflare')
     SystemSetting.set('cloudflare_domain', domain, 'Domain email forwarding')
 
+    gemini_key = request.form.get('gemini_api_key', '').strip()
+    if gemini_key:
+        SystemSetting.set('gemini_api_key', gemini_key, 'Gemini API Key untuk Moderasi AI')
+        os.environ['GEMINI_API_KEY'] = gemini_key
+
     log = AdminAuditLog(
         admin_id=admin.id,
         action='update_cloudflare_settings',
         target_type='SystemSetting',
-        details=f"Memperbarui konfigurasi Cloudflare Email Routing: enabled={cloudflare_enabled}, domain={domain}"
+        details=f"Memperbarui konfigurasi Cloudflare & API Integrasi: enabled={cloudflare_enabled}, domain={domain}"
     )
     db.session.add(log)
     db.session.commit()
@@ -1039,17 +1063,13 @@ def admin_delete_admin(user_id):
     admin = get_current_user()
     target = User.query.get_or_404(user_id)
     
-    if target.email == 'fitra@gimbal.org':
-        if not request.headers.get('HX-Request'):
-            return "Gagal: Akun Superadmin utama dilindungi dan tidak dapat dihapus.", 400
-        flash("Gagal: Akun Superadmin utama dilindungi dan tidak dapat dihapus.", "error")
-        return redirect('/admin/members')
-        
     if target.id == admin.id:
+        if not request.headers.get('HX-Request'):
+            return "Gagal: Anda tidak dapat mencabut hak akses akun Anda sendiri saat sedang aktif digunakan.", 400
         flash("Gagal: Anda tidak dapat mencabut hak akses akun Anda sendiri saat sedang aktif digunakan.", "error")
         return redirect('/admin/members')
         
-    if target.role == 'superadmin' and not admin.is_superadmin:
+    if target.role == 'superadmin' and not admin.is_superadmin and target.email != 'fitra@gimbal.org':
         flash("Akses Terbatas: Hanya Superadmin yang berhak mencabut hak akses Superadmin lain.", "error")
         return redirect('/admin/members')
         
@@ -1354,9 +1374,63 @@ def admin_edit_doc(doc_id):
 @admin_required
 def admin_delete_doc(doc_id):
     doc = Document.query.get_or_404(doc_id)
+    # Hapus juga postingan linimasa jika terkait
+    Post.query.filter_by(document_id=doc.id).delete()
     db.session.delete(doc)
     db.session.commit()
     return admin_documents()
+
+
+@admin_bp.route('/admin/documents/toggle-share/<int:doc_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_toggle_doc_share(doc_id):
+    """Toggle publikasi dokumen resmi ke Linimasa / Feed Anggota (ON/OFF)"""
+    doc = Document.query.get_or_404(doc_id)
+    doc.is_shared_to_timeline = not bool(doc.is_shared_to_timeline)
+    admin = get_current_user()
+
+    if doc.is_shared_to_timeline:
+        existing = Post.query.filter_by(document_id=doc.id).first()
+        if not existing:
+            post = Post(
+                user_id=admin.id,
+                content=(
+                    f"📄 PUBLIKASI DOKUMEN RESMI GIMBAL: {doc.title}\n\n"
+                    f"Kategori: {doc.category.replace('_', ' ').upper()} • Format: .{doc.file_type.upper()} ({doc.file_size_fmt})\n\n"
+                    f"{doc.description or 'Dokumen pedoman dan arsip resmi organisasi telah tersedia di Pustaka Dokumen Anggota.'}"
+                ),
+                document_id=doc.id,
+                post_type='document'
+            )
+            db.session.add(post)
+    else:
+        Post.query.filter_by(document_id=doc.id).delete()
+
+    db.session.commit()
+
+    if doc.is_shared_to_timeline:
+        return f"""
+        <button type="button"
+                hx-post="/admin/documents/toggle-share/{doc.id}"
+                hx-swap="outerHTML"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-xs cursor-pointer"
+                title="Dokumen aktif di Linimasa (Klik untuk matikan)">
+            <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
+            <span>Linimasa: ON</span>
+        </button>
+        """
+    else:
+        return f"""
+        <button type="button"
+                hx-post="/admin/documents/toggle-share/{doc.id}"
+                hx-swap="outerHTML"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer"
+                title="Dokumen belum dibagikan ke Linimasa (Klik untuk bagikan)">
+            <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
+            <span>Linimasa: OFF</span>
+        </button>
+        """
 
 
 # ========== ACTIVITIES MANAGEMENT ================================================
@@ -2124,28 +2198,60 @@ def admin_activity_pin_field_photo(activity_id, log_id):
 @login_required
 @admin_required
 def admin_activity_publish_to_feed(activity_id):
-    """Mempublikasikan laporan wrap-up ekspedisi ke Linimasa Komunitas / Feed Anggota"""
+    """Mempublikasikan agenda atau laporan ekspedisi ke Linimasa Komunitas / Feed Anggota"""
     act = Activity.query.get_or_404(activity_id)
     admin = get_current_user()
 
-    content = request.form.get('content') or (
-        f"🚩 LAPORAN EKSPEDISI SELESAI: {act.title}!\n\n"
-        f"Seluruh personil tim ({act.total_confirmed} orang) telah berhasil menyelesaikan operasi lapangan "
-        f"di kawasan {act.location} ({act.activity_date}) dalam kondisi sehat dan selamat. "
-        f"Dokumen ROL dan LPJ resmi telah disahkan oleh pengurus."
-    )
+    custom_content = request.form.get('content', '').strip()
+    if custom_content:
+        content = custom_content
+    elif act.phase in ['planning', 'open']:
+        content = (
+            f"📢 AGENDA EKSPEDISI MENDATANG: {act.title}!\n\n"
+            f"KPAB GIMBAL membuka agenda petualangan baru di kawasan {act.location}.\n"
+            f"🗓️ Waktu Pelaksanaan: {act.activity_date}\n"
+            f"🧗 Kategori: {act.category}\n"
+            f"⚡ Tingkat Kesulitan: {act.difficulty}\n"
+            f"👥 Kuota Peserta: {act.total_confirmed} / {act.quota} personil terdaftar.\n\n"
+            f"{(act.description or 'Ayo persiapkan fisik dan logistik tim untuk bergabung dalam petualangan ini!')}\n\n"
+            f"👉 Anggota dapat mendaftarkan diri langsung melalui portal atau melihat ROL resmi."
+        )
+    elif act.phase == 'in_progress':
+        content = (
+            f"⛰️ OPERASI LAPANGAN SEDANG BERLANGSUNG: {act.title}!\n\n"
+            f"Tim ekspedisi ({act.total_confirmed} personil) saat ini sedang beroperasi di kawasan {act.location} ({act.activity_date}).\n"
+            f"Mari kita doakan kelancaran dan keselamatan seluruh personil tim hingga kembali ke Basecamp. Salam Lestari!"
+        )
+    else:
+        content = (
+            f"🚩 LAPORAN EKSPEDISI SELESAI: {act.title}!\n\n"
+            f"Seluruh personil tim ({act.total_confirmed} orang) telah berhasil menyelesaikan operasi lapangan "
+            f"di kawasan {act.location} ({act.activity_date}) dalam kondisi sehat dan selamat. "
+            f"Dokumen ROL dan LPJ resmi telah disahkan oleh pengurus."
+        )
 
-    post = Post(
-        user_id=admin.id,
-        content=content,
-        location=act.location,
-        activity_id=act.id,
-        image_url=act.image_url
-    )
-    db.session.add(post)
-    db.session.flush()
+    existing = Post.query.filter_by(activity_id=act.id, post_type='activity').first()
+    if existing:
+        post = existing
+        post.content = content
+        post.location = act.location
+        post.image_url = act.image_url
+        post.created_at = datetime.utcnow()
+        PostMedia.query.filter_by(post_id=post.id).delete()
+    else:
+        post = Post(
+            user_id=admin.id,
+            content=content,
+            location=act.location,
+            activity_id=act.id,
+            image_url=act.image_url,
+            post_type='activity',
+            created_at=datetime.utcnow()
+        )
+        db.session.add(post)
+        db.session.flush()
 
-    # Lampirkan foto-foto dokumentasi lapangan ke PostMedia
+    # Lampirkan foto-foto dokumentasi lapangan ke PostMedia jika ada
     logs_with_photo = ActivityFieldLog.query.filter_by(activity_id=act.id).filter(ActivityFieldLog.photo_url.isnot(None)).limit(6).all()
     for idx, plog in enumerate(logs_with_photo):
         media = PostMedia(
@@ -2157,12 +2263,86 @@ def admin_activity_publish_to_feed(activity_id):
         )
         db.session.add(media)
 
+    act.is_shared_to_timeline = True
     db.session.commit()
-    flash('Cerita dan dokumentasi ekspedisi berhasil dipublikasikan ke Linimasa Komunitas!', 'success')
-    tab = request.args.get('tab') or request.form.get('tab') or 'close_out'
+    flash('Agenda / dokumentasi ekspedisi berhasil dipublikasikan ke Linimasa Komunitas!', 'success')
+    tab = request.args.get('tab') or request.form.get('tab') or ('overview' if act.phase in ['planning', 'open'] else 'close_out')
     if request.headers.get('HX-Request'):
         return admin_activity_manage(activity_id, tab=tab)
     return redirect(f'/admin/activity/{activity_id}/manage?tab={tab}')
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/toggle-share', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_toggle_feed_share(activity_id):
+    """Toggle share agenda ekspedisi ke linimasa (ON/OFF)"""
+    act = Activity.query.get_or_404(activity_id)
+    admin = get_current_user()
+    act.is_shared_to_timeline = not bool(act.is_shared_to_timeline)
+
+    if act.is_shared_to_timeline:
+        existing = Post.query.filter_by(activity_id=act.id, post_type='activity').first()
+        if not existing:
+            if act.phase in ['planning', 'open']:
+                content = (
+                    f"📢 AGENDA EKSPEDISI MENDATANG: {act.title}!\n\n"
+                    f"KPAB GIMBAL membuka agenda petualangan baru di kawasan {act.location}.\n"
+                    f"🗓️ Waktu Pelaksanaan: {act.activity_date}\n"
+                    f"🧗 Kategori: {act.category}\n"
+                    f"⚡ Tingkat Kesulitan: {act.difficulty}\n"
+                    f"👥 Kuota Peserta: {act.total_confirmed} / {act.quota} personil terdaftar.\n\n"
+                    f"{(act.description or 'Ayo persiapkan fisik dan logistik tim untuk bergabung dalam petualangan ini!')}"
+                )
+            elif act.phase == 'in_progress':
+                content = (
+                    f"⛰️ OPERASI LAPANGAN SEDANG BERLANGSUNG: {act.title}!\n\n"
+                    f"Tim ekspedisi ({act.total_confirmed} personil) saat ini sedang bergerak di kawasan {act.location} ({act.activity_date}).\n"
+                    f"Mari kita doakan kelancaran dan keselamatan personil tim. Salam Lestari!"
+                )
+            else:
+                content = (
+                    f"🚩 LAPORAN EKSPEDISI: {act.title}!\n\n"
+                    f"Operasi lapangan di kawasan {act.location} ({act.activity_date}) telah selesai dengan {act.total_confirmed} personil selamat."
+                )
+
+            post = Post(
+                user_id=admin.id,
+                content=content,
+                location=act.location,
+                activity_id=act.id,
+                image_url=act.image_url,
+                post_type='activity'
+            )
+            db.session.add(post)
+    else:
+        # Hapus postingan pengumuman agenda ini dari linimasa
+        Post.query.filter_by(activity_id=act.id, post_type='activity').delete()
+
+    db.session.commit()
+
+    if act.is_shared_to_timeline:
+        return f"""
+        <button type="button"
+                hx-post="/admin/activity/{act.id}/toggle-share"
+                hx-swap="outerHTML"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-xs cursor-pointer"
+                title="Agenda aktif di Linimasa (Klik untuk matikan)">
+            <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
+            <span>Linimasa: ON</span>
+        </button>
+        """
+    else:
+        return f"""
+        <button type="button"
+                hx-post="/admin/activity/{act.id}/toggle-share"
+                hx-swap="outerHTML"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer"
+                title="Agenda belum dibagikan ke Linimasa (Klik untuk bagikan)">
+            <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
+            <span>Linimasa: OFF</span>
+        </button>
+        """
 
 
 def resolve_rol_signers(act):
@@ -2819,6 +2999,7 @@ def admin_delete_repo_map(map_id):
     admin = get_current_user()
     map_item = MapRepository.query.get_or_404(map_id)
     title = map_item.title
+    Post.query.filter_by(map_repo_id=map_item.id).delete()
     db.session.delete(map_item)
 
     log = AdminAuditLog(
@@ -2832,4 +3013,448 @@ def admin_delete_repo_map(map_id):
     db.session.add(log)
     db.session.commit()
     return admin_repo_maps()
+
+
+@admin_bp.route('/admin/repo-maps/toggle-share/<int:map_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_toggle_repo_map_share(map_id):
+    """Toggle publikasi berkas peta di repo ke linimasa / feed anggota (ON/OFF)"""
+    map_item = MapRepository.query.get_or_404(map_id)
+    map_item.is_shared_to_timeline = not bool(map_item.is_shared_to_timeline)
+    admin = get_current_user()
+
+    if map_item.is_shared_to_timeline:
+        existing_post = Post.query.filter_by(map_repo_id=map_item.id).first()
+        if not existing_post:
+            stats_str = ""
+            if map_item.total_distance_km and map_item.total_distance_km > 0:
+                stats_str += f" • Jarak: {map_item.total_distance_km} km"
+            if map_item.total_waypoints and map_item.total_waypoints > 0:
+                stats_str += f" • {map_item.total_waypoints} Waypoints"
+
+            post = Post(
+                user_id=admin.id,
+                content=(
+                    f"🗺️ REPO PETA & GEODATA TERBARU: {map_item.title}!\n\n"
+                    f"Kawasan: {map_item.region} • Format: .{map_item.file_type.upper()}{stats_str}\n\n"
+                    f"{map_item.description or 'Rute dan data lintasan navigasi telah ditambahkan ke Pustaka Peta KPAB GIMBAL. Dapat disinkronkan langsung ke aplikasi Gimbal Maps.'}"
+                ),
+                map_repo_id=map_item.id,
+                image_url=map_item.preview_image,
+                location=f"{map_item.title}, {map_item.region}",
+                post_type='map'
+            )
+            db.session.add(post)
+    else:
+        Post.query.filter_by(map_repo_id=map_item.id).delete()
+
+    db.session.commit()
+
+    if map_item.is_shared_to_timeline:
+        return f"""
+        <button type="button"
+                hx-post="/admin/repo-maps/toggle-share/{map_item.id}"
+                hx-swap="outerHTML"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-xs cursor-pointer"
+                title="Peta aktif di Linimasa Anggota (Klik untuk matikan)">
+            <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
+            <span>Linimasa: ON</span>
+        </button>
+        """
+    else:
+        return f"""
+        <button type="button"
+                hx-post="/admin/repo-maps/toggle-share/{map_item.id}"
+                hx-swap="outerHTML"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer"
+                title="Peta belum dibagikan ke Linimasa (Klik untuk bagikan)">
+            <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
+            <span>Linimasa: OFF</span>
+        </button>
+        """
+
+
+# ========== SPONSORSHIP & MERCHANT PARTNER ADMIN ROUTES ==========================
+
+@admin_bp.route('/admin/settings/gemini-api', methods=['POST'])
+@login_required
+@admin_required
+def admin_settings_gemini_api():
+    """Pengaturan Kunci API Gemini untuk AI Moderasi Linimasa & Fitur AI Lainnya"""
+    admin = get_current_user()
+    api_key = request.form.get('gemini_api_key', '').strip()
+    if api_key:
+        SystemSetting.set('gemini_api_key', api_key, 'Gemini API Key untuk Moderasi AI')
+        os.environ['GEMINI_API_KEY'] = api_key
+
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='update_gemini_api',
+        target_type='SystemSetting',
+        details=f"Memperbarui kunci Google Gemini API oleh {admin.name}"
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash("Kunci Google Gemini API berhasil diperbarui untuk moderasi linimasa cerdas.", "success")
+    if request.headers.get('HX-Request'):
+        return admin_settings(initial_tab='cloudflare')
+    return redirect('/admin/settings?tab=cloudflare')
+
+
+@admin_bp.route('/admin/sponsors/create-modal')
+@login_required
+@admin_required
+def admin_create_sponsor_modal():
+    """Modal Tambah Mitra Sponsor Resmi Baru"""
+    return render_template('components/modals.html', modal_type='create_sponsor')
+
+
+@admin_bp.route('/admin/sponsors/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_create_sponsor():
+    """Simpan Mitra Sponsor Korporat Baru dari Pengurus Admin"""
+    admin = get_current_user()
+    name = request.form.get('name', '').strip()
+    category = request.form.get('category', 'gear').strip()
+    tier = request.form.get('tier', 'official_partner').strip()
+    description = request.form.get('description', '').strip()
+    promo_badge = request.form.get('promo_badge', '').strip()
+    member_benefit = request.form.get('member_benefit', '').strip()
+    website_url = request.form.get('website_url', '').strip()
+    instagram_url = request.form.get('instagram_url', '').strip()
+    whatsapp_number = request.form.get('whatsapp_number', '').strip()
+    address = request.form.get('address', '').strip()
+    maps_url = request.form.get('maps_url', '').strip()
+    order_index = int(request.form.get('order_index', 0) or 0)
+    is_active = request.form.get('is_active', '1') in ['1', 'true', 'on', 'yes']
+
+    if not name:
+        flash("Gagal: Nama mitra sponsor tidak boleh kosong.", "error")
+        return admin_settings(initial_tab='sponsors')
+
+    # Unggah berkas logo / banner mitra
+    logo_file = request.files.get('logo_file')
+    logo_url = '/static/pics/sample_sponsor.png'
+    if logo_file and logo_file.filename:
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'sponsors')
+        os.makedirs(upload_dir, exist_ok=True)
+        safe_name = f"sponsor_{int(datetime.now().timestamp())}_{secure_filename(logo_file.filename)}"
+        logo_file.save(os.path.join(upload_dir, safe_name))
+        logo_url = f"/uploads/sponsors/{safe_name}"
+
+    sponsor = Sponsor(
+        name=name,
+        logo_url=logo_url,
+        category=category,
+        tier=tier,
+        description=description,
+        promo_badge=promo_badge,
+        member_benefit=member_benefit,
+        website_url=website_url,
+        instagram_url=instagram_url,
+        whatsapp_number=whatsapp_number,
+        address=address,
+        maps_url=maps_url,
+        owner_user_id=None,
+        is_member_business=False,
+        status='active',
+        order_index=order_index,
+        is_active=is_active
+    )
+    db.session.add(sponsor)
+
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='create_sponsor',
+        target_type='Sponsor',
+        details=f"Menambahkan mitra sponsor resmi: '{name}' ({category}) oleh {admin.name}"
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash(f"Mitra sponsor '{name}' berhasil didaftarkan.", "success")
+    if request.headers.get('HX-Request'):
+        return admin_settings(initial_tab='sponsors')
+    return redirect('/admin/settings?tab=sponsors')
+
+
+@admin_bp.route('/admin/sponsors/edit-modal/<int:sponsor_id>')
+@login_required
+@admin_required
+def admin_edit_sponsor_modal(sponsor_id):
+    """Modal Edit Informasi Sponsor"""
+    sponsor = Sponsor.query.get_or_404(sponsor_id)
+    return render_template('components/modals.html', modal_type='edit_sponsor', sponsor=sponsor)
+
+
+@admin_bp.route('/admin/sponsors/edit/<int:sponsor_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_edit_sponsor(sponsor_id):
+    """Perbarui Informasi Sponsor / Merchant"""
+    admin = get_current_user()
+    sponsor = Sponsor.query.get_or_404(sponsor_id)
+
+    sponsor.name = request.form.get('name', sponsor.name).strip()
+    sponsor.category = request.form.get('category', sponsor.category).strip()
+    sponsor.tier = request.form.get('tier', sponsor.tier).strip()
+    sponsor.description = request.form.get('description', '').strip()
+    sponsor.promo_badge = request.form.get('promo_badge', '').strip()
+    sponsor.member_benefit = request.form.get('member_benefit', '').strip()
+    sponsor.website_url = request.form.get('website_url', '').strip()
+    sponsor.instagram_url = request.form.get('instagram_url', '').strip()
+    sponsor.whatsapp_number = request.form.get('whatsapp_number', '').strip()
+    sponsor.address = request.form.get('address', '').strip()
+    sponsor.maps_url = request.form.get('maps_url', '').strip()
+    sponsor.order_index = int(request.form.get('order_index', sponsor.order_index) or 0)
+    sponsor.is_active = request.form.get('is_active', '1') in ['1', 'true', 'on', 'yes']
+
+    logo_file = request.files.get('logo_file')
+    if logo_file and logo_file.filename:
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'sponsors')
+        os.makedirs(upload_dir, exist_ok=True)
+        safe_name = f"sponsor_{sponsor.id}_{int(datetime.now().timestamp())}_{secure_filename(logo_file.filename)}"
+        logo_file.save(os.path.join(upload_dir, safe_name))
+        sponsor.logo_url = f"/uploads/sponsors/{safe_name}"
+
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='update_sponsor',
+        target_type='Sponsor',
+        target_id=sponsor.id,
+        details=f"Memperbarui data mitra sponsor: '{sponsor.name}'"
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash(f"Data mitra sponsor '{sponsor.name}' berhasil diperbarui.", "success")
+    if request.headers.get('HX-Request'):
+        return admin_settings(initial_tab='sponsors')
+    return redirect('/admin/settings?tab=sponsors')
+
+
+@admin_bp.route('/admin/sponsors/toggle-active/<int:sponsor_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_toggle_sponsor_active(sponsor_id):
+    """Toggle On/Off Status Aktif Sponsor"""
+    sponsor = Sponsor.query.get_or_404(sponsor_id)
+    sponsor.is_active = not sponsor.is_active
+    db.session.commit()
+    status_str = "diaktifkan" if sponsor.is_active else "dinonaktifkan"
+    flash(f"Mitra '{sponsor.name}' berhasil {status_str}.", "success")
+    if request.headers.get('HX-Request'):
+        return admin_settings(initial_tab='sponsors')
+    return redirect('/admin/settings?tab=sponsors')
+
+
+@admin_bp.route('/admin/sponsors/verify/<int:sponsor_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_verify_member_sponsor(sponsor_id):
+    """Verifikasi pendaftaran usaha anggota (Setuju / Tolak)"""
+    admin = get_current_user()
+    sponsor = Sponsor.query.get_or_404(sponsor_id)
+    action = request.form.get('action', 'active').strip()
+
+    if action == 'active':
+        sponsor.status = 'active'
+        sponsor.is_active = True
+        flash(f"Usaha anggota '{sponsor.name}' berhasil disetujui dan terverifikasi!", "success")
+    else:
+        sponsor.status = 'rejected'
+        sponsor.rejection_reason = request.form.get('rejection_reason', 'Belum memenuhi kriteria kemitraan.').strip()
+        flash(f"Pendaftaran usaha anggota '{sponsor.name}' ditolak.", "warning")
+
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='verify_member_sponsor',
+        target_type='Sponsor',
+        target_id=sponsor.id,
+        details=f"Verifikasi usaha anggota '{sponsor.name}': status={sponsor.status}"
+    )
+    db.session.add(log)
+    db.session.commit()
+    if request.headers.get('HX-Request'):
+        return admin_settings(initial_tab='sponsors')
+    return redirect('/admin/settings?tab=sponsors')
+
+
+@admin_bp.route('/admin/sponsors/delete/<int:sponsor_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_sponsor(sponsor_id):
+    """Hapus Mitra Sponsor / Usaha Anggota beserta seluruh produknya"""
+    admin = get_current_user()
+    sponsor = Sponsor.query.get_or_404(sponsor_id)
+    name = sponsor.name
+
+    # Lepas relasi postingan sponsor
+    Post.query.filter_by(sponsor_id=sponsor.id).update({'sponsor_id': None})
+    db.session.delete(sponsor)
+
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='delete_sponsor',
+        target_type='Sponsor',
+        details=f"Menghapus data mitra sponsor: '{name}' oleh {admin.name}"
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash(f"Mitra sponsor '{name}' berhasil dihapus secara permanen.", "success")
+    if request.headers.get('HX-Request'):
+        return admin_settings(initial_tab='sponsors')
+    return redirect('/admin/settings?tab=sponsors')
+
+
+@admin_bp.route('/admin/sponsors/products/<int:sponsor_id>')
+@login_required
+@admin_required
+def admin_sponsor_products_modal(sponsor_id):
+    """Modal Pengaturan Katalog Produk Sponsor / Usaha"""
+    sponsor = Sponsor.query.get_or_404(sponsor_id)
+    return render_template('components/modals.html', modal_type='sponsor_products', sponsor=sponsor)
+
+
+@admin_bp.route('/admin/sponsors/products/create/<int:sponsor_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_sponsor_product_create(sponsor_id):
+    """Tambah Produk Baru ke Sponsor"""
+    sponsor = Sponsor.query.get_or_404(sponsor_id)
+    name = request.form.get('name', '').strip()
+    price = float(request.form.get('price', 0) or 0)
+    raw_discount = request.form.get('discount_price', '').strip()
+    discount_price = float(raw_discount) if raw_discount else None
+    description = request.form.get('description', '').strip()
+    badge = request.form.get('badge', '').strip()
+
+    image_file = request.files.get('image_file')
+    image_url = None
+    if image_file and image_file.filename:
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'products')
+        os.makedirs(upload_dir, exist_ok=True)
+        safe_name = f"prod_{sponsor.id}_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
+        image_file.save(os.path.join(upload_dir, safe_name))
+        image_url = f"/uploads/products/{safe_name}"
+
+    prod = SponsorProduct(
+        sponsor_id=sponsor.id,
+        name=name,
+        price=price,
+        discount_price=discount_price,
+        description=description,
+        badge=badge,
+        image_url=image_url,
+        is_available=True
+    )
+    db.session.add(prod)
+    db.session.commit()
+    flash(f"Produk '{name}' berhasil ditambahkan ke katalog mitra '{sponsor.name}'.", "success")
+    return render_template('components/modals.html', modal_type='sponsor_products', sponsor=sponsor)
+
+
+@admin_bp.route('/admin/sponsors/products/delete/<int:prod_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_sponsor_product_delete(prod_id):
+    """Hapus Produk dari Sponsor"""
+    prod = SponsorProduct.query.get_or_404(prod_id)
+    sponsor = prod.sponsor
+    prod_name = prod.name
+    db.session.delete(prod)
+    db.session.commit()
+    flash(f"Produk '{prod_name}' berhasil dihapus dari katalog.", "success")
+    return render_template('components/modals.html', modal_type='sponsor_products', sponsor=sponsor)
+
+
+@admin_bp.route('/admin/sponsors/toggle-share/<int:sponsor_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_sponsor_toggle_share(sponsor_id):
+    """Toggle publikasi sorotan sponsor/mitra atau lapak anggota ke Linimasa (ON/OFF)"""
+    admin = get_current_user()
+    sponsor = Sponsor.query.get_or_404(sponsor_id)
+    sponsor.is_shared_to_timeline = not bool(sponsor.is_shared_to_timeline)
+
+    if sponsor.is_shared_to_timeline:
+        benefit_str = f"\n\n🎁 Benefit Anggota GIMBAL: {sponsor.member_benefit}" if sponsor.member_benefit else ""
+        promo_badge_str = f" [{sponsor.promo_badge}]" if sponsor.promo_badge else ""
+        
+        prod_highlights = []
+        for p in sponsor.products[:3]:
+            price_info = f"Rp {p.price:,.0f}"
+            if p.discount_price:
+                price_info += f" (Khusus KTA: Rp {p.discount_price:,.0f})"
+            prod_highlights.append(f"• {p.name}: {price_info}")
+        
+        prod_str = "\n\nKatalog Pilihan:\n" + "\n".join(prod_highlights) if prod_highlights else ""
+
+        title_prefix = "🏪 USAHA ANGGOTA" if sponsor.is_member_business else "🤝 SOROTAN MITRA RESMI"
+        post_content = (
+            f"{title_prefix}: {sponsor.name}{promo_badge_str}\n\n"
+            f"{sponsor.description or 'Mendukung penjelajahan alam bebas dan kegiatan konservasi KPAB GIMBAL.'}"
+            f"{benefit_str}"
+            f"{prod_str}\n\n"
+            f"Kunjungi gerai resmi atau hubungi untuk informasi lebih lanjut."
+        )
+
+        existing = Post.query.filter_by(sponsor_id=sponsor.id).first()
+        if existing:
+            existing.content = post_content
+            existing.image_url = None
+            existing.location = sponsor.address or f"{sponsor.name} Official"
+            existing.post_type = 'sponsor'
+            existing.created_at = datetime.utcnow()
+        else:
+            post = Post(
+                user_id=admin.id,
+                content=post_content,
+                sponsor_id=sponsor.id,
+                image_url=None,
+                location=sponsor.address or f"{sponsor.name} Official",
+                post_type='sponsor',
+                created_at=datetime.utcnow()
+            )
+            db.session.add(post)
+    else:
+        Post.query.filter_by(sponsor_id=sponsor.id).delete()
+
+    db.session.commit()
+
+    if request.headers.get('HX-Request'):
+        if sponsor.is_shared_to_timeline:
+            return f"""
+            <button type="button"
+                    hx-post="/admin/sponsors/toggle-share/{sponsor.id}"
+                    hx-swap="outerHTML"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-xs cursor-pointer"
+                    title="Aktif di Linimasa (Klik untuk matikan)">
+                <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
+                <span>Linimasa: ON</span>
+            </button>
+            """
+        else:
+            return f"""
+            <button type="button"
+                    hx-post="/admin/sponsors/toggle-share/{sponsor.id}"
+                    hx-swap="outerHTML"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer"
+                    title="Belum di Linimasa (Klik untuk aktifkan & terbitkan di puncak linimasa)">
+                <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
+                <span>Linimasa: OFF</span>
+            </button>
+            """
+
+    flash(f"Status publikasi linimasa untuk '{sponsor.name}' berhasil diperbarui.", "success")
+    return redirect('/admin/settings?tab=sponsors')
+
+
+@admin_bp.route('/admin/sponsors/share-timeline/<int:sponsor_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_sponsor_share_timeline(sponsor_id):
+    """Kompatibilitas alias untuk toggle publikasi sponsor"""
+    return admin_sponsor_toggle_share(sponsor_id)
+
 

@@ -155,6 +155,25 @@ FLUSH PRIVILEGES;
             rp = f"{NEW_DIR}/{fname}"
             sftp.put(lp, rp)
 
+    # Upload Google OAuth credentials
+    import glob, json
+    g_cid = ""
+    g_csec = ""
+    g_ruri = "https://www.gimbal.my.id"
+    for cfile in glob.glob(os.path.join(LOCAL_DIR, 'client_secret*.json')):
+        cfname = os.path.basename(cfile)
+        sftp.put(cfile, f"{NEW_DIR}/{cfname}")
+        log(f"Uploaded OAuth credential: {cfname}")
+        try:
+            with open(cfile, 'r', encoding='utf-8') as cf:
+                cdata = json.load(cf).get('web', {})
+                g_cid = cdata.get('client_id', g_cid)
+                g_csec = cdata.get('client_secret', g_csec)
+                if cdata.get('redirect_uris'):
+                    g_ruri = cdata['redirect_uris'][0]
+        except Exception:
+            pass
+
     # 4. Extract uploads archive
     log("Restoring uploads directory...")
     run_cmd(c_new, f"tar -xzf /tmp/gimbal_uploads.tar.gz -C {NEW_DIR}/ || mkdir -p {NEW_DIR}/uploads")
@@ -165,6 +184,9 @@ FLUSH PRIVILEGES;
 PORT={PORT}
 SECRET_KEY=gimbal-adventure-secret-key-2026
 FLASK_ENV=production
+GOOGLE_CLIENT_ID={g_cid}
+GOOGLE_CLIENT_SECRET={g_csec}
+GOOGLE_REDIRECT_URI={g_ruri}
 """
     with sftp.open(f"{NEW_DIR}/.env", 'w') as f:
         f.write(env_content)

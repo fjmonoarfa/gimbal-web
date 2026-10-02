@@ -2,13 +2,14 @@ import os
 import io
 import base64
 import qrcode
-from datetime import datetime
-from flask import Blueprint, request, redirect, render_template, render_template_string, make_response, current_app, jsonify
+from datetime import datetime, timedelta
+from flask import Blueprint, request, redirect, render_template, render_template_string, make_response, current_app, jsonify, flash
 from werkzeug.utils import secure_filename
 from models import (
     db, User, Dues, DuesPayment, Document, Activity,
     ActivityParticipant, GalleryItem, Post, PostComment,
-    PostLike, ChatMessage, SystemSetting, MapRepository, PostMedia
+    PostLike, ChatMessage, SystemSetting, MapRepository, PostMedia,
+    Sponsor, SponsorProduct
 )
 from helpers import get_current_user, login_required, check_member_access, render_gimbal_page, render_gimbal_modal
 
@@ -160,6 +161,7 @@ def member_dashboard():
     recent_chats = ChatMessage.query.order_by(ChatMessage.created_at.asc()).limit(35).all()
 
     all_activities = Activity.query.order_by(Activity.created_at.desc()).all()
+    user_businesses = Sponsor.query.filter_by(owner_user_id=user.id).order_by(Sponsor.id.desc()).all()
 
     data = {
         'user': user,
@@ -168,7 +170,8 @@ def member_dashboard():
         'dues_enabled': dues_enabled,
         'unpaid_count': unpaid_count,
         'posts': posts,
-        'recent_chats': recent_chats
+        'recent_chats': recent_chats,
+        'user_businesses': user_businesses
     }
     return render_gimbal_page('member/member_pages.html', 'member_dashboard', data, active_page='member_dashboard')
 
@@ -323,11 +326,57 @@ def member_post_create():
         if not primary_image_url:
             primary_image_url = image_url_input
 
+    raw_sponsor_id = request.form.get('sponsor_id', '').strip()
+    sponsor_id = int(raw_sponsor_id) if raw_sponsor_id and raw_sponsor_id.isdigit() and int(raw_sponsor_id) > 0 else None
+
+    # Anti Double-Posting Linimasa: Cek duplikasi postingan identik dalam 24 jam terakhir (oleh member yang sama maupun admin/member lain)
+    cleaned_input = " ".join(content.strip().split()).lower()
+    if cleaned_input:
+        recent_posts = Post.query.filter(Post.created_at >= datetime.utcnow() - timedelta(hours=24)).all()
+        for rp in recent_posts:
+            if rp.content and " ".join(rp.content.strip().split()).lower() == cleaned_input:
+                flash(
+                    "⚠️ Postingan dengan isi serupa atau sama persis sudah diterbitkan di linimasa dalam 24 jam terakhir (oleh Anda atau anggota/admin lain). "
+                    "Mohon hindari duplikasi postingan.",
+                    "warning"
+                )
+                if request.headers.get('HX-Request'):
+                    return member_dashboard()
+                return redirect('/member/dashboard')
+
+    # Otomasi Moderasi AI (Etika Organisasi, Norma Komunitas & Komersial)
+    from moderation import check_content_moderation
+    is_blocked, violation_type, reason = check_content_moderation(content)
+    if is_blocked:
+        if violation_type == 'ethics':
+            # Pelanggaran Etika & Norma diblokir mutlak untuk seluruh postingan
+            flash(
+                f"🚫 Postingan Ditolak (Moderasi Etika & Norma): {reason} "
+                f"KPAB GIMBAL menjunjung tinggi Kode Etik Pencinta Alam Indonesia serta tata krama dan persaudaraan sesama petualang.",
+                "error"
+            )
+            if request.headers.get('HX-Request'):
+                return member_dashboard()
+            return redirect('/member/dashboard')
+        elif violation_type == 'commercial' and not sponsor_id:
+            # Penjualan langsung tanpa melalui Lapak Resmi diarahkan ke portal Usaha Anggota
+            flash(
+                f"⚠️ Postingan Ditahan (Moderasi Komersial AI): {reason} "
+                f"Linimasa utama diprioritaskan khusus untuk cerita ekspedisi, konservasi, dan kabar petualangan alam. "
+                f"Silakan gunakan menu 'Usaha & Lapak Saya' agar produk Anda tampil resmi dengan badge mitra terverifikasi & fitur diskon KTA!",
+                "warning"
+            )
+            if request.headers.get('HX-Request'):
+                return member_dashboard()
+            return redirect('/member/dashboard')
+
     new_post = Post(
         user_id=user.id,
         content=content,
         location=location,
         activity_id=activity_id,
+        sponsor_id=sponsor_id,
+        post_type='sponsor' if sponsor_id else 'general',
         image_url=primary_image_url
     )
     db.session.add(new_post)
@@ -754,6 +803,19 @@ def member_documents():
     return render_gimbal_page('member/member_pages.html', 'member_documents', data, active_page='member_documents')
 
 
+@members_bp.route('/documents/read/<int:doc_id>')
+@members_bp.route('/member/documents/read/<int:doc_id>')
+@login_required
+def read_document(doc_id):
+    """Full-screen interactive web reader untuk dokumen resmi (PDF, EPUB, DOCX, DOC, teks)"""
+    user = get_current_user()
+    doc = Document.query.get_or_404(doc_id)
+    if not doc.is_public_to_members and not (user and user.is_admin):
+        flash("Dokumen ini bersifat internal pengurus dan tidak dapat diakses publik.", "error")
+        return redirect('/member/documents')
+    return render_template('document_reader.html', document=doc, user=user)
+
+
 @members_bp.route('/member/profile', methods=['GET', 'POST'])
 @login_required
 def member_profile():
@@ -797,3 +859,488 @@ def member_repo_maps():
         'selected_region': region
     }
     return render_gimbal_page('member/member_pages.html', 'member_repo_maps', data, active_page='member_repo_maps')
+
+
+@members_bp.route('/member/repo-maps/toggle-share/<int:map_id>', methods=['POST'])
+@login_required
+def member_toggle_repo_map_share(map_id):
+    """Toggle publikasi peta repo dari portal member (oleh Admin atau Uploader)"""
+    user = get_current_user()
+    map_item = MapRepository.query.get_or_404(map_id)
+    if not (user.is_admin or map_item.uploaded_by == user.id):
+        return "<span class='text-[10px] text-rose-500 font-bold'>Akses Ditolak</span>", 403
+
+    map_item.is_shared_to_timeline = not bool(map_item.is_shared_to_timeline)
+    if map_item.is_shared_to_timeline:
+        existing = Post.query.filter_by(map_repo_id=map_item.id).first()
+        if not existing:
+            stats_str = ""
+            if map_item.total_distance_km and map_item.total_distance_km > 0:
+                stats_str += f" • Jarak: {map_item.total_distance_km} km"
+            if map_item.total_waypoints and map_item.total_waypoints > 0:
+                stats_str += f" • {map_item.total_waypoints} Waypoints"
+            post = Post(
+                user_id=user.id,
+                content=(
+                    f"🗺️ REPO PETA & GEODATA TERBARU: {map_item.title}!\n\n"
+                    f"Kawasan: {map_item.region} • Format: .{map_item.file_type.upper()}{stats_str}\n\n"
+                    f"{map_item.description or 'Rute dan data lintasan navigasi telah ditambahkan ke Pustaka Peta KPAB GIMBAL. Dapat disinkronkan langsung ke aplikasi Gimbal Maps.'}"
+                ),
+                map_repo_id=map_item.id,
+                image_url=map_item.preview_image,
+                location=f"{map_item.title}, {map_item.region}",
+                post_type='map'
+            )
+            db.session.add(post)
+    else:
+        Post.query.filter_by(map_repo_id=map_item.id).delete()
+    db.session.commit()
+
+    if map_item.is_shared_to_timeline:
+        return f"""
+        <button type="button"
+                hx-post="/member/repo-maps/toggle-share/{map_item.id}"
+                hx-swap="outerHTML"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-xs cursor-pointer"
+                title="Peta aktif di Linimasa (Klik untuk matikan)">
+            <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
+            <span>Linimasa: ON</span>
+        </button>
+        """
+    else:
+        return f"""
+        <button type="button"
+                hx-post="/member/repo-maps/toggle-share/{map_item.id}"
+                hx-swap="outerHTML"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer"
+                title="Peta belum dibagikan ke Linimasa (Klik untuk bagikan)">
+            <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
+            <span>Linimasa: OFF</span>
+        </button>
+        """
+
+
+@members_bp.route('/member/documents/toggle-share/<int:doc_id>', methods=['POST'])
+@login_required
+def member_toggle_doc_share(doc_id):
+    """Toggle publikasi dokumen dari portal member (khusus Pengurus/Admin)"""
+    user = get_current_user()
+    if not user.is_admin:
+        return "<span class='text-[10px] text-rose-500 font-bold'>Akses Ditolak</span>", 403
+    doc = Document.query.get_or_404(doc_id)
+    doc.is_shared_to_timeline = not bool(doc.is_shared_to_timeline)
+    if doc.is_shared_to_timeline:
+        existing = Post.query.filter_by(document_id=doc.id).first()
+        if not existing:
+            post = Post(
+                user_id=user.id,
+                content=(
+                    f"📄 PUBLIKASI DOKUMEN RESMI GIMBAL: {doc.title}\n\n"
+                    f"Kategori: {doc.category.replace('_', ' ').upper()} • Format: .{doc.file_type.upper()} ({doc.file_size_fmt})\n\n"
+                    f"{doc.description or 'Dokumen pedoman dan arsip resmi organisasi telah tersedia di Pustaka Dokumen Anggota.'}"
+                ),
+                document_id=doc.id,
+                post_type='document'
+            )
+            db.session.add(post)
+    else:
+        Post.query.filter_by(document_id=doc.id).delete()
+    db.session.commit()
+
+    if doc.is_shared_to_timeline:
+        return f"""
+        <button type="button"
+                hx-post="/member/documents/toggle-share/{doc.id}"
+                hx-swap="outerHTML"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-xs cursor-pointer"
+                title="Dokumen aktif di Linimasa (Klik untuk matikan)">
+            <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
+            <span>Linimasa: ON</span>
+        </button>
+        """
+    else:
+        return f"""
+        <button type="button"
+                hx-post="/member/documents/toggle-share/{doc.id}"
+                hx-swap="outerHTML"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer"
+                title="Dokumen belum dibagikan ke Linimasa (Klik untuk bagikan)">
+            <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
+            <span>Linimasa: OFF</span>
+        </button>
+        """
+
+
+@members_bp.route('/member/activity/share-to-timeline/<int:activity_id>', methods=['POST'])
+@login_required
+def member_activity_share_to_timeline(activity_id):
+    """Membagikan agenda ekspedisi mendatang ke linimasa petualang dari dashboard member"""
+    user = get_current_user()
+    act = Activity.query.get_or_404(activity_id)
+
+    # Buat postingan agenda ekspedisi
+    if act.phase in ['planning', 'open']:
+        content = (
+            f"📢 AGENDA EKSPEDISI MENDATANG: {act.title}!\n\n"
+            f"🗓️ Waktu Pelaksanaan: {act.activity_date}\n"
+            f"📍 Kawasan: {act.location}\n"
+            f"🧗 Kategori: {act.category} ({act.difficulty})\n"
+            f"👥 Kuota Peserta: {act.total_confirmed} / {act.quota} personil.\n\n"
+            f"{(act.description or 'Ayo bergabung dalam petualangan ini! Persiapkan fisik dan peralatan tim.')}"
+        )
+    elif act.phase == 'in_progress':
+        content = (
+            f"⛰️ OPERASI LAPANGAN SEDANG BERLANGSUNG: {act.title}!\n\n"
+            f"Tim ekspedisi ({act.total_confirmed} personil) saat ini sedang beroperasi di kawasan {act.location} ({act.activity_date}).\n"
+            f"Mari kita doakan kelancaran dan keselamatan personil tim. Salam Lestari!"
+        )
+    else:
+        content = (
+            f"🚩 LAPORAN EKSPEDISI: {act.title}!\n\n"
+            f"Operasi lapangan di kawasan {act.location} ({act.activity_date}) telah selesai dengan {act.total_confirmed} personil selamat."
+        )
+
+    existing = Post.query.filter_by(activity_id=act.id, post_type='activity').first()
+    if existing:
+        existing.content = content
+        existing.location = act.location
+        existing.image_url = act.image_url
+        existing.created_at = datetime.utcnow()
+    else:
+        post = Post(
+            user_id=user.id,
+            content=content,
+            location=act.location,
+            activity_id=act.id,
+            image_url=act.image_url,
+            post_type='activity'
+        )
+        db.session.add(post)
+    act.is_shared_to_timeline = True
+    db.session.commit()
+
+    return f"""
+    <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
+        <i class="fas fa-check-circle text-emerald-600"></i> Terbagikan ke Linimasa
+    </span>
+    """
+
+
+# ========== MEMBER BUSINESS DIRECTORY (USAHA ANGGOTA) ROUTES =====================
+
+@members_bp.route('/member/business')
+@login_required
+def member_business():
+    """Halaman Usaha & Lapak Anggota: Pendaftaran Usaha, Manajemen Produk & Promosi Resmi"""
+    user = get_current_user()
+    access_guard = check_member_access(user)
+    if access_guard:
+        return access_guard
+
+    my_businesses = Sponsor.query.filter_by(owner_user_id=user.id).order_by(Sponsor.id.desc()).all()
+    all_active_businesses = Sponsor.query.filter_by(is_active=True, status='active').order_by(Sponsor.order_index.asc()).all()
+
+    data = {
+        'user': user,
+        'my_businesses': my_businesses,
+        'has_business': len(my_businesses) > 0,
+        'primary_business': my_businesses[0] if my_businesses else None,
+        'all_active_businesses': all_active_businesses
+    }
+    return render_gimbal_page('member/member_pages.html', 'member_business', data, active_page='member_business')
+
+
+@members_bp.route('/member/business/register', methods=['POST'])
+@login_required
+def member_business_register():
+    """Formulir Pendaftaran Usaha Mandiri oleh Anggota (Maksimal 1 Usaha per Anggota)"""
+    user = get_current_user()
+
+    # Pembatasan Kebijakan: 1 Anggota hanya boleh mendaftarkan 1 Lapak / Usaha
+    existing_biz = Sponsor.query.filter_by(owner_user_id=user.id).first()
+    if existing_biz:
+        flash(
+            f"Pendaftaran Ditolak: Anda telah memiliki usaha terdaftar ('{existing_biz.name}'). "
+            f"Setiap anggota dibatasi maksimal 1 lapak usaha resmi. Silakan gunakan tombol 'Edit Profil Usaha' untuk memperbarui data.",
+            "warning"
+        )
+        if request.headers.get('HX-Request'):
+            return member_business()
+        return redirect('/member/business')
+
+    name = request.form.get('name', '').strip()
+    category = request.form.get('category', 'cafe').strip()
+    description = request.form.get('description', '').strip()
+    promo_badge = request.form.get('promo_badge', 'Diskon KTA GIMBAL').strip()
+    member_benefit = request.form.get('member_benefit', '').strip()
+    address = request.form.get('address', '').strip()
+    maps_url = request.form.get('maps_url', '').strip()
+    whatsapp_number = request.form.get('whatsapp_number', '').strip()
+    instagram_url = request.form.get('instagram_url', '').strip()
+
+    if not name:
+        flash("Gagal: Nama usaha/toko/cafe tidak boleh kosong.", "error")
+        if request.headers.get('HX-Request'):
+            return member_business()
+        return redirect('/member/business')
+
+    logo_file = request.files.get('logo_file')
+    logo_url = '/static/pics/sample_sponsor.png'
+    if logo_file and logo_file.filename:
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'sponsors')
+        os.makedirs(upload_dir, exist_ok=True)
+        safe_name = f"biz_user_{user.id}_{int(datetime.now().timestamp())}_{secure_filename(logo_file.filename)}"
+        logo_file.save(os.path.join(upload_dir, safe_name))
+        logo_url = f"/uploads/sponsors/{safe_name}"
+
+    new_biz = Sponsor(
+        name=name,
+        logo_url=logo_url,
+        category=category,
+        tier='community_partner',
+        description=description,
+        promo_badge=promo_badge,
+        member_benefit=member_benefit,
+        address=address,
+        maps_url=maps_url,
+        whatsapp_number=whatsapp_number,
+        instagram_url=instagram_url,
+        owner_user_id=user.id,
+        is_member_business=True,
+        status='active',  # Auto-active dengan lencana Usaha Anggota Terverifikasi
+        is_active=True
+    )
+    db.session.add(new_biz)
+    db.session.commit()
+
+    flash(f"Selamat! Usaha '{name}' berhasil didaftarkan dan mendapatkan lencana Usaha Rekanan Anggota GIMBAL.", "success")
+    if request.headers.get('HX-Request'):
+        return member_business()
+    return redirect('/member/business')
+
+
+@members_bp.route('/member/business/edit-modal/<int:sponsor_id>')
+@login_required
+def member_business_edit_modal(sponsor_id):
+    """Modal Edit Profil Usaha / Lapak Milik Anggota Sendiri"""
+    user = get_current_user()
+    biz = Sponsor.query.filter_by(id=sponsor_id, owner_user_id=user.id).first_or_404()
+    return render_template('components/modals.html', modal_type='edit_member_business', sponsor=biz)
+
+
+@members_bp.route('/member/business/edit/<int:sponsor_id>', methods=['POST'])
+@login_required
+def member_business_edit(sponsor_id):
+    """Perbarui Profil Usaha Anggota oleh Pemiliknya"""
+    user = get_current_user()
+    biz = Sponsor.query.filter_by(id=sponsor_id, owner_user_id=user.id).first_or_404()
+
+    biz.name = request.form.get('name', biz.name).strip()
+    biz.category = request.form.get('category', biz.category).strip()
+    biz.description = request.form.get('description', '').strip()
+    biz.promo_badge = request.form.get('promo_badge', '').strip()
+    biz.member_benefit = request.form.get('member_benefit', '').strip()
+    biz.address = request.form.get('address', '').strip()
+    biz.maps_url = request.form.get('maps_url', '').strip()
+    biz.whatsapp_number = request.form.get('whatsapp_number', '').strip()
+    biz.instagram_url = request.form.get('instagram_url', '').strip()
+
+    logo_file = request.files.get('logo_file')
+    if logo_file and logo_file.filename:
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'sponsors')
+        os.makedirs(upload_dir, exist_ok=True)
+        safe_name = f"biz_user_{user.id}_{int(datetime.now().timestamp())}_{secure_filename(logo_file.filename)}"
+        logo_file.save(os.path.join(upload_dir, safe_name))
+        biz.logo_url = f"/uploads/sponsors/{safe_name}"
+
+    db.session.commit()
+    flash(f"Profil usaha '{biz.name}' berhasil diperbarui.", "success")
+    if request.headers.get('HX-Request'):
+        return member_business()
+    return redirect('/member/business')
+
+
+@members_bp.route('/member/business/product/create/<int:sponsor_id>', methods=['POST'])
+@login_required
+def member_business_product_create(sponsor_id):
+    """Tambah Produk / Menu / Paket Jasa oleh Pemilik Usaha Anggota"""
+    user = get_current_user()
+    biz = Sponsor.query.filter_by(id=sponsor_id, owner_user_id=user.id).first_or_404()
+
+    name = request.form.get('name', '').strip()
+    price = float(request.form.get('price', 0) or 0)
+    raw_disc = request.form.get('discount_price', '').strip()
+    discount_price = float(raw_disc) if raw_disc else None
+    description = request.form.get('description', '').strip()
+    badge = request.form.get('badge', '').strip()
+
+    if not name:
+        flash("Gagal: Nama produk tidak boleh kosong.", "error")
+        return redirect('/member/business')
+
+    image_file = request.files.get('image_file')
+    image_url = None
+    if image_file and image_file.filename:
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'products')
+        os.makedirs(upload_dir, exist_ok=True)
+        safe_name = f"prod_biz_{biz.id}_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
+        image_file.save(os.path.join(upload_dir, safe_name))
+        image_url = f"/uploads/products/{safe_name}"
+
+    prod = SponsorProduct(
+        sponsor_id=biz.id,
+        name=name,
+        price=price,
+        discount_price=discount_price,
+        description=description,
+        badge=badge,
+        image_url=image_url,
+        is_available=True
+    )
+    db.session.add(prod)
+    db.session.commit()
+    flash(f"Produk '{name}' berhasil ditambahkan ke katalog usaha Anda.", "success")
+    return redirect('/member/business')
+
+
+@members_bp.route('/member/business/product/delete/<int:prod_id>', methods=['POST'])
+@login_required
+def member_business_product_delete(prod_id):
+    """Hapus Produk Milik Usaha Anggota"""
+    user = get_current_user()
+    prod = SponsorProduct.query.get_or_404(prod_id)
+    if prod.sponsor.owner_user_id != user.id and not user.is_admin:
+        flash("Akses ditolak: Anda bukan pemilik produk ini.", "error")
+        return redirect('/member/business')
+
+    prod_name = prod.name
+    db.session.delete(prod)
+    db.session.commit()
+    flash(f"Produk '{prod_name}' telah dihapus dari katalog.", "success")
+    return redirect('/member/business')
+
+
+def generate_business_post_content(biz, custom_caption=None):
+    """Menyusun teks postingan resmi lapak usaha anggota & ringkasan katalog produk"""
+    badge_str = f" [{biz.promo_badge}]" if biz.promo_badge else ""
+    benefit_str = f"\n\n🎁 Diskon Spesial Anggota KTA: {biz.member_benefit}" if biz.member_benefit else ""
+
+    prod_lines = []
+    for p in biz.products[:3]:
+        p_info = f"• {p.name} - Rp {p.price:,.0f}"
+        if p.discount_price:
+            p_info += f" (Khusus KTA: Rp {p.discount_price:,.0f})"
+        prod_lines.append(p_info)
+
+    prod_str = "\n\nKatalog Pilihan:\n" + "\n".join(prod_lines) if prod_lines else ""
+    intro = custom_caption or f"Salam Petualang! Kunjungi gerai {biz.name}, rekanan resmi komunitas GIMBAL."
+
+    return (
+        f"🏪 USAHA ANGGOTA: {biz.name}{badge_str}\n\n"
+        f"{intro}\n\n"
+        f"{biz.description or ''}"
+        f"{benefit_str}"
+        f"{prod_str}\n\n"
+        f"📍 Alamat: {biz.address or 'Gorontalo'}\n"
+        f"Dukung sesama saudara petualang dengan berkunjung & berbelanja!"
+    )
+
+
+@members_bp.route('/member/business/toggle-share/<int:sponsor_id>', methods=['POST'])
+@login_required
+def member_business_toggle_share(sponsor_id):
+    """Toggle publikasi profil & produk lapak anggota ke Linimasa Petualang (ON/OFF)"""
+    user = get_current_user()
+    biz = Sponsor.query.filter_by(id=sponsor_id).first_or_404()
+    if not (user.is_admin or biz.owner_user_id == user.id):
+        return "<span class='text-[10px] text-rose-500 font-bold'>Akses Ditolak</span>", 403
+
+    biz.is_shared_to_timeline = not bool(biz.is_shared_to_timeline)
+    btn_style = request.args.get('style', 'compact')
+
+    if biz.is_shared_to_timeline:
+        content = generate_business_post_content(biz, request.form.get('custom_caption', '').strip())
+        existing = Post.query.filter_by(sponsor_id=biz.id).first()
+        if existing:
+            # Jika ON lagi, perbarui isi & letakkan di puncak timeline terkini (top current timeline)
+            existing.content = content
+            existing.location = biz.address or f"{biz.name}, Gorontalo"
+            existing.image_url = None
+            existing.post_type = 'sponsor'
+            existing.created_at = datetime.utcnow()
+        else:
+            post = Post(
+                user_id=user.id,
+                content=content,
+                sponsor_id=biz.id,
+                location=biz.address or f"{biz.name}, Gorontalo",
+                image_url=None,
+                post_type='sponsor',
+                created_at=datetime.utcnow()
+            )
+            db.session.add(post)
+    else:
+        # Saat OFF: otomatis hilang dari postingan linimasa
+        Post.query.filter_by(sponsor_id=biz.id).delete()
+
+    db.session.commit()
+
+    # Respon HTMX langsung menggantikan tombol toggle tanpa merusak tampilan induk
+    if request.headers.get('HX-Request'):
+        if btn_style == 'full':
+            if biz.is_shared_to_timeline:
+                return f"""
+                <button type="button"
+                        hx-post="/member/business/toggle-share/{biz.id}?style=full"
+                        hx-swap="outerHTML"
+                        class="w-full sm:w-auto px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                        title="Lapak aktif di Linimasa (Klik untuk sembunyikan)">
+                    <i class="fas fa-toggle-on text-emerald-600 text-sm"></i>
+                    <span>Linimasa: ON</span>
+                </button>
+                """
+            else:
+                return f"""
+                <button type="button"
+                        hx-post="/member/business/toggle-share/{biz.id}?style=full"
+                        hx-swap="outerHTML"
+                        class="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                        title="Lapak belum di linimasa (Klik untuk aktifkan & terbitkan di puncak linimasa)">
+                    <i class="fas fa-toggle-off text-slate-400 text-sm"></i>
+                    <span>Linimasa: OFF</span>
+                </button>
+                """
+        else:
+            if biz.is_shared_to_timeline:
+                return f"""
+                <button type="button"
+                        hx-post="/member/business/toggle-share/{biz.id}?style=compact"
+                        hx-swap="outerHTML"
+                        class="w-full py-1.5 px-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                        title="Lapak aktif di Linimasa (Klik untuk sembunyikan)">
+                    <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
+                    <span>Linimasa: ON</span>
+                </button>
+                """
+            else:
+                return f"""
+                <button type="button"
+                        hx-post="/member/business/toggle-share/{biz.id}?style=compact"
+                        hx-swap="outerHTML"
+                        class="w-full py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 rounded-lg text-[10px] font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                        title="Lapak belum di linimasa (Klik untuk aktifkan & terbitkan di puncak linimasa)">
+                    <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
+                    <span>Linimasa: OFF</span>
+                </button>
+                """
+
+    flash(f"Status publikasi linimasa untuk usaha '{biz.name}' berhasil diperbarui.", "success")
+    return redirect('/member/business')
+
+
+@members_bp.route('/member/business/share-timeline/<int:sponsor_id>', methods=['POST'])
+@login_required
+def member_business_share_timeline(sponsor_id):
+    """Kompatibilitas alias untuk toggle publikasi usaha anggota"""
+    return member_business_toggle_share(sponsor_id)
+

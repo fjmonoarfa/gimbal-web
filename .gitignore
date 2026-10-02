@@ -28,6 +28,8 @@ scratch/
 *.bundle
 *.tar.gz
 *.zip
+*.apk
+static/downloads/
 tilongkabila.gpx
 
 # Credentials & OAuth Keys

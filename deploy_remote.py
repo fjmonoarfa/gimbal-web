@@ -80,22 +80,55 @@ def upload_templates_and_missing(client):
                     log(f"Uploaded: {rp}")
                     
     # Ensure core files are always up to date
-    for fname in ['app.py', 'helpers.py', 'web_api.py', 'admin_pages.py', 'members_page.py', 'models.py', 'cloudflare_email.py', 'seed.py', 'requirements.txt', 'test_rol_and_sync.py', 'CONVERSATION_HISTORY.md']:
+    for fname in ['app.py', 'helpers.py', 'web_api.py', 'admin_pages.py', 'members_page.py', 'models.py', 'moderation.py', 'cloudflare_email.py', 'seed.py', 'requirements.txt', 'test_rol_and_sync.py', 'CONVERSATION_HISTORY.md']:
         lp = os.path.join(LOCAL_DIR, fname)
         if os.path.exists(lp):
             rp = f"{REMOTE_DIR}/{fname}"
             sftp.put(lp, rp)
             log(f"Updated core file: {fname}")
+
+    # Upload Google OAuth credentials if present
+    import glob, json
+    g_cid = ""
+    g_csec = ""
+    g_ruri = "https://www.gimbal.my.id"
+    for cfile in glob.glob(os.path.join(LOCAL_DIR, 'client_secret*.json')):
+        cfname = os.path.basename(cfile)
+        sftp.put(cfile, f"{REMOTE_DIR}/{cfname}")
+        log(f"Uploaded OAuth credential: {cfname}")
+        try:
+            with open(cfile, 'r', encoding='utf-8') as cf:
+                cdata = json.load(cf).get('web', {})
+                g_cid = cdata.get('client_id', g_cid)
+                g_csec = cdata.get('client_secret', g_csec)
+                if cdata.get('redirect_uris'):
+                    g_ruri = cdata['redirect_uris'][0]
+        except Exception as e:
+            log(f"Error parsing OAuth file: {e}")
         
     # Create / update .env file on remote server
+    gemini_key = os.environ.get('GEMINI_API_KEY', '')
+    if not gemini_key:
+        try:
+            with sftp.open(f"{REMOTE_DIR}/.env", 'r') as f:
+                for line in f:
+                    if line.startswith('GEMINI_API_KEY='):
+                        gemini_key = line.strip().split('=', 1)[1]
+        except Exception:
+            pass
+
     env_content = f"""DATABASE_URL=mysql+pymysql://{DB_USER}:{DB_PASS}@localhost/{DB_NAME}?charset=utf8mb4
 PORT={PORT}
 SECRET_KEY=gimbal-adventure-secret-key-2026
 FLASK_ENV=production
+GOOGLE_CLIENT_ID={g_cid}
+GOOGLE_CLIENT_SECRET={g_csec}
+GOOGLE_REDIRECT_URI={g_ruri}
+GEMINI_API_KEY={gemini_key}
 """
     with sftp.open(f"{REMOTE_DIR}/.env", 'w') as f:
         f.write(env_content)
-    log("Updated remote .env configuration file.")
+    log("Updated remote .env configuration file with Google OAuth keys & Gemini API key.")
         
     sftp.close()
 
@@ -132,7 +165,7 @@ def setup_python_env(client):
 
 def populate_database(client):
     log("Ensuring upload directories exist on server...")
-    run_ssh_cmd(client, f"mkdir -p {REMOTE_DIR}/uploads/proofs {REMOTE_DIR}/uploads/docs {REMOTE_DIR}/uploads/gallery {REMOTE_DIR}/uploads/posts {REMOTE_DIR}/uploads/avatars {REMOTE_DIR}/uploads/maps {REMOTE_DIR}/uploads/expeditions")
+    run_ssh_cmd(client, f"mkdir -p {REMOTE_DIR}/uploads/proofs {REMOTE_DIR}/uploads/docs {REMOTE_DIR}/uploads/gallery {REMOTE_DIR}/uploads/posts {REMOTE_DIR}/uploads/avatars {REMOTE_DIR}/uploads/maps {REMOTE_DIR}/uploads/expeditions {REMOTE_DIR}/uploads/sponsors {REMOTE_DIR}/uploads/products")
     log("Upload directories ready.")
 
 def setup_systemd(client):
@@ -174,6 +207,7 @@ def verify_deployment(client):
     run_ssh_cmd(client, f"curl -s -o /dev/null -w 'HTTP Status [GET /verify-kta/R-01-26]: %{{http_code}}\\n' http://127.0.0.1:{PORT}/verify-kta/R-01-26")
     run_ssh_cmd(client, f"curl -s -o /dev/null -w 'HTTP Status [GET /api/v1/activities/active]: %{{http_code}}\\n' http://127.0.0.1:{PORT}/api/v1/activities/active")
     run_ssh_cmd(client, f"curl -s -o /dev/null -w 'HTTP Status [GET /admin/activity/preset-rol]: %{{http_code}}\\n' 'http://127.0.0.1:{PORT}/admin/activity/preset-rol?category=Gunung%20Hutan'")
+    run_ssh_cmd(client, f"curl -s -i http://127.0.0.1:{PORT}/auth/google-login | grep -i 'Location:'")
 
 def main():
     log(f"Connecting to {SERVER_IP}...")

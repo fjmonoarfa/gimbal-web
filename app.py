@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import (
     Flask, render_template, request,
     redirect, session, send_from_directory,
-    jsonify
+    jsonify, send_file
 )
 try:
     from dotenv import load_dotenv
@@ -15,7 +15,8 @@ except ImportError:
 
 from models import (
     db, User, Dues, DuesPayment, Activity, ActivityParticipant,
-    ActivityFieldLog, GalleryItem, SystemSetting, Position, ChatMessage
+    ActivityFieldLog, GalleryItem, SystemSetting, Position, ChatMessage, MapRepository,
+    Sponsor, SponsorProduct
 )
 from cloudflare_email import sync_cloudflare_email_routing, clean_username_for_alias
 from helpers import (
@@ -42,6 +43,8 @@ os.makedirs(os.path.join(UPLOAD_FOLDER, 'gallery'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'posts'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'avatars'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'expeditions'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'sponsors'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'products'), exist_ok=True)
 
 db.init_app(app)
 
@@ -131,9 +134,13 @@ def init_database_and_defaults():
                     except Exception:
                         pass
 
-                # Migrasi kolom tabel posts (Tautan ke Agenda Ekspedisi)
+                # Migrasi kolom tabel posts (Tautan ke Ekspedisi, Dokumen, Peta Repo, Sponsor & Jenis Postingan)
                 post_cols = [
-                    ('activity_id', 'INTEGER')
+                    ('activity_id', 'INTEGER'),
+                    ('document_id', 'INTEGER'),
+                    ('map_repo_id', 'INTEGER'),
+                    ('sponsor_id', 'INTEGER'),
+                    ('post_type', "VARCHAR(30) DEFAULT 'general'")
                 ]
                 for col, col_type in post_cols:
                     try:
@@ -153,7 +160,29 @@ def init_database_and_defaults():
                     except Exception:
                         pass
 
-                # Migrasi kolom tabel activities (ROL & Lifecycle)
+                # Migrasi kolom tabel documents (Toggle Share ke Linimasa)
+                doc_cols = [
+                    ('is_shared_to_timeline', 'BOOLEAN DEFAULT 0')
+                ]
+                for col, col_type in doc_cols:
+                    try:
+                        conn.execute(db.text(f"ALTER TABLE documents ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception:
+                        pass
+
+                # Migrasi kolom tabel map_repositories (Toggle Share ke Linimasa)
+                map_cols = [
+                    ('is_shared_to_timeline', 'BOOLEAN DEFAULT 0')
+                ]
+                for col, col_type in map_cols:
+                    try:
+                        conn.execute(db.text(f"ALTER TABLE map_repositories ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception:
+                        pass
+
+                # Migrasi kolom tabel activities (ROL & Lifecycle & Share Linimasa)
                 activity_cols = [
                     ('category', "VARCHAR(80) DEFAULT 'Gunung Hutan'"),
                     ('phase', "VARCHAR(30) DEFAULT 'open'"),
@@ -161,7 +190,8 @@ def init_database_and_defaults():
                     ('route_plan', 'TEXT'),
                     ('map_repo_id', 'INTEGER'),
                     ('gear_json', "TEXT DEFAULT '{}'"),
-                    ('evaluation_notes', 'TEXT')
+                    ('evaluation_notes', 'TEXT'),
+                    ('is_shared_to_timeline', 'BOOLEAN DEFAULT 0')
                 ]
                 for col, col_type in activity_cols:
                     try:
@@ -177,6 +207,24 @@ def init_database_and_defaults():
                 for col, col_type in part_cols:
                     try:
                         conn.execute(db.text(f"ALTER TABLE activity_participants ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception:
+                        pass
+
+                # Migrasi kolom tabel posts (sponsor_id)
+                try:
+                    conn.execute(db.text("ALTER TABLE posts ADD COLUMN sponsor_id INT NULL"))
+                    conn.commit()
+                except Exception:
+                    pass
+
+                # Migrasi kolom tabel sponsors (Toggle Share ke Linimasa)
+                sponsor_cols = [
+                    ('is_shared_to_timeline', 'BOOLEAN DEFAULT 0')
+                ]
+                for col, col_type in sponsor_cols:
+                    try:
+                        conn.execute(db.text(f"ALTER TABLE sponsors ADD COLUMN {col} {col_type}"))
                         conn.commit()
                     except Exception:
                         pass
@@ -206,37 +254,40 @@ def init_database_and_defaults():
                 db.session.add(p)
             db.session.commit()
 
-        # Pastikan Superadmin 'fitra' ada dengan password 'P4ssw0rd!?!'
-        fitra = User.query.filter((User.email == 'fitra@gimbal.org') | (db.func.lower(User.name) == 'fitra')).first()
-        if not fitra:
-            fitra = User(
-                email='fitra@gimbal.org',
-                name='Fitra',
-                role='superadmin',
-                jabatan='Sekretaris Jenderal',
-                status='active',
-                nra='R-00-98',
-                phone='08114300001',
-                birth_place='Gorontalo',
-                birth_date='1985-05-15',
-                blood_type='O',
-                address='Basecamp KPAB GIMBAL Gorontalo',
-                medical_history='Tidak Ada',
-                emergency_name='Sekretariat GIMBAL',
-                emergency_relation='Organisasi',
-                emergency_phone='08114300000',
-                avatar='/static/pics/cartoon/avatar_sekjen.jpg',
-                password_hash='P4ssw0rd!?!'
-            )
-            db.session.add(fitra)
-            db.session.commit()
-        else:
-            fitra.role = 'superadmin'
-            fitra.password_hash = 'P4ssw0rd!?!'
-            fitra.status = 'active'
-            if not fitra.jabatan:
-                fitra.jabatan = 'Sekretaris Jenderal'
-            db.session.commit()
+        # Inisialisasi akun Superadmin 'fitra' hanya jika belum pernah ditandai dihapus oleh admin
+        is_fitra_deleted = SystemSetting.get('fitra_deleted') == 'true'
+        if not is_fitra_deleted:
+            fitra = User.query.filter((User.email == 'fitra@gimbal.org') | (db.func.lower(User.name) == 'fitra')).first()
+            if not fitra:
+                fitra = User(
+                    email='fitra@gimbal.org',
+                    name='Fitra',
+                    role='superadmin',
+                    jabatan='Sekretaris Jenderal',
+                    status='active',
+                    nra='R-00-98',
+                    phone='08114300001',
+                    birth_place='Gorontalo',
+                    birth_date='1985-05-15',
+                    blood_type='O',
+                    address='Basecamp KPAB GIMBAL Gorontalo',
+                    medical_history='Tidak Ada',
+                    emergency_name='Sekretariat GIMBAL',
+                    emergency_relation='Organisasi',
+                    emergency_phone='08114300000',
+                    avatar='/static/pics/cartoon/avatar_sekjen.jpg',
+                    password_hash='P4ssw0rd!?!'
+                )
+                db.session.add(fitra)
+                db.session.commit()
+            else:
+                if not fitra.role:
+                    fitra.role = 'superadmin'
+                if not fitra.status:
+                    fitra.status = 'active'
+                if not fitra.jabatan:
+                    fitra.jabatan = 'Sekretaris Jenderal'
+                db.session.commit()
 
         # Pastikan akun kepengurusan bawaan memiliki jabatan jika belum disetel
         admin_user = User.query.filter_by(email='admin@gimbal.org').first()
@@ -538,6 +589,13 @@ def landing():
             'is_assigned': bool(member)
         })
 
+    repo_maps = MapRepository.query.order_by(MapRepository.id.desc()).limit(4).all()
+
+    # Data Sponsorship & Usaha Anggota untuk Landing Page
+    sponsors = Sponsor.query.filter_by(is_active=True).order_by(Sponsor.order_index.asc(), Sponsor.id.asc()).all()
+    corporate_sponsors = [s for s in sponsors if not s.is_member_business]
+    member_businesses = [s for s in sponsors if s.is_member_business and s.status == 'active']
+
     return render_gimbal_template(
         'landing.html',
         context={
@@ -546,10 +604,28 @@ def landing():
             'gallery_categories': gallery_categories,
             'active_members_count': active_members_count,
             'board_members': board_members,
-            'operational_divisions': operational_divisions
+            'operational_divisions': operational_divisions,
+            'repo_maps': repo_maps,
+            'sponsors': sponsors,
+            'corporate_sponsors': corporate_sponsors,
+            'member_businesses': member_businesses
         },
         active_page='landing'
     )
+
+@app.route('/download/gimbal-maps.apk')
+@app.route('/download/gimbal-maps')
+def download_gimbal_maps():
+    """Endpoint pengunduhan berkas APK aplikasi Android GIMBAL-Maps"""
+    apk_path = os.path.join(app.root_path, 'static', 'downloads', 'gimbal-maps.apk')
+    if os.path.exists(apk_path):
+        return send_file(
+            apk_path,
+            as_attachment=True,
+            download_name='gimbal-maps-v1.0.apk',
+            mimetype='application/vnd.android.package-archive'
+        )
+    return redirect('/static/downloads/gimbal-maps.apk')
 
 @app.route('/app-shell')
 def app_shell():
