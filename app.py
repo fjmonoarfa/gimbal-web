@@ -35,6 +35,10 @@ if database_url.startswith('mysql://'):
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Shared session cookie domain for *.gimbal.my.id in production
+if 'mysql' in database_url or os.environ.get('SESSION_COOKIE_DOMAIN'):
+    app.config['SESSION_COOKIE_DOMAIN'] = os.environ.get('SESSION_COOKIE_DOMAIN', '.gimbal.my.id')
+
 UPLOAD_FOLDER = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'proofs'), exist_ok=True)

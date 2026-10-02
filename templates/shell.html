@@ -227,6 +227,22 @@
                                     <i class="fas fa-chevron-right text-[8px] opacity-50 nav-arrow"></i>
                                 </a>
 
+                                <!-- 8b. Studio GeoPDF A3 -->
+                                <a href="https://mapgen.gimbal.my.id" target="_blank"
+                                    @click="adminMenu = false"
+                                    class="admin-nav-item w-full px-3 py-2 rounded-md transition flex items-center justify-between text-slate-700 hover:bg-orange-50 hover:text-orange-600">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="nav-icon-box w-6 h-6 rounded-md flex items-center justify-center bg-orange-100 text-orange-600">
+                                            <i class="fas fa-layer-group text-[11px]"></i>
+                                        </div>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-xs font-semibold">Studio GeoPDF A3</span>
+                                            <span class="px-1 py-0.2 bg-emerald-600 text-[8px] font-black text-white rounded">NEW</span>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-external-link-alt text-[8px] opacity-50 nav-arrow"></i>
+                                </a>
+
                                 <!-- 9. Sponsorship & Mitra Usaha -->
                                 <a href="/admin/sponsors" data-page="admin_sponsors"
                                     @click="adminMenu = false"
@@ -415,6 +431,22 @@
                                     <i class="fas fa-chevron-right text-[9px] opacity-50 nav-arrow"></i>
                                 </a>
 
+                                <a href="https://mapgen.gimbal.my.id" target="_blank"
+                                    @click="userDropdown = false"
+                                    class="member-nav-item w-full text-left px-3 py-2 rounded-md transition flex items-center gap-3 text-slate-700 hover:bg-orange-50 hover:text-orange-600 group">
+                                    <div class="nav-icon-box w-7 h-7 rounded-md flex items-center justify-center bg-orange-100 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition">
+                                        <i class="fas fa-layer-group text-xs"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <p class="text-xs font-semibold leading-tight text-slate-800">Studio GeoPDF A3</p>
+                                            <span class="px-1.5 py-0.2 bg-emerald-600 text-[9px] font-bold text-white rounded">NEW</span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 opacity-75">Cetak Topo ISO 32000 & Avenza</p>
+                                    </div>
+                                    <i class="fas fa-external-link-alt text-[9px] opacity-50 nav-arrow"></i>
+                                </a>
+
                                 <a href="/member/business" data-page="member_business"
                                     hx-get="/member/business" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true"
                                     @click="userDropdown = false"
@@ -546,6 +578,11 @@
                     hx-get="/admin/repo-maps" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
                     <i class="fas fa-map-marked-alt mr-2"></i> Repo Peta GIMBAL
                 </a>
+                <a href="https://mapgen.gimbal.my.id" target="_blank" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800 flex items-center justify-between"
+                    @click="mobileMenu = false">
+                    <span><i class="fas fa-layer-group mr-2"></i> Studio GeoPDF A3</span>
+                    <span class="px-1.5 py-0.2 bg-emerald-600 text-[9px] font-black text-white rounded">NEW</span>
+                </a>
                 <a href="/admin/sponsors" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
                     hx-get="/admin/sponsors" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
                     <i class="fas fa-handshake mr-2"></i> Sponsorship & Mitra
@@ -571,6 +608,15 @@
                 <a href="/member/kta" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
                     hx-get="/member/kta" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
                     <i class="fas fa-id-card mr-2 text-orange-400"></i> KTA Digital
+                </a>
+                <a href="/member/repo-maps" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
+                    hx-get="/member/repo-maps" hx-target="#main-content" hx-push-url="true" @click="mobileMenu = false">
+                    <i class="fas fa-map-marked-alt mr-2 text-orange-400"></i> Repo Peta GIMBAL
+                </a>
+                <a href="https://mapgen.gimbal.my.id" target="_blank" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800 flex items-center justify-between"
+                    @click="mobileMenu = false">
+                    <span><i class="fas fa-layer-group mr-2 text-orange-400"></i> Studio GeoPDF A3</span>
+                    <span class="px-1.5 py-0.2 bg-emerald-600 text-[9px] font-black text-white rounded">NEW</span>
                 </a>
                 {% endif %}
                 <a href="/member/iuran" class="block px-3 py-2 rounded-lg text-sm text-orange-100 hover:bg-orange-800"
