@@ -1,14 +1,15 @@
 import os
 import io
 import csv
+import json
 from datetime import datetime
-from flask import Blueprint, request, redirect, render_template, make_response, current_app, flash
+from flask import Blueprint, request, redirect, render_template, make_response, current_app, flash, jsonify
 from werkzeug.utils import secure_filename
 from sqlalchemy.exc import IntegrityError
 from models import (
     db, User, Dues, DuesPayment, Document, Activity,
-    ActivityParticipant, GalleryItem, Post, PostComment,
-    PostLike, ChatMessage, SystemSetting, AdminAuditLog,
+    ActivityParticipant, ActivityFieldLog, GalleryItem, Post, PostMedia,
+    PostComment, PostLike, ChatMessage, SystemSetting, AdminAuditLog,
     MapRepository, Position, generate_next_nra
 )
 from cloudflare_email import delete_cloudflare_email_rule, sync_cloudflare_email_routing
@@ -1363,6 +1364,904 @@ def admin_activities():
     return render_gimbal_page('admin/admin_pages.html', 'admin_activities', data, active_page='admin_activities')
 
 
+def get_rol_category_presets():
+    """
+    Koleksi template ROL (Rencana Operasional Lapangan) terstandarisasi KPAB GIMBAL
+    berdasarkan ragam jenis kegiatan kepetualangan & kepecintaalaman.
+    """
+    return {
+        'Gunung Hutan': {
+            'label': 'Gunung Hutan (Mountaineering / Trekking)',
+            'icon': 'fa-mountain',
+            'route_plan': (
+                "Jalur Pendakian & Checkpoint Standar:\n"
+                "• Checkpoint 1 (KM 0): Pos Perizinan / Basecamp SIMAKSI & Briefing Medis\n"
+                "• Checkpoint 2 (KM 2.5): Pintu Rimba / Batas Kawasan Konservasi\n"
+                "• Checkpoint 3 (KM 5.0): Pos 2 (Sumber Air Terakhir / Water Point)\n"
+                "• Checkpoint 4 (KM 7.8): Shelter Pos 3 / Area Bivak & Camp Utama\n"
+                "• Checkpoint 5 (KM 9.5): Puncak Sasaran (Summit Attack) & Dokumentasi Patok Triangulasi\n"
+                "• Jalur Evakuasi: Lintas punggungan barat menuju Posko Desa Penyangga (Kontingensi)"
+            ),
+            'team_gear': (
+                "• Tenda Dome 4P (2 unit, frame alloy)\n"
+                "• Flysheet Pelindung 4x6 meter & Tali Guyline\n"
+                "• Kompor Lapangan Windproof & Nesting DS-300 (2 set)\n"
+                "• Tabung Gas Butane / Canister (6 kaleng)\n"
+                "• Parang Tebas & Tali Webbing Tubular 20 meter\n"
+                "• Radio Komunikasi HT VHF 5W (3 unit) + Baterai Cadangan\n"
+                "• GPS Handheld / Smartphone dengan Peta Offline Gimbal Maps"
+            ),
+            'personal_gear': (
+                "• Carrier 60-80 Liter + Raincover Waterproof\n"
+                "• Sleeping Bag Suhu Ekstrem + Matras Spon/Aluminium\n"
+                "• Jaket Windproof/Goretex, Pakaian Hangat Polar, Jas Hujan\n"
+                "• Sepatu Trekking Sol Grip + Kaos Kaki Cadangan (3 pasang)\n"
+                "• Headlamp LED Waterproof + Baterai Cadangan\n"
+                "• Piring, Sendok, Tumbler Air Minum 2L & Peluit Darurat"
+            ),
+            'food_ration': (
+                "• Hari 1: Nasi liwet rempah, kornet daging, telur, sambal botol\n"
+                "• Hari 2: Bubur instan, sarden saus tomat, tumis sayur kering\n"
+                "• Logistik Jalan: Energy bar, cokelat batangan, biskuit gandum, madu sachet\n"
+                "• Minuman Penghangat: Kopi jahe, sari temulawak, susu sachet, teh manis"
+            ),
+            'medical_kit': (
+                "• Tabung Oksigen Portable (Oxycan 500cc - 2 kaleng)\n"
+                "• Emergency Thermal Blanket Aluminium (4 lembar)\n"
+                "• Kasa steril, verban elastis (Elastic Bandage), mitela segitiga\n"
+                "• Povidone Iodine (Betadine), Alkohol 70%, Rivanol\n"
+                "• Obat Hipotermia, Penurun Panas (Paracetamol), Anti Maag, Oralit\n"
+                "• Salep Otot (Counterpain), Minyak Kayu Putih, Tabir Surya SPF 50"
+            ),
+            'recommended_roles': ['Pimpinan Perjalanan', 'Navigator', 'Logistik & Konsumsi', 'Medis / P3K', 'Sweeper', 'Dokumentasi & Publikasi']
+        },
+        'Panjat Tebing': {
+            'label': 'Panjat Tebing (Rock Climbing / Big Wall)',
+            'icon': 'fa-mountain-city',
+            'route_plan': (
+                "Pola Lintasan & Rigging Tebing:\n"
+                "• Base Staging: Basecamp Kaki Tebing & Verifikasi Kelayakan Alat\n"
+                "• Pitch 1 (Grade 5.8 / 25m): Face climbing menuju Hanging Belay Stance 1\n"
+                "• Pitch 2 (Grade 5.10a / 30m - Crux): Crack climbing & runner aktif\n"
+                "• Pitch 3 (Grade 5.9 / 20m): Slab runout menuju Anchor Station Puncak Tebing\n"
+                "• Rute Turun (Extraction): Sistem Rapelling ganda via Anchor Ring Hanger utama\n"
+                "• Jalur Darurat: Jalur setapak kontur belakang tebing menuju basecamp"
+            ),
+            'team_gear': (
+                "• Tali Karmantel Dinamis 10.2mm 60 meter (1 rol UIAA)\n"
+                "• Tali Karmantel Statis 10.5mm 100 meter (1 rol hauling/safety)\n"
+                "• Quickdraw Set / Runner Panjang (16 set)\n"
+                "• Webbing Tubular 30 meter & Prusik Cord 6mm (3 set)\n"
+                "• Hammer Climbing, Hanger Plate & Bolt Expansion Cadangan (4 set)\n"
+                "• Tarp Alas Tali (Rope Bag Tarp) & Haul Bag 50L"
+            ),
+            'personal_gear': (
+                "• Helm Panjat Standar UIAA (Climbing Helmet)\n"
+                "• Seat Harness Ergonomis (dilengkapi gear loops)\n"
+                "• Sepatu Panjat Tebing (Rock Climbing Shoes)\n"
+                "• Belay Device (ATC Guide / Petzl GriGri) & Figure-of-Eight\n"
+                "• Carabiner Screw-Lock HMS (minimal 4 pcs)\n"
+                "• Chalk Bag + Magnesium Karbonat Padat/Bubuk\n"
+                "• Sarung Tangan Belaying Kulit Sintetis (Belay Gloves)"
+            ),
+            'food_ration': (
+                "• Makanan Padat Kalori: Protein bar, roti isi selai kacang, kurma, kismis\n"
+                "• Hidrasi: Minuman elektrolit/isotonik 3L per person (Hydration pack)\n"
+                "• Makanan Hangat di Basecamp: Sup daging, mie rebus, telur rebus, pisang ambon"
+            ),
+            'medical_kit': (
+                "• Sam Splint (Bidai Busa Aluminium untuk fraktur/patah tulang)\n"
+                "• Kasa Kompres Trauma, Perban Elastis 4 inch & 6 inch\n"
+                "• Plester Zinc Oxide / Strapping Tape jari & telapak tangan\n"
+                "• Antiseptik Cair, Painkiller (Asam Mefenamat/Ibuprofen)\n"
+                "• Obat Tetes Mata Steril (Eyewash untuk serpihan debu batu)\n"
+                "• Gunting Medis Emergency Trauma Shears & Sarung Tangan Nitril"
+            ),
+            'recommended_roles': ['Pimpinan Perjalanan', 'Safety Belayer & Rigging Master', 'Equipment Inspector', 'Medis Lapangan', 'Dokumentasi Ekstrem', 'Anggota Tim']
+        },
+        'Susur Gua': {
+            'label': 'Susur Gua (Caving / Speleologi)',
+            'icon': 'fa-dungeon',
+            'route_plan': (
+                "Topografi Karst & Lintasan Gua:\n"
+                "• Entrance Pit (Mulut Gua Vertikal): Titik Rigging Utama Pohon/Anchor Alam\n"
+                "• Pitch 1 (Drop 35 meter): Single Rope Technique (SRT) Descent & Intermediate Re-belay\n"
+                "• Lorong Utama (Horizontal Cave): Sump Area, Stalakmit Hall, Chamber Kelelawar\n"
+                "• Sump & Water Flow: Pemetaan aliran sungai bawah tanah & siphon\n"
+                "• Titik Exit: Lubang terobosan tembus karst utara atau ascending rute awal\n"
+                "• Prosedur Banjir: Evakuasi ke High Ground Chamber jika hujan lebat di hulu"
+            ),
+            'team_gear': (
+                "• Tali Statis Low Stretch 10.5mm 150 meter (2 rol)\n"
+                "• SRT Rigging Kit (Spit, Hanger, Webbing, Anchor Pad/Protector)\n"
+                "• Tackle Bag Heavy Duty PVC Anti Robek (4 unit)\n"
+                "• Peta Gua Speleologi, Kompas Klinometer Suunto, Laser Disto\n"
+                "• Pelindung Gesekan Tali (Rope Protector Kanvas & Roller)\n"
+                "• Gas Detector / Lilin Penguji Oksigen Ruang Bawah Tanah"
+            ),
+            'personal_gear': (
+                "• Caving Suit / Coverall Tahan Air & Gesekan Karst\n"
+                "• Helm Caving + Headlamp Waterproof IPX8 (Dua Sumber Cahaya Independen)\n"
+                "• Sepatu Boot Karet (Wellington Boot) dengan Grip Dalam\n"
+                "• SRT Set Lengkap: Sit & Chest Harness, Jammer (Croll + Basic), Descender Stop/Simple, Footloop, Cowstail Dinamis\n"
+                "• Tas Kedap Air Caving (Drybag 10L) & Peluit"
+            ),
+            'food_ration': (
+                "• Makanan Siap Santap Kedap Air: Nasi bakar aluminium foil, biskuit kaleng\n"
+                "• Pemanis Instan: Permen jahe, cokelat pasta, madu murni\n"
+                "• Air Minum Botol Keras 2L (Dilarang membuang sisa makanan di dalam gua / LNT)"
+            ),
+            'medical_kit': (
+                "• Thermal Foil Blanket Tebal (Gua basah sangat rentan hipotermia)\n"
+                "• Kassa steril, pembalut cepat, antiseptik povidone\n"
+                "• Salep luka robek & antibiotik topikal\n"
+                "• Splint jari dan lengan, obat anti kram otot, paracetamol\n"
+                "• Lampu penerangan cadangan medis & baterai alkaline"
+            ),
+            'recommended_roles': ['Pimpinan Perjalanan', 'Rigging Master', 'Surveyor Gua / Pemetaan', 'Medis Evakuasi', 'Sweeper Tim', 'Anggota Tim']
+        },
+        'Arung Jeram': {
+            'label': 'Arung Jeram (Rafting / Water Rescue)',
+            'icon': 'fa-water',
+            'route_plan': (
+                "Lintasan Sungai & Jeram:\n"
+                "• Put-In Area (KM 0): Safety Talk, Pengenalan Komando Dayung & Flip Drill\n"
+                "• Rapid 1 (Grade II): Jeram Pemanasan & Kalibrasi Kekompakan Awak\n"
+                "• Rapid 2 (Grade III+ - Jeram Buaya): Undercut rock scouted & penempatan Rescue Rope\n"
+                "• Rest Area (KM 6): Pantai Pasir Kali, Pengecekan Tekanan Tabung Perahu\n"
+                "• Rapid 3 (Grade IV - Jeram Air Terjun): Drop 1.5m & Standing Waves\n"
+                "• Take-Out Area (KM 12): Titik Pendaratan Perahu & Bongkar Muat Armada"
+            ),
+            'team_gear': (
+                "• Perahu Karet Rafting Heavy Duty Self Bailing (2 armada)\n"
+                "• Pompa Injak / Tangan Tekanan Tinggi + Manometer\n"
+                "• Rescue Throw Bag (Tali Lempar Apung 20m - 2 unit)\n"
+                "• Flip Line (Tali Pembalik Perahu) & Carabiner HMS Snag-Free\n"
+                "• Repair Kit Lem PVC, Patch Tambalan & Valve Wrench\n"
+                "• Dayung Cadangan T-Grip (2 pcs) & Dry Bag Besar (30L)"
+            ),
+            'personal_gear': (
+                "• Pelampung Arung Jeram (Life Jacket Type V / USCG Approved, Buoyancy 22 lbs)\n"
+                "• Helm Arung Jeram / Kayak Helmets dengan Ventilasi Air\n"
+                "• Dayung Tunggal Ergonomis (Aluminium Shaft & Nylon Blade)\n"
+                "• Sepatu Neoprene / Sandal Gunung Tali Tumit Kokoh\n"
+                "• Pakaian Cepat Kering (Rashguard / Celana Cepat Kering, Hindari Jeans)\n"
+                "• Peluit Tanpa Bola Pea-less (Bekerja maksimal saat basah)"
+            ),
+            'food_ration': (
+                "• Di Perahu (Dry Bag): Gula aren, cokelat bar, biskuit asin, air isotonik\n"
+                "• Di Titik Take-Out / Basecamp: Prasmanan sup panas, ikan bakar, teh manis hangat"
+            ),
+            'medical_kit': (
+                "• Pocket Mask CPR Resusitasi Pernapasan Kedap Air\n"
+                "• Emergency Thermal Blanket (Mencegah hipotermia air dingin)\n"
+                "• Plester Tahan Air (Waterproof Dressing) & Kasa Steril\n"
+                "• Minyak Angin Penghangat, Balsem Otot Kram, Antihistamin sengatan air\n"
+                "• Tabung Oksigen Siaga di Mobil Pengangkut / Rescue Darat"
+            ),
+            'recommended_roles': ['Pimpinan Perjalanan', 'Skipper / River Guide Utama', 'Rescue Master & Thrower', 'Logistik Perahu', 'Sweeper Boat Guide', 'Medis Air']
+        },
+        'Konservasi & LH': {
+            'label': 'Konservasi & Lingkungan Hidup (Reboisasi / Riset Flora-Fauna)',
+            'icon': 'fa-seedling',
+            'route_plan': (
+                "Plot Kawasan & Titik Konservasi:\n"
+                "• Posko Bibit / Induk: Registrasi Relawan & Serah Terima Bibit Endemik\n"
+                "• Plot 1 (Zona Kritis / 2 Hektar): Pembuatan Lubang Tanam & Pemupukan Dasar\n"
+                "• Plot 2 (Koridor Perlindungan Mata Air): Penanaman Pohon Beringin/Bambu Penghijau\n"
+                "• Jalur Inventarisasi Flora-Fauna: Transek Garis 1.5 KM untuk Identifikasi Spesies\n"
+                "• Pos Penimbangan Sampah: Sortir sampah pendaki organik & anorganik (Bersih Gunung)"
+            ),
+            'team_gear': (
+                "• Bibit Pohon Kayu & Buah Hutan (200 - 500 bibit polybag)\n"
+                "• Cangkul Kecil, Sekop Mini & Linggis Tanam (10 unit)\n"
+                "• Meteran Gulung 50m, Tali Patok & Patok Kayu Label Tanam\n"
+                "• Trash Bag Tebal 80x100 cm (10 pack) & Sarung Tangan Safety\n"
+                "• Timbangan Gantung Digital (Kapasitas 100 kg untuk audit sampah)\n"
+                "• GPS Tracker & Kamera Dokumentasi Titik Koordinat Penanaman"
+            ),
+            'personal_gear': (
+                "• Sarung Tangan Katun/Karet Berlapis Grip Tahan Tusuk\n"
+                "• Sepatu Boot Karet / Trekking Lapangan Tahan Lumpur\n"
+                "• Topi Rimba Lebar & Kacamata Pelindung Debu/Ranting\n"
+                "• Raincoat / Ponco Hujan Lapangan\n"
+                "• Buku Catatan Tahan Air (Rite in the Rain) & Spidol Permanen"
+            ),
+            'food_ration': (
+                "• Nasi Kotak / Dapur Lapangan Bersama Panitia\n"
+                "• Galon Air Mineral + Gelas Reusable (Bebas Sampah Plastik Sekali Pakai)\n"
+                "• Pisang Rebus, Ubi Manis, Kopi & Teh Tubruk"
+            ),
+            'medical_kit': (
+                "• Venom Extractor Pump (Penanganan awal gigitan serangga/hewan berbisa)\n"
+                "• Salep Kortikosteroid (Gatal ulat bulu / tanaman jelatang), Antihistamin\n"
+                "• Obat Tetes Mata Steril, Betadine, Perban Steril, Hansaplast\n"
+                "• Paracetamol, Oralit Cair, Masker Kain/Medis Lapangan"
+            ),
+            'recommended_roles': ['Pimpinan Perjalanan', 'Koordinator Teknis Penanaman', 'Surveyor Plotting GPS', 'Koordinator Logistik & Bibit', 'Medis Lapangan', 'Dokumentasi & Kampanye']
+        },
+        'Pendidikan Dasar': {
+            'label': 'Pendidikan Dasar & Diklat Petualang (Diksar KPAB)',
+            'icon': 'fa-graduation-cap',
+            'route_plan': (
+                "Pos Lapangan & Rangkaian Materi Latsar:\n"
+                "• Pos Induk / Lapangan Utama: Upacara Pembukaan, Apel Disiplin & Cek Kesiapan Perlengkapan\n"
+                "• Pos 1 (Navigasi Darat): Pembacaan Peta RBI, Resection/Intersection, Kompas Azimuth\n"
+                "• Pos 2 (Jungle Survival): Identifikasi Tumbuhan Makanan, Jebakan Satwa & Air Bersih\n"
+                "• Pos 3 (Bivak & Campcraft): Pembuatan Bivak Alami Ponco, Manajemen Sanitasi Camp\n"
+                "• Pos 4 (Tali Temali & Pioneering): Anchor, Simpul Dasar & Jembatan Tali Darurat\n"
+                "• Rute Long March / Caraka Malam: Jalur Uji Mental Sepanjang 8 KM Jalur Lembah\n"
+                "• Lapangan Pengukuhan: Penyematan Brevet / Syal Anggota Muda"
+            ),
+            'team_gear': (
+                "• Tenda Pleton Militer / Barak Panitia & Tenda Medis Lapangan\n"
+                "• Sound System Megaphone / Toa Portable (2 unit)\n"
+                "• Peta Topografi Lembar Kerja Skala 1:25.000 (15 eksemplar laminasi)\n"
+                "• Kompas Bidik Prisma Komando (8 unit), Douglas Protractor, Busur Derajat\n"
+                "• Tali Webbing, Tali Karmantel Safety, Parang Tebas (4 bilah)\n"
+                "• Peluit Instruktur, Bendera Merah Putih & Bendera KPAB GIMBAL"
+            ),
+            'personal_gear': (
+                "• Ransel Punggung Standar Diksar (Minimal 50L)\n"
+                "• Ponco Militer Hijau (Multi-fungsi tenda bivak & jas hujan)\n"
+                "• Pakaian Dinas Lapangan PDL (2 setel) + Sepatu Lapangan Kuat\n"
+                "• Matras & Sleeping Bag Standar Hangat\n"
+                "• Pisau Saku Lipat, Korek Api Kedap Air & Senter Kepala / Senter Tangan\n"
+                "• Peluit Sinyal Darurat, Tumbler Air Minum 2 Botol & Perlengkapan Makan Logam"
+            ),
+            'food_ration': (
+                "• Dapur Umum Terpusat: Beras, Sayur Asem, Tahu Tempe, Ikan Asin, Sambal Terasi\n"
+                "• Ransum Lapangan Siswa: Biskuit survival padat gizi, mie mentah, telur asin, gula kelapa\n"
+                "• Minuman Vitalitas: Susu kental manis hangat, wedang jahe sereh"
+            ),
+            'medical_kit': (
+                "• Tandu Lipat Lapangan (Emergency Stretcher - 2 unit)\n"
+                "• Tabung Oksigen Portable 500cc (4 unit)\n"
+                "• Kassa steril balut luka, perban gulung, splint patah tulang, mitela segitiga (6 unit)\n"
+                "• Rivanol, Alkohol 70%, Povidone Iodine 1 Liter\n"
+                "• Obat Maag Kronis, Paracetamol, Dexamethasone, Obat Hipotermia\n"
+                "• Larutan Elektrolit & Oralit Massal (1 ember dispenser steril)"
+            ),
+            'recommended_roles': ['Komandan Latihan (Danlat)', 'Koordinator Instruktur', 'Seksi Medis & Evakuasi', 'Seksi Logistik Dapur Umum', 'Tim Keamanan Jalur & Sweeper', 'Seksi Dokumentasi']
+        },
+        'Camp & Wisata Alam': {
+            'label': 'Camp & Wisata Alam (Family Camp / Eksplorasi Santai)',
+            'icon': 'fa-campground',
+            'route_plan': (
+                "Itinerary & Titik Kumpul Santai:\n"
+                "• Meeting Point: Titik Kumpul Parkir Kendaraan / Sekretariat\n"
+                "• Camping Ground: Area Tenda Tepi Sungai / Bukit Berumput\n"
+                "• Exploration Walk: Jalan Santai Menuju Curug / Spot Sunset\n"
+                "• Campfire Area: Titik Api Unggun & Silaturahmi Keluarga Besar\n"
+                "• Clean-Up: Operasi Semut Bersih Sampah Bersama Sebelum Pulang"
+            ),
+            'team_gear': (
+                "• Tenda Dome Rekreasi / Keluarga (4-6 Orang)\n"
+                "• Flysheet Peneduh Meja Makan & Lampu Gantung LED\n"
+                "• Meja & Kursi Lipat Camping Praktis\n"
+                "• Kompor Portable Gas Kaleng + Wajan Grill BBQ\n"
+                "• Speaker Bluetooth Portable, Gitar Akustik, Trash Bag"
+            ),
+            'personal_gear': (
+                "• Daypack / Ransel Santai 30-40L\n"
+                "• Pakaian Santai Outdoor + Jaket Hangat Malam Hari\n"
+                "• Sandal Gunung / Sepatu Kets yang Nyaman\n"
+                "• Selimut / Sleeping Bag Santai & Bantal Angin\n"
+                "• Powerbank Kapasitas Besar & Perlengkapan Mandi"
+            ),
+            'food_ration': (
+                "• Daging Ayam Marinasi BBQ, Jagung Bakar, Sosis, Marshmallow\n"
+                "• Nasi Putih / Nasi Kuning Kotak, Kopi Espresso Sachet, Teh Manis\n"
+                "• Buah Segar: Semangka, Melon, Pisang"
+            ),
+            'medical_kit': (
+                "• Kotak P3K Standar Keluarga (Hansaplast, Betadine, Minyak Kayu Putih)\n"
+                "• Obat Masuk Angin (Tolak Angin), Paracetamol Anak & Dewasa\n"
+                "• Lotion Anti Nyamuk / Serangga (Soffell / Autan), Salep Kulit"
+            ),
+            'recommended_roles': ['Pimpinan Perjalanan', 'Koordinator Konsumsi & BBQ', 'Pemandu Rute Santai', 'Medis P3K Santai', 'Dokumentasi Keluarga & Foto']
+        }
+    }
+
+
+@admin_bp.route('/admin/activity/preset-rol', methods=['GET'])
+@login_required
+@admin_required
+def admin_activity_preset_rol():
+    """Mengambil template dokumen ROL berdasarkan jenis kegiatan yang dipilih"""
+    category = request.args.get('category', 'Gunung Hutan').strip()
+    presets = get_rol_category_presets()
+    preset = presets.get(category) or presets.get('Gunung Hutan')
+    return jsonify({
+        'status': 'success',
+        'category': category,
+        'preset': preset
+    })
+
+
+@admin_bp.route('/admin/activity/new', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_activity_new():
+    """Halaman Full Page untuk membuka agenda ekspedisi baru & inisialisasi ROL"""
+    if request.method == 'POST':
+        admin = get_current_user()
+        title = request.form.get('title', '').strip()
+        location = request.form.get('location', '').strip()
+        activity_date = request.form.get('activity_date', '').strip()
+        difficulty = request.form.get('difficulty', 'Menengah')
+        category = request.form.get('category', 'Gunung Hutan').strip()
+        quota = int(request.form.get('quota', 20))
+        description = request.form.get('description', '').strip()
+        phase = request.form.get('phase', 'planning')
+        is_open = (phase == 'open')
+
+        image_file = request.files.get('image_file')
+        image_url_input = request.form.get('image_url', '').strip()
+        image_url = '/static/pics/cartoon/hero.jpg'
+
+        if image_file and image_file.filename:
+            safe_name = f"act_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
+            save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'gallery', safe_name)
+            image_file.save(save_path)
+            image_url = f"/uploads/gallery/{safe_name}"
+        elif image_url_input:
+            image_url = image_url_input
+
+        # Ambil template preset bawaan sesuai kategori kegiatan
+        presets = get_rol_category_presets()
+        active_preset = presets.get(category) or presets.get('Gunung Hutan')
+
+        default_budget = {
+            'expense_transport': 0,
+            'expense_permit': 0,
+            'expense_food': 0,
+            'expense_gear': 0,
+            'expense_med': 0,
+            'expense_emergency': 0,
+            'fee_per_person': 0,
+            'income_subsidy': 0,
+            'income_sponsor': 0
+        }
+        default_gear = {
+            'team_gear': active_preset.get('team_gear', ''),
+            'personal_gear': active_preset.get('personal_gear', ''),
+            'food_ration': active_preset.get('food_ration', ''),
+            'medical_kit': active_preset.get('medical_kit', '')
+        }
+
+        new_act = Activity(
+            title=title,
+            location=location,
+            activity_date=activity_date,
+            difficulty=difficulty,
+            category=category,
+            quota=quota,
+            description=description,
+            image_url=image_url,
+            is_open=is_open,
+            phase=phase,
+            route_plan=active_preset.get('route_plan', ''),
+            budget_json=json.dumps(default_budget),
+            gear_json=json.dumps(default_gear)
+        )
+        db.session.add(new_act)
+        db.session.commit()
+
+        # Otomatis daftarkan admin pembuat sebagai Pimpinan Perjalanan
+        if admin:
+            leader_part = ActivityParticipant(
+                activity_id=new_act.id,
+                user_id=admin.id,
+                status='confirmed',
+                role='Pimpinan Perjalanan'
+            )
+            db.session.add(leader_part)
+            db.session.commit()
+
+        flash(f'Agenda ekspedisi "{new_act.title}" ({new_act.category}) berhasil dibuat! Silakan lengkapi dokumen ROL.', 'success')
+        return redirect(f'/admin/activity/{new_act.id}/manage')
+
+    repo_maps = MapRepository.query.order_by(MapRepository.created_at.desc()).all()
+    presets = get_rol_category_presets()
+    data = {
+        'repo_maps': repo_maps,
+        'rol_presets': presets
+    }
+    return render_gimbal_page('admin/admin_pages.html', 'admin_activity_new', data, active_page='admin_activities')
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/manage')
+@login_required
+@admin_required
+def admin_activity_manage(activity_id):
+    """Workspace Terpadu Ekspedisi & ROL (Full Page Command Hub)"""
+    act = Activity.query.get_or_404(activity_id)
+    participants = ActivityParticipant.query.filter_by(activity_id=act.id).all()
+    all_members = User.query.filter_by(status='active').order_by(User.name.asc()).all()
+    repo_maps = MapRepository.query.order_by(MapRepository.created_at.desc()).all()
+    field_logs = ActivityFieldLog.query.filter_by(activity_id=act.id).order_by(ActivityFieldLog.recorded_at.desc()).all()
+    tab = request.args.get('tab', 'overview')
+
+    data = {
+        'activity': act,
+        'participants': participants,
+        'all_members': all_members,
+        'repo_maps': repo_maps,
+        'field_logs': field_logs,
+        'rol_presets': get_rol_category_presets(),
+        'active_tab': tab
+    }
+    return render_gimbal_page('admin/admin_pages.html', 'admin_activity_manage', data, active_page='admin_activities')
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/update-basic', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_update_basic(activity_id):
+    """Memperbarui informasi dasar ekspedisi"""
+    act = Activity.query.get_or_404(activity_id)
+    act.title = request.form.get('title', act.title).strip()
+    act.location = request.form.get('location', act.location).strip()
+    act.activity_date = request.form.get('activity_date', act.activity_date).strip()
+    act.difficulty = request.form.get('difficulty', act.difficulty)
+    act.category = request.form.get('category', act.category or 'Gunung Hutan').strip()
+    act.quota = int(request.form.get('quota', act.quota or 20))
+    act.is_open = bool(request.form.get('is_open'))
+    act.description = request.form.get('description', act.description).strip()
+
+    image_file = request.files.get('image_file')
+    image_url_input = request.form.get('image_url', '').strip()
+    if image_file and image_file.filename:
+        safe_name = f"act_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
+        save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'gallery', safe_name)
+        image_file.save(save_path)
+        act.image_url = f"/uploads/gallery/{safe_name}"
+    elif image_url_input:
+        act.image_url = image_url_input
+
+    db.session.commit()
+    flash('Informasi dasar ekspedisi berhasil diperbarui.', 'success')
+    return admin_activity_manage(activity_id)
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/update-rol', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_update_rol(activity_id):
+    """Menyimpan Rencana Operasional Lapangan: RAB, Rute, Logistik & Medis"""
+    act = Activity.query.get_or_404(activity_id)
+
+    # 1. Budgeting / RAB
+    budget = {
+        'expense_transport': float(request.form.get('expense_transport', 0) or 0),
+        'expense_permit': float(request.form.get('expense_permit', 0) or 0),
+        'expense_food': float(request.form.get('expense_food', 0) or 0),
+        'expense_gear': float(request.form.get('expense_gear', 0) or 0),
+        'expense_med': float(request.form.get('expense_med', 0) or 0),
+        'expense_emergency': float(request.form.get('expense_emergency', 0) or 0),
+        'fee_per_person': float(request.form.get('fee_per_person', 0) or 0),
+        'income_subsidy': float(request.form.get('income_subsidy', 0) or 0),
+        'income_sponsor': float(request.form.get('income_sponsor', 0) or 0)
+    }
+    act.budget_json = json.dumps(budget)
+
+    # 2. Rencana Rute & Pustaka Peta
+    act.route_plan = request.form.get('route_plan', act.route_plan)
+    map_repo_id = request.form.get('map_repo_id')
+    act.map_repo_id = int(map_repo_id) if (map_repo_id and map_repo_id.isdigit()) else None
+
+    # 3. Logistik & Kotak Medis
+    gear = {
+        'team_gear': request.form.get('team_gear', ''),
+        'personal_gear': request.form.get('personal_gear', ''),
+        'food_ration': request.form.get('food_ration', ''),
+        'medical_kit': request.form.get('medical_kit', '')
+    }
+    act.gear_json = json.dumps(gear)
+
+    db.session.commit()
+    flash('Dokumen ROL (RAB, Rute, Logistik & P3K) berhasil disimpan.', 'success')
+    return admin_activity_manage(activity_id)
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/update-phase', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_update_phase(activity_id):
+    """Transisi Fase Siklus Hidup Ekspedisi (Planning -> Open -> In Progress -> Completed)"""
+    act = Activity.query.get_or_404(activity_id)
+    new_phase = request.form.get('phase', act.phase)
+    act.phase = new_phase
+
+    if new_phase == 'in_progress':
+        act.is_open = False  # Pendaftaran ditutup otomatis saat tim sudah di lapangan
+    elif new_phase == 'open':
+        act.is_open = True
+    elif new_phase == 'completed':
+        eval_notes = request.form.get('evaluation_notes')
+        if eval_notes:
+            act.evaluation_notes = eval_notes.strip()
+
+    db.session.commit()
+    flash(f'Status ekspedisi kini diperbarui ke fase: {new_phase.upper()}', 'success')
+    return admin_activity_manage(activity_id)
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/add-participant', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_add_participant(activity_id):
+    """Menambahkan personil anggota ke manifest tim secara manual"""
+    act = Activity.query.get_or_404(activity_id)
+    user_id = int(request.form.get('user_id'))
+    role = request.form.get('role', 'Anggota Tim')
+
+    existing = ActivityParticipant.query.filter_by(activity_id=act.id, user_id=user_id).first()
+    if existing:
+        existing.status = 'confirmed'
+        existing.role = role
+    else:
+        new_part = ActivityParticipant(
+            activity_id=act.id,
+            user_id=user_id,
+            status='confirmed',
+            role=role
+        )
+        db.session.add(new_part)
+
+    db.session.commit()
+    flash('Personil berhasil ditambahkan ke manifest tim.', 'success')
+    return admin_activity_manage(activity_id)
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/participant-role/<int:part_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_update_participant_role(activity_id, part_id):
+    """Mengubah peran penugasan personil lapangan"""
+    part = ActivityParticipant.query.get_or_404(part_id)
+    part.role = request.form.get('role', part.role)
+    db.session.commit()
+    flash(f'Peran personil {part.user.name if part.user else ""} diubah menjadi: {part.role}', 'success')
+    return admin_activity_manage(activity_id)
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/delete-participant/<int:part_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_delete_participant(activity_id, part_id):
+    """Menghapus personil dari manifest"""
+    part = ActivityParticipant.query.get_or_404(part_id)
+    db.session.delete(part)
+    db.session.commit()
+    flash('Personil dihapus dari manifest.', 'info')
+    return admin_activity_manage(activity_id)
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/add-field-log', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_add_field_log(activity_id):
+    """Input manual laporan titik POI / situasi dari pos lapangan"""
+    act = Activity.query.get_or_404(activity_id)
+    admin = get_current_user()
+
+    title = request.form.get('title', 'Titik Pantau Lapangan').strip()
+    description = request.form.get('description', '').strip()
+    lat = float(request.form.get('latitude')) if request.form.get('latitude') else None
+    lon = float(request.form.get('longitude')) if request.form.get('longitude') else None
+    elevation = float(request.form.get('elevation')) if request.form.get('elevation') else None
+
+    photo_file = request.files.get('photo_file')
+    photo_url = None
+    if photo_file and photo_file.filename:
+        safe_name = f"field_{act.id}_{int(datetime.now().timestamp())}_{secure_filename(photo_file.filename)}"
+        save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'expeditions', safe_name)
+        photo_file.save(save_path)
+        photo_url = f"/uploads/expeditions/{safe_name}"
+
+    log = ActivityFieldLog(
+        activity_id=act.id,
+        user_id=admin.id if admin else None,
+        log_type='poi',
+        title=title,
+        description=description,
+        latitude=lat,
+        longitude=lon,
+        elevation=elevation,
+        photo_url=photo_url,
+        source='manual'
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash(f'Laporan titik POI "{title}" berhasil dicatat.', 'success')
+    return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/upload-gimbal-maps', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_upload_gimbal_maps(activity_id):
+    """Unggah berkas GPX / GeoJSON / KMZ hasil ekspor Gimbal-Maps untuk melampirkan titik & track"""
+    act = Activity.query.get_or_404(activity_id)
+    admin = get_current_user()
+    file_upload = request.files.get('geodata_file')
+
+    if not file_upload or not file_upload.filename:
+        flash('Silakan pilih berkas spasial hasil ekspor Gimbal-Maps (.gpx, .geojson, .kmz)', 'error')
+        return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+
+    safe_name = f"gmaps_{act.id}_{int(datetime.now().timestamp())}_{secure_filename(file_upload.filename)}"
+    save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'expeditions', safe_name)
+    file_upload.save(save_path)
+
+    synced_points = 0
+    if safe_name.lower().endswith('.gpx'):
+        try:
+            import xml.etree.ElementTree as ET
+            tree = ET.parse(save_path)
+            root = tree.getroot()
+            for elem in root.iter():
+                if elem.tag.endswith('wpt'):
+                    w_lat = elem.attrib.get('lat')
+                    w_lon = elem.attrib.get('lon')
+                    w_name = 'Waypoint Survei'
+                    w_desc = ''
+                    w_ele = None
+                    for child in elem:
+                        if child.tag.endswith('name') and child.text:
+                            w_name = child.text
+                        elif child.tag.endswith('desc') and child.text:
+                            w_desc = child.text
+                        elif child.tag.endswith('ele') and child.text:
+                            try:
+                                w_ele = float(child.text)
+                            except Exception:
+                                pass
+                    log = ActivityFieldLog(
+                        activity_id=act.id,
+                        user_id=admin.id if admin else None,
+                        log_type='poi',
+                        title=w_name,
+                        description=w_desc,
+                        latitude=float(w_lat) if w_lat else None,
+                        longitude=float(w_lon) if w_lon else None,
+                        elevation=w_ele,
+                        source='gimbal_maps'
+                    )
+                    db.session.add(log)
+                    synced_points += 1
+        except Exception as e:
+            current_app.logger.warning(f"Error parsing GPX: {e}")
+
+    # Simpan file track log
+    track_log = ActivityFieldLog(
+        activity_id=act.id,
+        user_id=admin.id if admin else None,
+        log_type='track',
+        title=f"Lintasan Peta: {file_upload.filename}",
+        description=f"Berkas rekaman spasial diunggah dari Gimbal-Maps ({round(os.path.getsize(save_path)/1024, 1)} KB)",
+        photo_url=f"/uploads/expeditions/{safe_name}",
+        source='gimbal_maps'
+    )
+    db.session.add(track_log)
+    db.session.commit()
+
+    flash(f'Berkas Gimbal-Maps berhasil diimpor! ({synced_points} titik waypoint diekstrak)', 'success')
+    return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/delete-field-log/<int:log_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_delete_field_log(activity_id, log_id):
+    """Menghapus catatan lapangan / titik POI"""
+    log = ActivityFieldLog.query.get_or_404(log_id)
+    db.session.delete(log)
+    db.session.commit()
+    flash('Catatan lapangan berhasil dihapus.', 'info')
+    return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/pin-field-photo/<int:log_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_pin_field_photo(activity_id, log_id):
+    """Pin foto dokumentasi lapangan langsung ke Galeri Ekspedisi Landing Page"""
+    act = Activity.query.get_or_404(activity_id)
+    log = ActivityFieldLog.query.get_or_404(log_id)
+    if not log.photo_url:
+        flash('Catatan lapangan ini tidak memiliki lampiran foto.', 'error')
+        return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+
+    gallery_item = GalleryItem(
+        title=log.title,
+        caption=log.description or f"Dokumentasi lapangan resmi ekspedisi {act.title} di {act.location}.",
+        image_url=log.photo_url,
+        activity_id=act.id,
+        is_pinned=True
+    )
+    db.session.add(gallery_item)
+    db.session.commit()
+    flash(f'Foto "{log.title}" berhasil di-pin ke Galeri Utama Landing Page!', 'success')
+    return redirect(f'/admin/activity/{activity_id}/manage?tab=field_ops')
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/publish-to-feed', methods=['POST'])
+@login_required
+@admin_required
+def admin_activity_publish_to_feed(activity_id):
+    """Mempublikasikan laporan wrap-up ekspedisi ke Linimasa Komunitas / Feed Anggota"""
+    act = Activity.query.get_or_404(activity_id)
+    admin = get_current_user()
+
+    content = request.form.get('content') or (
+        f"🚩 LAPORAN EKSPEDISI SELESAI: {act.title}!\n\n"
+        f"Seluruh personil tim ({act.total_confirmed} orang) telah berhasil menyelesaikan operasi lapangan "
+        f"di kawasan {act.location} ({act.activity_date}) dalam kondisi sehat dan selamat. "
+        f"Dokumen ROL dan LPJ resmi telah disahkan oleh pengurus."
+    )
+
+    post = Post(
+        user_id=admin.id,
+        content=content,
+        location=act.location,
+        activity_id=act.id,
+        image_url=act.image_url
+    )
+    db.session.add(post)
+    db.session.flush()
+
+    # Lampirkan foto-foto dokumentasi lapangan ke PostMedia
+    logs_with_photo = ActivityFieldLog.query.filter_by(activity_id=act.id).filter(ActivityFieldLog.photo_url.isnot(None)).limit(6).all()
+    for idx, plog in enumerate(logs_with_photo):
+        media = PostMedia(
+            post_id=post.id,
+            media_url=plog.photo_url,
+            media_type='image',
+            caption=plog.title,
+            order_index=idx
+        )
+        db.session.add(media)
+
+    db.session.commit()
+    flash('Cerita dan dokumentasi ekspedisi berhasil dipublikasikan ke Linimasa Komunitas!', 'success')
+    return redirect(f'/admin/activity/{activity_id}/manage?tab=close_out')
+
+
+def resolve_rol_signers(act):
+    """
+    Menemukan penandatangan sah berdasarkan jabatan di database anggota:
+    1. Pimpinan Perjalanan (Field Leader) dari peserta terkonfirmasi dengan peran Leader
+    2. Kepala Divisi Operasional sesuai jenis/kategori kegiatan
+    3. Ketua Umum KPAB GIMBAL
+    """
+    # 1. Pimpinan Perjalanan
+    leader_user = None
+    if act.lead_person and act.lead_person.user:
+        leader_user = act.lead_person.user
+    else:
+        first_confirmed = act.participants.filter_by(status='confirmed').first()
+        if first_confirmed and first_confirmed.user:
+            leader_user = first_confirmed.user
+
+    # 2. Kepala Divisi Operasional berdasarkan jenis kegiatan
+    category = act.category or 'Gunung Hutan'
+    cat_to_pos = {
+        'Gunung Hutan': 'Kepala Divisi Gunung Hutan',
+        'Panjat Tebing': 'Kepala Divisi Panjat Tebing',
+        'Susur Gua': 'Kepala Divisi Susur Gua (Caving)',
+        'Susur Gua (Caving)': 'Kepala Divisi Susur Gua (Caving)',
+        'Arung Jeram': 'Kepala Divisi Arung Jeram (Rafting)',
+        'Arung Jeram (Rafting)': 'Kepala Divisi Arung Jeram (Rafting)',
+        'Konservasi & LH': 'Kepala Divisi Konservasi & LH',
+        'Pendidikan Dasar (Diksar)': 'Kepala Divisi Gunung Hutan',
+        'Camp & Wisata Alam': 'Kepala Divisi Humas & Publikasi'
+    }
+    target_pos_name = cat_to_pos.get(category, f"Kepala Divisi {category}")
+
+    # Query pejabat dari database
+    kadiv_user = User.query.filter_by(jabatan=target_pos_name).first()
+    if not kadiv_user:
+        first_word = category.split()[0]
+        kadiv_user = User.query.filter(User.jabatan.ilike(f"%{first_word}%")).first()
+    if not kadiv_user:
+        kadiv_user = User.query.filter(User.jabatan.ilike("%Kepala Divisi%")).first()
+
+    # 3. Ketua Umum KPAB GIMBAL
+    ketum_user = User.query.filter_by(jabatan='Ketua Umum').first()
+    if not ketum_user:
+        ketum_user = User.query.filter(User.role == 'superadmin').first()
+
+    return {
+        'leader': leader_user,
+        'kadiv': kadiv_user,
+        'kadiv_title': target_pos_name,
+        'ketum': ketum_user,
+        'ketum_title': 'Ketua Umum KPAB GIMBAL'
+    }
+
+
+@admin_bp.route('/admin/activity/<int:activity_id>/print')
+@login_required
+@admin_required
+def admin_activity_print(activity_id):
+    """Tampilan Cetak / Print-Ready HTML dokumen ROL & Laporan Ekspedisi (Ctrl+P -> PDF)"""
+    act = Activity.query.get_or_404(activity_id)
+    participants = ActivityParticipant.query.filter_by(activity_id=act.id).all()
+    field_logs = ActivityFieldLog.query.filter_by(activity_id=act.id).all()
+
+    budget = act.budget_data
+    gear = act.gear_data
+
+    total_expense = (
+        float(budget.get('expense_transport', 0) or 0) +
+        float(budget.get('expense_permit', 0) or 0) +
+        float(budget.get('expense_food', 0) or 0) +
+        float(budget.get('expense_gear', 0) or 0) +
+        float(budget.get('expense_med', 0) or 0) +
+        float(budget.get('expense_emergency', 0) or 0)
+    )
+    total_income = (
+        (float(budget.get('fee_per_person', 0) or 0) * act.total_confirmed) +
+        float(budget.get('income_subsidy', 0) or 0) +
+        float(budget.get('income_sponsor', 0) or 0)
+    )
+
+    org_address = SystemSetting.get('org_address', 'Jl. Raja Eyato No. 45, Kota Gorontalo')
+    org_phone = SystemSetting.get('org_phone', '0811-430-1982')
+
+    signers = resolve_rol_signers(act)
+
+    # Dukungan override via query parameter
+    leader_id = request.args.get('leader_id', type=int)
+    kadiv_id = request.args.get('kadiv_id', type=int)
+    ketum_id = request.args.get('ketum_id', type=int)
+
+    if leader_id:
+        u = db.session.get(User, leader_id)
+        if u:
+            signers['leader'] = u
+    if kadiv_id:
+        u = db.session.get(User, kadiv_id)
+        if u:
+            signers['kadiv'] = u
+            if u.jabatan:
+                signers['kadiv_title'] = u.jabatan
+    if ketum_id:
+        u = db.session.get(User, ketum_id)
+        if u:
+            signers['ketum'] = u
+            if u.jabatan:
+                signers['ketum_title'] = u.jabatan
+
+    all_members = User.query.filter(User.status == 'active').order_by(User.name.asc()).all()
+
+    months_id = ['', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+    now = datetime.now()
+    today_date_fmt = f"{now.day} {months_id[now.month]} {now.year}"
+
+    return render_template(
+        'admin/print_rol.html',
+        activity=act,
+        participants=participants,
+        field_logs=field_logs,
+        budget=budget,
+        gear=gear,
+        total_expense=total_expense,
+        total_income=total_income,
+        org_address=org_address,
+        org_phone=org_phone,
+        current_year=now.strftime('%Y'),
+        today_date_fmt=today_date_fmt,
+        signers=signers,
+        all_members=all_members
+    )
+
+
+# ========== BACKWARD COMPATIBILITY MODAL HANDLERS ===============================
+
 @admin_bp.route('/admin/activity/create-modal')
 @login_required
 @admin_required
@@ -1381,10 +2280,10 @@ def admin_create_activity():
     difficulty = request.form.get('difficulty', 'Menengah')
     quota = int(request.form.get('quota', 20))
     description = request.form.get('description', '')
-    
+
     image_file = request.files.get('image_file')
     image_url_input = request.form.get('image_url', '').strip()
-    
+
     image_url = ''
     if image_file and image_file.filename:
         safe_name = f"act_{int(datetime.now().timestamp())}_{secure_filename(image_file.filename)}"
@@ -1404,7 +2303,8 @@ def admin_create_activity():
         quota=quota,
         description=description,
         image_url=image_url,
-        is_open=True
+        is_open=True,
+        phase='open'
     )
     db.session.add(new_act)
     db.session.commit()
@@ -1431,7 +2331,7 @@ def admin_edit_activity(activity_id):
     act.quota = int(request.form.get('quota', act.quota or 20))
     act.is_open = bool(request.form.get('is_open'))
     act.description = request.form.get('description', act.description).strip()
-    
+
     image_file = request.files.get('image_file')
     image_url_input = request.form.get('image_url', '').strip()
     if image_file and image_file.filename:
@@ -1441,7 +2341,7 @@ def admin_edit_activity(activity_id):
         act.image_url = f"/uploads/gallery/{safe_name}"
     elif image_url_input:
         act.image_url = image_url_input
-        
+
     db.session.commit()
     return admin_activities()
 
@@ -1452,6 +2352,8 @@ def admin_edit_activity(activity_id):
 def admin_toggle_activity_status(activity_id):
     act = Activity.query.get_or_404(activity_id)
     act.is_open = not act.is_open
+    if act.is_open and act.phase == 'planning':
+        act.phase = 'open'
     db.session.commit()
     return admin_activities()
 
@@ -1462,6 +2364,7 @@ def admin_toggle_activity_status(activity_id):
 def admin_delete_activity(activity_id):
     act = Activity.query.get_or_404(activity_id)
     ActivityParticipant.query.filter_by(activity_id=act.id).delete()
+    ActivityFieldLog.query.filter_by(activity_id=act.id).delete()
     db.session.delete(act)
     db.session.commit()
     return admin_activities()
@@ -1484,7 +2387,7 @@ def admin_update_participant_status(part_id):
     status = request.args.get('status', 'confirmed')
     part.status = status
     db.session.commit()
-    
+
     act = Activity.query.get(part.activity_id)
     participants = ActivityParticipant.query.filter_by(activity_id=act.id).all()
     return render_template('components/modals.html', modal_type='activity_participants', activity=act, participants=participants)

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROL & Laporan Ekspedisi - {{ activity.title }}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .font-heading {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                font-size: 11pt;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            .print-container {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+            @page {
+                size: A4 portrait;
+                margin: 15mm 12mm 15mm 12mm;
+            }
+        }
+    </style>
+</head>
+<body class="py-6 sm:py-10">
+
+    <!-- FLOATING TOP TOOLBAR (HIDDEN IN PRINT) -->
+    <div class="no-print fixed top-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md text-white border-b border-slate-800 px-4 py-2.5 shadow-lg flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <a href="/admin/activity/{{ activity.id }}/manage" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-md transition flex items-center gap-1.5">
+                <i class="fas fa-arrow-left"></i>
+                <span>Kembali ke Workspace</span>
+            </a>
+            <span class="text-xs text-slate-400 hidden sm:inline">|</span>
+            <span class="text-xs font-semibold text-slate-300 hidden sm:inline">Dokumen Resmi ROL & Rekap Ekspedisi</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="document.getElementById('signer-panel').classList.toggle('hidden')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-md transition flex items-center gap-1.5 border border-slate-700">
+                <i class="fas fa-user-check text-orange-400"></i>
+                <span>Sesuaikan Penandatangan</span>
+                <i class="fas fa-chevron-down text-[10px] opacity-70"></i>
+            </button>
+            <button onclick="window.print()" class="px-4 py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-extrabold rounded-md shadow transition flex items-center gap-2">
+                <i class="fas fa-print"></i>
+                <span>Cetak / Simpan PDF (Ctrl+P)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- DRAWER SESUAIKAN PENANDATANGAN SESUAI JABATAN (NO-PRINT) -->
+    <div id="signer-panel" class="no-print hidden fixed top-11 left-0 right-0 z-40 bg-slate-800/98 backdrop-blur-md border-b border-slate-700 text-slate-200 px-6 py-3 shadow-2xl transition-all">
+        <div class="max-w-[210mm] mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
+            <div class="flex-1 w-full">
+                <label class="block font-bold text-orange-400 mb-1">1. Pimpinan Perjalanan (Field Leader):</label>
+                <select id="sel-lead" onchange="applySigner('lead', this)" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-white text-xs">
+                    <option value="" data-name="..................................." data-nra="-" data-pos="">-- Kosongkan (Manual) --</option>
+                    {% for m in all_members %}
+                    <option value="{{ m.id }}" data-name="{{ m.name }}" data-nra="{{ m.nra or '-' }}" data-pos="{{ m.jabatan or '' }}" {% if signers.leader and signers.leader.id == m.id %}selected{% endif %}>
+                        {{ m.name }} ({{ m.nra or 'NRA -' }}){% if m.jabatan %} - {{ m.jabatan }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-1 w-full">
+                <label class="block font-bold text-orange-400 mb-1">2. {{ signers.kadiv_title }}:</label>
+                <select id="sel-kadiv" onchange="applySigner('kadiv', this)" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-white text-xs">
+                    <option value="" data-name="..................................." data-nra=".............................." data-pos="{{ signers.kadiv_title }}">-- Kosongkan (Manual) --</option>
+                    {% for m in all_members %}
+                    <option value="{{ m.id }}" data-name="{{ m.name }}" data-nra="{{ m.nra or '-' }}" data-pos="{{ m.jabatan or signers.kadiv_title }}" {% if signers.kadiv and signers.kadiv.id == m.id %}selected{% endif %}>
+                        {{ m.name }} ({{ m.nra or 'NRA -' }}){% if m.jabatan %} - {{ m.jabatan }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-1 w-full">
+                <label class="block font-bold text-orange-400 mb-1">3. {{ signers.ketum_title }}:</label>
+                <select id="sel-ketum" onchange="applySigner('ketum', this)" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-white text-xs">
+                    <option value="" data-name="..................................." data-nra="-" data-pos="{{ signers.ketum_title }}">-- Kosongkan (Manual) --</option>
+                    {% for m in all_members %}
+                    <option value="{{ m.id }}" data-name="{{ m.name }}" data-nra="{{ m.nra or '-' }}" data-pos="{{ m.jabatan or signers.ketum_title }}" {% if signers.ketum and signers.ketum.id == m.id %}selected{% endif %}>
+                        {{ m.name }} ({{ m.nra or 'NRA -' }}){% if m.jabatan %} - {{ m.jabatan }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN A4 PRINT CONTAINER -->
+    <div class="print-container max-w-[210mm] mx-auto bg-white border border-slate-200 shadow-xl rounded-xl p-8 sm:p-12 space-y-6 mt-6 sm:mt-4">
+
+        <!-- KOP SURAT RESMI -->
+        <div class="border-b-4 border-double border-slate-900 pb-4 text-center relative">
+            <div class="flex items-center justify-center gap-4 mb-2">
+                <div class="w-16 h-16 rounded-full border-2 border-orange-600 p-1 flex items-center justify-center">
+                    <img src="/static/pics/cartoon/logo.png" alt="Logo GIMBAL" class="w-full h-full object-contain" onerror="this.src='/static/pics/cartoon/hero.jpg'">
+                </div>
+                <div class="text-center">
+                    <h2 class="text-base font-black tracking-wider text-slate-900 uppercase">Kelompok Pencinta Alam & Bina Lingkungan Hidup</h2>
+                    <h1 class="text-2xl font-black text-orange-600 tracking-widest font-heading uppercase">KPAB GIMBAL</h1>
+                    <p class="text-xs font-bold text-slate-700">PROVINSI GORONTALO - INDONESIA</p>
+                    <p class="text-[10px] text-slate-500 mt-0.5">Sekretariat: {{ org_address or 'Jl. Raja Eyato No. 45, Kota Gorontalo' }} • Telp/WA: {{ org_phone or '0811-430-1982' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- JUDUL DOKUMEN -->
+        <div class="text-center space-y-1">
+            <h2 class="text-lg font-black text-slate-900 font-heading tracking-wide uppercase underline decoration-2 decoration-orange-600">
+                RENCANA OPERASIONAL LAPANGAN (ROL) & LAPORAN EKSPEDISI
+            </h2>
+            <p class="text-xs text-slate-600 font-semibold">Nomor Registrasi: GMB/ROL/{{ '%03d' % activity.id }}/{{ current_year }}</p>
+        </div>
+
+        <!-- I. IDENTITAS KEGIATAN -->
+        <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-white bg-slate-900 px-2.5 py-1 rounded inline-block">
+                I. Identitas & Gambaran Umum Ekspedisi
+            </h3>
+            <table class="w-full text-xs border border-slate-300">
+                <tbody>
+                    <tr class="border-b border-slate-200">
+                        <td class="w-1/3 p-2 bg-slate-50 font-bold text-slate-700">Nama Ekspedisi / Kegiatan</td>
+                        <td class="p-2 font-bold text-slate-900">{{ activity.title }}</td>
+                    </tr>
+                    <tr class="border-b border-slate-200">
+                        <td class="p-2 bg-slate-50 font-bold text-slate-700">Wilayah / Lokasi Operasi</td>
+                        <td class="p-2 text-slate-800">{{ activity.location }}</td>
+                    </tr>
+                    <tr class="border-b border-slate-200">
+                        <td class="p-2 bg-slate-50 font-bold text-slate-700">Jadwal / Waktu Pelaksanaan</td>
+                        <td class="p-2 text-slate-800">{{ activity.activity_date }}</td>
+                    </tr>
+                    <tr class="border-b border-slate-200">
+                        <td class="p-2 bg-slate-50 font-bold text-slate-700">Jenis Kegiatan / Divisi</td>
+                        <td class="p-2 font-bold text-orange-800">{{ activity.category or 'Gunung Hutan' }}</td>
+                    </tr>
+                    <tr class="border-b border-slate-200">
+                        <td class="p-2 bg-slate-50 font-bold text-slate-700">Tingkat Kesulitan Medan</td>
+                        <td class="p-2"><span class="font-semibold">{{ activity.difficulty }}</span></td>
+                    </tr>
+                    <tr class="border-b border-slate-200">
+                        <td class="p-2 bg-slate-50 font-bold text-slate-700">Status Siklus Operasi</td>
+                        <td class="p-2 font-bold uppercase text-orange-700">{{ activity.phase }}</td>
+                    </tr>
+                    <tr>
+                        <td class="p-2 bg-slate-50 font-bold text-slate-700">Deskripsi & Tujuan Operasi</td>
+                        <td class="p-2 text-slate-700 leading-relaxed">{{ activity.description or '-' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- II. MANIFEST PERSONIL & TIM OPERASIONAL -->
+        <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-white bg-slate-900 px-2.5 py-1 rounded inline-block">
+                II. Manifest Personil & Pembagian Tugas Tim
+            </h3>
+            <table class="w-full text-xs border border-slate-300">
+                <thead class="bg-slate-100 border-b border-slate-300 text-slate-700">
+                    <tr>
+                        <th class="p-2 text-center w-10">No</th>
+                        <th class="p-2 text-left">Nama Personil</th>
+                        <th class="p-2 text-center">NRA</th>
+                        <th class="p-2 text-left">Peran Operasional</th>
+                        <th class="p-2 text-center">Gol. Darah</th>
+                        <th class="p-2 text-left">Kontak Darurat / WA</th>
+                        <th class="p-2 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                    {% for part in participants %}
+                    <tr class="{% if loop.index % 2 == 0 %}bg-slate-50/50{% endif %}">
+                        <td class="p-2 text-center text-slate-500">{{ loop.index }}</td>
+                        <td class="p-2 font-bold text-slate-900">{{ part.user.name if part.user else 'Peserta' }}</td>
+                        <td class="p-2 text-center font-mono text-[11px]">{{ part.user.nra if part.user else '-' }}</td>
+                        <td class="p-2 font-semibold text-orange-700">{{ part.role or 'Anggota Tim' }}</td>
+                        <td class="p-2 text-center font-bold">{{ part.user.blood_type or '-' if part.user else '-' }}</td>
+                        <td class="p-2 text-slate-600">{{ part.user.emergency_contact or part.user.phone or '-' if part.user else '-' }}</td>
+                        <td class="p-2 text-center font-semibold {% if part.status == 'confirmed' %}text-emerald-700{% else %}text-slate-500{% endif %}">
+                            {{ 'Lolos' if part.status == 'confirmed' else part.status }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="p-4 text-center text-slate-400">Belum ada personil yang terdaftar dalam manifest.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- III. RENCANA ANGGARAN BIAYA (RAB) -->
+        <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-white bg-slate-900 px-2.5 py-1 rounded inline-block">
+                III. Rencana Anggaran Biaya (RAB)
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+                <!-- Pengeluaran -->
+                <div class="border border-slate-300 rounded p-3">
+                    <h4 class="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 mb-2">Estimasi Pengeluaran</h4>
+                    <table class="w-full text-xs">
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <td class="py-1 text-slate-600">Transportasi & Carter</td>
+                                <td class="py-1 text-right font-semibold">Rp {{ "{:,.0f}".format(budget.expense_transport|default(0)|int) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 text-slate-600">Simaksi / Retribusi Masuk</td>
+                                <td class="py-1 text-right font-semibold">Rp {{ "{:,.0f}".format(budget.expense_permit|default(0)|int) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 text-slate-600">Logistik Makan & Minum</td>
+                                <td class="py-1 text-right font-semibold">Rp {{ "{:,.0f}".format(budget.expense_food|default(0)|int) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 text-slate-600">Sewa & Perawatan Alat</td>
+                                <td class="py-1 text-right font-semibold">Rp {{ "{:,.0f}".format(budget.expense_gear|default(0)|int) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 text-slate-600">Kotak P3K & Medis</td>
+                                <td class="py-1 text-right font-semibold">Rp {{ "{:,.0f}".format(budget.expense_med|default(0)|int) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 text-slate-600">Dana Darurat / Lainnya</td>
+                                <td class="py-1 text-right font-semibold">Rp {{ "{:,.0f}".format(budget.expense_emergency|default(0)|int) }}</td>
+                            </tr>
+                            <tr class="border-t-2 border-slate-300 font-bold text-slate-900">
+                                <td class="pt-1.5">Total Estimasi Kebutuhan</td>
+                                <td class="pt-1.5 text-right text-orange-700">Rp {{ "{:,.0f}".format(total_expense) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pemasukan -->
+                <div class="border border-slate-300 rounded p-3">
+                    <h4 class="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 mb-2">Rencana Sumber Dana</h4>
+                    <table class="w-full text-xs">
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <td class="py-1 text-slate-600">Iuran per Peserta</td>
+                                <td class="py-1 text-right font-semibold">Rp {{ "{:,.0f}".format(budget.fee_per_person|default(0)|int) }} /org</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 text-slate-600">Total Iuran Peserta ({{ activity.total_confirmed }} org)</td>
+                                <td class="py-1 text-right font-semibold">Rp {{ "{:,.0f}".format((budget.fee_per_person|default(0)|int) * activity.total_confirmed) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 text-slate-600">Subsidi Kas Organisasi</td>
+                                <td class="py-1 text-right font-semibold">Rp {{ "{:,.0f}".format(budget.income_subsidy|default(0)|int) }}</td>
+                            </tr>
+                            <tr>
+                                <td class="py-1 text-slate-600">Sponsorship & Donasi</td>
+                                <td class="py-1 text-right font-semibold">Rp {{ "{:,.0f}".format(budget.income_sponsor|default(0)|int) }}</td>
+                            </tr>
+                            <tr class="border-t-2 border-slate-300 font-bold text-slate-900">
+                                <td class="pt-1.5">Total Rencana Pemasukan</td>
+                                <td class="pt-1.5 text-right text-emerald-700">Rp {{ "{:,.0f}".format(total_income) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- IV. RENCANA RUTE & LOGISTIK -->
+        <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-white bg-slate-900 px-2.5 py-1 rounded inline-block">
+                IV. Rencana Rute, Logistik & Medis
+            </h3>
+            <div class="border border-slate-300 rounded p-3 space-y-3 text-xs">
+                <div>
+                    <h4 class="font-bold text-slate-900 mb-1">Rencana Navigasi & Pos Perjalanan:</h4>
+                    <p class="text-slate-700 whitespace-pre-line leading-relaxed">{{ activity.route_plan or 'Belum ada rincian rute spesifik yang diinputkan.' }}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200">
+                    <div>
+                        <h4 class="font-bold text-slate-900 mb-1">Peralatan Tim & PIC:</h4>
+                        <p class="text-slate-700 whitespace-pre-line">{{ gear.team_gear or 'Tenda dome, kompor storm/nesting, radio HT, tali prusik/webbing, GPS/peta kompas.' }}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 mb-1">Kotak Medis & P3K:</h4>
+                        <p class="text-slate-700 whitespace-pre-line">{{ gear.medical_kit or 'Kasa steril, betadine, perban elastis, oralit, paracetamol, antasida, plester, emergency blanket.' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- V. REKAPITULASI DOKUMENTASI & POI LAPANGAN (JIKA ADA) -->
+        {% if field_logs %}
+        <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-white bg-slate-900 px-2.5 py-1 rounded inline-block">
+                V. Rekapitulasi Catatan & Titik POI Lapangan
+            </h3>
+            <table class="w-full text-xs border border-slate-300">
+                <thead class="bg-slate-100 border-b border-slate-300 text-slate-700">
+                    <tr>
+                        <th class="p-2 text-center w-10">No</th>
+                        <th class="p-2 text-left">Nama Titik / Pos</th>
+                        <th class="p-2 text-center">Koordinat GPS</th>
+                        <th class="p-2 text-center">Elevasi</th>
+                        <th class="p-2 text-left">Catatan Situasi</th>
+                        <th class="p-2 text-center">Sumber</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                    {% for log in field_logs %}
+                    <tr>
+                        <td class="p-2 text-center text-slate-500">{{ loop.index }}</td>
+                        <td class="p-2 font-bold text-slate-900">{{ log.title }}</td>
+                        <td class="p-2 text-center font-mono text-[10px]">
+                            {% if log.latitude and log.longitude %}
+                            {{ "%.5f"|format(log.latitude) }}, {{ "%.5f"|format(log.longitude) }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="p-2 text-center">{{ ("%.0f mdpl"|format(log.elevation)) if log.elevation else '-' }}</td>
+                        <td class="p-2 text-slate-600">{{ log.description or '-' }}</td>
+                        <td class="p-2 text-center text-[10px] uppercase font-semibold text-slate-500">{{ log.source }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- VI. EVALUASI AKHIR (JIKA SELESAI) -->
+        {% if activity.evaluation_notes %}
+        <div class="space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-white bg-slate-900 px-2.5 py-1 rounded inline-block">
+                VI. Evaluasi Pasca-Kegiatan & Keselamatan
+            </h3>
+            <div class="border border-slate-300 rounded p-3 text-xs text-slate-800 leading-relaxed whitespace-pre-line">
+                {{ activity.evaluation_notes }}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- LEMBAR PENGESAHAN / TANDA TANGAN BERDASARKAN JABATAN ORGANISASI -->
+        <div class="pt-8 border-t border-slate-300">
+            <div class="text-right text-xs text-slate-600 mb-6">
+                Gorontalo, {{ today_date_fmt }}
+            </div>
+            <div class="grid grid-cols-3 gap-4 text-center text-xs">
+                <div>
+                    <p class="text-slate-600 mb-16">Pimpinan Perjalanan,</p>
+                    <p class="font-bold text-slate-900 underline" id="sig-lead-name">{{ signers.leader.name if signers.leader else '...................................' }}</p>
+                    <p class="text-slate-500 text-[11px]" id="sig-lead-nra">NRA: {{ signers.leader.nra if (signers.leader and signers.leader.nra) else '-' }}</p>
+                    <p class="text-slate-400 text-[10px]" id="sig-lead-pos">{% if signers.leader and signers.leader.jabatan %}({{ signers.leader.jabatan }}){% endif %}</p>
+                </div>
+                <div>
+                    <p class="text-slate-600 mb-16" id="sig-kadiv-title">{{ signers.kadiv_title }},</p>
+                    <p class="font-bold text-slate-900 underline" id="sig-kadiv-name">{{ signers.kadiv.name if signers.kadiv else '...................................' }}</p>
+                    <p class="text-slate-500 text-[11px]" id="sig-kadiv-nra">NRA: {{ signers.kadiv.nra if (signers.kadiv and signers.kadiv.nra) else '..............................' }}</p>
+                    <p class="text-slate-400 text-[10px]" id="sig-kadiv-pos">{% if signers.kadiv and signers.kadiv.jabatan and signers.kadiv.jabatan != signers.kadiv_title %}({{ signers.kadiv.jabatan }}){% endif %}</p>
+                </div>
+                <div>
+                    <p class="text-slate-600 mb-16" id="sig-ketum-title">Mengetahui,<br><span class="font-semibold text-slate-700">{{ signers.ketum_title }}</span></p>
+                    <p class="font-bold text-slate-900 underline" id="sig-ketum-name">{{ signers.ketum.name if signers.ketum else '...................................' }}</p>
+                    <p class="text-slate-500 text-[11px]" id="sig-ketum-nra">NRA: {{ signers.ketum.nra if (signers.ketum and signers.ketum.nra) else '-' }}</p>
+                    <p class="text-slate-400 text-[10px]" id="sig-ketum-pos">{% if signers.ketum and signers.ketum.jabatan and signers.ketum.jabatan != signers.ketum_title %}({{ signers.ketum.jabatan }}){% endif %}</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC UNTUK PEMILIHAN PENANDATANGAN DINAMIS -->
+    <script>
+        function applySigner(type, el) {
+            const opt = el.options[el.selectedIndex];
+            const name = opt.getAttribute('data-name') || '...................................';
+            const nra = opt.getAttribute('data-nra') || '-';
+            const pos = opt.getAttribute('data-pos') || '';
+
+            if (type === 'lead') {
+                const nameEl = document.getElementById('sig-lead-name');
+                const nraEl = document.getElementById('sig-lead-nra');
+                const posEl = document.getElementById('sig-lead-pos');
+                if (nameEl) nameEl.innerText = name;
+                if (nraEl) nraEl.innerText = 'NRA: ' + nra;
+                if (posEl) posEl.innerText = pos ? '(' + pos + ')' : '';
+            } else if (type === 'kadiv') {
+                const nameEl = document.getElementById('sig-kadiv-name');
+                const nraEl = document.getElementById('sig-kadiv-nra');
+                const posEl = document.getElementById('sig-kadiv-pos');
+                if (nameEl) nameEl.innerText = name;
+                if (nraEl) nraEl.innerText = 'NRA: ' + nra;
+                if (posEl) posEl.innerText = pos ? '(' + pos + ')' : '';
+            } else if (type === 'ketum') {
+                const nameEl = document.getElementById('sig-ketum-name');
+                const nraEl = document.getElementById('sig-ketum-nra');
+                const posEl = document.getElementById('sig-ketum-pos');
+                if (nameEl) nameEl.innerText = name;
+                if (nraEl) nraEl.innerText = 'NRA: ' + nra;
+                if (posEl) posEl.innerText = pos ? '(' + pos + ')' : '';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -14,8 +14,8 @@ except ImportError:
     pass
 
 from models import (
-    db, User, Dues, DuesPayment, Activity,
-    GalleryItem, SystemSetting, Position, ChatMessage
+    db, User, Dues, DuesPayment, Activity, ActivityParticipant,
+    ActivityFieldLog, GalleryItem, SystemSetting, Position, ChatMessage
 )
 from cloudflare_email import sync_cloudflare_email_routing, clean_username_for_alias
 from helpers import (
@@ -41,6 +41,7 @@ os.makedirs(os.path.join(UPLOAD_FOLDER, 'docs'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'gallery'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'posts'), exist_ok=True)
 os.makedirs(os.path.join(UPLOAD_FOLDER, 'avatars'), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_FOLDER, 'expeditions'), exist_ok=True)
 
 db.init_app(app)
 
@@ -131,6 +132,34 @@ def init_database_and_defaults():
                 for col, col_type in gallery_cols:
                     try:
                         conn.execute(db.text(f"ALTER TABLE gallery_items ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception:
+                        pass
+
+                # Migrasi kolom tabel activities (ROL & Lifecycle)
+                activity_cols = [
+                    ('category', "VARCHAR(80) DEFAULT 'Gunung Hutan'"),
+                    ('phase', "VARCHAR(30) DEFAULT 'open'"),
+                    ('budget_json', "TEXT DEFAULT '{}'"),
+                    ('route_plan', 'TEXT'),
+                    ('map_repo_id', 'INTEGER'),
+                    ('gear_json', "TEXT DEFAULT '{}'"),
+                    ('evaluation_notes', 'TEXT')
+                ]
+                for col, col_type in activity_cols:
+                    try:
+                        conn.execute(db.text(f"ALTER TABLE activities ADD COLUMN {col} {col_type}"))
+                        conn.commit()
+                    except Exception:
+                        pass
+
+                # Migrasi kolom tabel activity_participants (Peran Operasional ROL)
+                part_cols = [
+                    ('role', "VARCHAR(50) DEFAULT 'Anggota'")
+                ]
+                for col, col_type in part_cols:
+                    try:
+                        conn.execute(db.text(f"ALTER TABLE activity_participants ADD COLUMN {col} {col_type}"))
                         conn.commit()
                     except Exception:
                         pass

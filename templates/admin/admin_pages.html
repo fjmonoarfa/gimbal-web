@@ -891,90 +891,984 @@
 {% macro admin_activities(data) %}
 <div class="space-y-6">
 
+    <!-- Header Section -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
             <h1 class="text-2xl font-black text-slate-900 font-heading">Agenda Ekspedisi & Kegiatan</h1>
-            <p class="text-xs text-slate-500">Buka pendaftaran trip petualang, pantau kuota rombongan, dan manifest peserta</p>
+            <p class="text-xs text-slate-500">Buka pendaftaran trip petualang, penyusunan ROL, pemantauan manifest, dan log lapangan</p>
         </div>
-        <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2"
-                hx-get="/admin/activity/create-modal" hx-target="#modal-container">
-            <i class="fas fa-mountain"></i>
-            <span>Buka Ekspedisi Baru</span>
-        </button>
+        <a href="/admin/activity/new" hx-get="/admin/activity/new" hx-target="#main-content" hx-push-url="true"
+           class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2">
+            <i class="fas fa-plus"></i>
+            <span>Buka Ekspedisi & ROL Baru</span>
+        </a>
     </div>
 
-    <!-- GRID EKSPEDISI -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <!-- FILTER STATUS TABS (OPSIONAL) -->
+    <div class="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto text-xs font-semibold">
+        <span class="text-slate-400 mr-1"><i class="fas fa-filter mr-1"></i>Status:</span>
+        <button class="px-3 py-1 rounded-full bg-orange-100 text-orange-800 font-bold">Semua ({{ data.activities|length }})</button>
+    </div>
+
+    <!-- GRID EKSPEDISI 3 / 4 KOLOM -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {% for act in data.activities %}
-        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between card-hover">
-            <div class="relative h-48">
+        <div class="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition group">
+            
+            <!-- HEADER FOTO SAMPUL -->
+            <div class="relative h-36 w-full overflow-hidden bg-slate-900">
                 <img src="{{ act.image_url or '/static/pics/cartoon/hero.jpg' }}" 
-                     alt="{{ act.title }}" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                <div class="absolute top-3 left-3 flex gap-2">
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow bg-brand-600 text-white">
-                        {{ act.difficulty }}
+                     alt="{{ act.title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                
+                <!-- BADGES TOP -->
+                <div class="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1">
+                    <!-- Status Siklus Operasi -->
+                    {% if act.phase == 'in_progress' %}
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-sm bg-amber-500 text-white flex items-center gap-1 animate-pulse">
+                        <i class="fas fa-play text-[8px]"></i> Operasi Lapangan
                     </span>
-                    {% if act.is_open %}
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow bg-emerald-600 text-white flex items-center gap-1">
-                        <i class="fas fa-door-open text-[9px]"></i> Terbuka
+                    {% elif act.phase == 'completed' %}
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-sm bg-blue-600 text-white flex items-center gap-1">
+                        <i class="fas fa-check-circle text-[8px]"></i> Selesai
+                    </span>
+                    {% elif act.phase == 'planning' %}
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-sm bg-slate-600 text-white flex items-center gap-1">
+                        <i class="fas fa-pen-ruler text-[8px]"></i> Draft ROL
                     </span>
                     {% else %}
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow bg-rose-600 text-white flex items-center gap-1">
-                        <i class="fas fa-lock text-[9px]"></i> Ditutup
-                    </span>
+                        {% if act.is_open %}
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-sm bg-emerald-600 text-white flex items-center gap-1">
+                            <i class="fas fa-door-open text-[8px]"></i> Buka
+                        </span>
+                        {% else %}
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-sm bg-rose-600 text-white flex items-center gap-1">
+                            <i class="fas fa-lock text-[8px]"></i> Tutup
+                        </span>
+                        {% endif %}
                     {% endif %}
+
+                    <!-- Tingkat Kesulitan -->
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm bg-black/60 backdrop-blur-sm text-white border border-white/20">
+                        {{ act.difficulty }}
+                    </span>
+                </div>
+
+                <!-- LOKASI & TANGGAL OVERLAY -->
+                <div class="absolute bottom-2 left-2.5 right-2.5 text-white">
+                    <p class="text-[10px] text-orange-200 font-medium flex items-center gap-1">
+                        <i class="far fa-calendar-alt"></i> {{ act.activity_date }}
+                    </p>
                 </div>
             </div>
 
-            <div class="p-5 space-y-2 flex-1">
-                <span class="text-xs text-slate-400 dark:text-stone-400"><i class="far fa-calendar-alt mr-1"></i> {{ act.activity_date }}</span>
-                <h2 class="text-base font-bold text-slate-900 dark:text-white font-heading">{{ act.title }}</h2>
-                <p class="text-xs text-slate-500 dark:text-stone-400 line-clamp-2">{{ act.description }}</p>
-                <p class="text-xs font-semibold text-brand-700 dark:text-brand-400"><i class="fas fa-map-marker-alt mr-1"></i> {{ act.location }}</p>
+            <!-- DETAIL KONTEN -->
+            <div class="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-1.5 mb-1">
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-orange-50 text-orange-700 border border-orange-200 flex items-center gap-1">
+                            <i class="fas fa-compass text-[8px]"></i> {{ act.category or 'Gunung Hutan' }}
+                        </span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-900 font-heading line-clamp-1 group-hover:text-orange-600 transition" title="{{ act.title }}">
+                        {{ act.title }}
+                    </h2>
+                    <p class="text-[11px] font-medium text-slate-500 flex items-center gap-1 mt-0.5">
+                        <i class="fas fa-map-marker-alt text-orange-600 text-[10px]"></i>
+                        <span class="line-clamp-1">{{ act.location }}</span>
+                    </p>
+                    <p class="text-[11px] text-slate-600 line-clamp-2 mt-1.5 leading-relaxed">
+                        {{ act.description or 'Belum ada deskripsi singkat untuk agenda ini.' }}
+                    </p>
+                </div>
+
+                <!-- MANIFEST PROGRESS -->
+                <div class="pt-2 border-t border-slate-100 space-y-1">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-slate-500 font-medium">Manifest Tim:</span>
+                        <span class="font-bold text-slate-800">{{ act.total_confirmed }} / {{ act.quota }} orang</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        {% set pct = [((act.total_confirmed / (act.quota or 20)) * 100)|round|int, 100]|min %}
+                        <div class="h-full bg-orange-600 rounded-full transition-all" style="width: {{ pct }}%"></div>
+                    </div>
+                </div>
             </div>
 
-            <div class="px-5 py-3.5 bg-slate-50 dark:bg-stone-800/60 border-t border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span class="text-slate-600 dark:text-stone-300">Kuota: <strong class="text-slate-900 dark:text-white">{{ act.quota }} orang</strong></span>
-                
-                <div class="flex items-center gap-1.5">
-                    <!-- Tombol Edit Ekspedisi -->
-                    <button type="button"
-                            hx-get="/admin/activity/edit-modal/{{ act.id }}"
-                            hx-target="#modal-container"
-                            class="px-3 py-1.5 bg-brand-600 hover:brightness-110 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
-                        <i class="fas fa-edit"></i>
-                        <span>Edit</span>
-                    </button>
+            <!-- FOOTER TOMBOL AKSI -->
+            <div class="px-3.5 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-1.5 text-xs">
+                <!-- Tombol Full Page Manage ROL -->
+                <a href="/admin/activity/{{ act.id }}/manage" 
+                   hx-get="/admin/activity/{{ act.id }}/manage" 
+                   hx-target="#main-content" 
+                   hx-push-url="true"
+                   class="flex-1 py-1.5 px-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition shadow-sm">
+                    <i class="fas fa-compass"></i>
+                    <span>Kelola ROL</span>
+                </a>
 
-                    <!-- Tombol Buka / Tutup Trip -->
-                    <button type="button"
-                            hx-post="/admin/activity/toggle-status/{{ act.id }}"
-                            hx-target="#main-content"
-                            class="px-2.5 py-1.5 {% if act.is_open %}bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200{% else %}bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200{% endif %} font-bold rounded-lg text-xs flex items-center gap-1 transition"
-                            title="{% if act.is_open %}Tutup Pendaftaran{% else %}Buka Pendaftaran{% endif %}">
-                        <i class="fas {% if act.is_open %}fa-lock{% else %}fa-lock-open{% endif %}"></i>
-                    </button>
+                <!-- Quick Toggle Status Buka/Tutup -->
+                <button type="button"
+                        hx-post="/admin/activity/toggle-status/{{ act.id }}"
+                        hx-target="#main-content"
+                        class="p-1.5 px-2 {% if act.is_open %}bg-amber-100 text-amber-800 hover:bg-amber-200{% else %}bg-emerald-100 text-emerald-800 hover:bg-emerald-200{% endif %} font-bold rounded-lg text-xs flex items-center gap-1 transition"
+                        title="{% if act.is_open %}Tutup Pendaftaran{% else %}Buka Pendaftaran{% endif %}">
+                    <i class="fas {% if act.is_open %}fa-lock{% else %}fa-lock-open{% endif %}"></i>
+                </button>
 
-                    <!-- Tombol Hapus Ekspedisi -->
-                    <button type="button"
-                            hx-post="/admin/activity/delete/{{ act.id }}"
-                            hx-target="#main-content"
-                            hx-confirm="Yakin ingin menghapus agenda ekspedisi '{{ act.title }}'? Semua partisipan terdaftar akan dibatalkan."
-                            class="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 font-bold rounded-lg text-xs transition"
-                            title="Hapus Ekspedisi">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </div>
+                <!-- Tombol Hapus Ekspedisi -->
+                <button type="button"
+                        hx-post="/admin/activity/delete/{{ act.id }}"
+                        hx-target="#main-content"
+                        hx-confirm="Hapus agenda ekspedisi '{{ act.title }}' beserta seluruh data ROL dan log lapangan?"
+                        class="p-1.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-lg text-xs transition"
+                        title="Hapus Ekspedisi">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             </div>
         </div>
         {% else %}
-        <div class="col-span-2 p-12 text-center bg-white rounded-lg border border-slate-200 text-slate-400">
+        <div class="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4 p-12 text-center bg-white rounded-xl border border-slate-200 text-slate-400">
             <i class="fas fa-mountain text-4xl mb-3 text-slate-300"></i>
             <p class="text-sm font-semibold">Belum ada agenda ekspedisi yang dibuat.</p>
-            <p class="text-xs text-slate-500 mt-1">Klik tombol "Buka Ekspedisi Baru" di atas untuk menambahkan trip pertama.</p>
+            <p class="text-xs text-slate-500 mt-1">Klik tombol "Buka Ekspedisi & ROL Baru" di atas untuk menambahkan trip pertama.</p>
         </div>
         {% endfor %}
+    </div>
+
+</div>
+{% endmacro %}
+
+
+<!-- 6B. FULL PAGE: FORM BUAT EKSPEDISI & INISIALISASI ROL BARU -->
+{% macro admin_activity_new(data) %}
+<div class="space-y-6 max-w-4xl mx-auto">
+
+    <!-- BREADCRUMB & HEADER -->
+    <div class="flex items-center justify-between gap-3 border-b border-slate-200 pb-4">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                <a href="/admin/activities" hx-get="/admin/activities" hx-target="#main-content" hx-push-url="true" class="hover:text-orange-600 transition flex items-center gap-1">
+                    <i class="fas fa-arrow-left"></i> Kembali ke Daftar Ekspedisi
+                </a>
+                <span>/</span>
+                <span class="text-slate-800 font-semibold">Buka Ekspedisi Baru</span>
+            </div>
+            <h1 class="text-2xl font-black text-slate-900 font-heading">Formulir Buka Ekspedisi & Perencanaan ROL</h1>
+            <p class="text-xs text-slate-500">Lengkapi informasi dasar kegiatan petualang untuk menginisialisasi lembar ROL terpadu</p>
+        </div>
+    </div>
+
+    <!-- FORM BUAT EKSPEDISI -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+        <form hx-post="/admin/activity/new" hx-target="#main-content" enctype="multipart/form-data" class="space-y-5">
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-700">Nama Ekspedisi / Agenda Trip <span class="text-rose-500">*</span></label>
+                <input type="text" name="title" required placeholder="Contoh: Ekspedisi Speleologi Karst Maros 2026"
+                       class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Wilayah / Lokasi Operasi <span class="text-rose-500">*</span></label>
+                    <input type="text" name="location" required placeholder="Contoh: Kawasan Karst Maros, Sulawesi Selatan"
+                           class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Waktu / Jadwal Pelaksanaan <span class="text-rose-500">*</span></label>
+                    <input type="text" name="activity_date" required placeholder="Contoh: 14 - 17 Agustus 2026"
+                           class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Jenis Kegiatan & Divisi <span class="text-rose-500">*</span></label>
+                    <select name="category" required class="w-full px-3.5 py-2.5 border border-orange-300 rounded-lg text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition bg-orange-50/40">
+                        <option value="Gunung Hutan" selected>🏔️ Gunung Hutan (Mountaineering)</option>
+                        <option value="Panjat Tebing">🧗 Panjat Tebing (Rock Climbing)</option>
+                        <option value="Susur Gua">🦇 Susur Gua (Caving / Speleologi)</option>
+                        <option value="Arung Jeram">🚣 Arung Jeram (Rafting / Water)</option>
+                        <option value="Konservasi & LH">🌱 Konservasi & Lingkungan Hidup</option>
+                        <option value="Pendidikan Dasar">🎖️ Pendidikan Dasar (Diksar KPAB)</option>
+                        <option value="Camp & Wisata Alam">🏕️ Camp & Wisata Alam (Family)</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Tingkat Kesulitan Medan</label>
+                    <select name="difficulty" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition bg-white">
+                        <option value="Santai">Santai (Family / Pemula)</option>
+                        <option value="Menengah" selected>Menengah (Jalur Standar)</option>
+                        <option value="Ekstrem">Ekstrem (Rintis / Taktis)</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Target Kuota Personil</label>
+                    <input type="number" name="quota" value="15" min="1" max="100"
+                           class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Status Awal Siklus</label>
+                    <select name="phase" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition bg-white">
+                        <option value="planning" selected>📝 Draft ROL (Internal)</option>
+                        <option value="open">🟢 Langsung Buka Pendaftaran</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="p-3 bg-amber-50/70 border border-amber-200/80 rounded-lg flex items-center gap-2.5 text-xs text-amber-900">
+                <i class="fas fa-magic text-orange-600 text-sm shrink-0"></i>
+                <p>
+                    <strong>Otomatisasi Standar ROL:</strong> Berkas ROL (rute checkpoint pos, perlengkapan tim, ransum konsumsi, dan kotak medis khusus) akan otomatis diinisialisasi berdasarkan <strong>Jenis Kegiatan</strong> yang Anda pilih.
+                </p>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-700">Deskripsi & Tujuan Ekspedisi</label>
+                <textarea name="description" rows="3" placeholder="Tuliskan tujuan operasi lapangan, target capaian riset/survei, dan latar belakang kegiatan..."
+                          class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Unggah Foto Sampul Ekspedisi</label>
+                    <input type="file" name="image_file" accept="image/*"
+                           class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Atau URL Gambar Eksternal</label>
+                    <input type="url" name="image_url" placeholder="https://..."
+                           class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition">
+                </div>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-200">
+                <a href="/admin/activities" hx-get="/admin/activities" hx-target="#main-content" hx-push-url="true"
+                   class="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold text-xs rounded-lg transition">
+                    Batal
+                </a>
+                <button type="submit"
+                        class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs rounded-lg shadow-sm transition flex items-center gap-2">
+                    <span>Simpan & Masuk ke Lembar ROL</span>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+{% endmacro %}
+
+
+<!-- 6C. FULL PAGE: WORKSPACE TERPADU EKSPEDISI & ROL COMMAND HUB -->
+{% macro admin_activity_manage(data) %}
+{% set act = data.activity %}
+{% set budget = act.budget_data %}
+{% set gear = act.gear_data %}
+<div class="space-y-6" x-data="{ tab: '{{ data.active_tab or 'overview' }}' }">
+
+    <!-- TOP HEADER: EXPEDITION INFO & PHASE LIFECYCLE BAR -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 space-y-4">
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-slate-900 shrink-0 border border-slate-200">
+                    <img src="{{ act.image_url or '/static/pics/cartoon/hero.jpg' }}" alt="{{ act.title }}" class="w-full h-full object-cover">
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <a href="/admin/activities" hx-get="/admin/activities" hx-target="#main-content" hx-push-url="true"
+                           class="text-xs text-slate-500 hover:text-orange-600 transition flex items-center gap-1">
+                            <i class="fas fa-arrow-left"></i> Ekspedisi
+                        </a>
+                        <span class="text-xs text-slate-300">•</span>
+                        <!-- Status Phase Badge -->
+                        {% if act.phase == 'in_progress' %}
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white flex items-center gap-1 animate-pulse">
+                            <i class="fas fa-play text-[8px]"></i> Sedang Berlangsung (Operasi Lapangan)
+                        </span>
+                        {% elif act.phase == 'completed' %}
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-600 text-white flex items-center gap-1">
+                            <i class="fas fa-flag-checkered text-[8px]"></i> Selesai / Ditutup (LPJ)
+                        </span>
+                        {% elif act.phase == 'planning' %}
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-600 text-white flex items-center gap-1">
+                            <i class="fas fa-pen-ruler text-[8px]"></i> Perencanaan ROL
+                        </span>
+                        {% else %}
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-600 text-white flex items-center gap-1">
+                            <i class="fas fa-door-open text-[8px]"></i> Pendaftaran Terbuka
+                        </span>
+                        {% endif %}
+                    </div>
+                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 font-heading">{{ act.title }}</h1>
+                    <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500 mt-1">
+                        <span class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-orange-600"></i> {{ act.location }}</span>
+                        <span>•</span>
+                        <span class="flex items-center gap-1"><i class="far fa-calendar-alt"></i> {{ act.activity_date }}</span>
+                        <span>•</span>
+                        <span>Personil: <strong class="text-slate-800">{{ act.total_confirmed }}/{{ act.quota }}</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUICK LIFECYCLE ACTION BUTTONS -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- PRINT ROL PREVIEW -->
+                <a href="/admin/activity/{{ act.id }}/print" target="_blank"
+                   class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
+                    <i class="fas fa-print"></i>
+                    <span>Cetak ROL (PDF)</span>
+                </a>
+
+                <!-- PHASE TRANSITION BUTTONS -->
+                {% if act.phase in ['planning', 'open'] %}
+                <form hx-post="/admin/activity/{{ act.id }}/update-phase" hx-target="#main-content">
+                    <input type="hidden" name="phase" value="in_progress">
+                    <button type="submit" hx-confirm="Mulai operasi lapangan sekarang? Pendaftaran akan ditutup otomatis dan kanal log lapangan akan aktif."
+                            class="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
+                        <i class="fas fa-play"></i>
+                        <span>Start Kegiatan (Lapangan)</span>
+                    </button>
+                </form>
+                {% elif act.phase == 'in_progress' %}
+                <form hx-post="/admin/activity/{{ act.id }}/update-phase" hx-target="#main-content">
+                    <input type="hidden" name="phase" value="completed">
+                    <button type="submit" hx-confirm="Tutup kegiatan ekspedisi dan masuk ke tahap wrap-up laporan akhir (LPJ)?"
+                            class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
+                        <i class="fas fa-flag-checkered"></i>
+                        <span>Tutup Kegiatan (Finish LPJ)</span>
+                    </button>
+                </form>
+                {% else %}
+                <form hx-post="/admin/activity/{{ act.id }}/publish-to-feed" hx-target="#main-content">
+                    <button type="submit" class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold rounded-lg text-xs flex items-center gap-1.5 transition shadow-sm">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Publikasikan ke Linimasa</span>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 5 TABS NAVIGATION -->
+        <div class="border-t border-slate-100 pt-3 flex items-center gap-1 overflow-x-auto text-xs font-bold">
+            <button @click="tab = 'overview'" 
+                    :class="tab === 'overview' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
+                    class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-info-circle"></i>
+                <span>Ikhtisar & Detail</span>
+            </button>
+            <button @click="tab = 'manifest'" 
+                    :class="tab === 'manifest' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
+                    class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-users"></i>
+                <span>Manifest Tim ({{ data.participants|length }})</span>
+            </button>
+            <button @click="tab = 'rol_plan'" 
+                    :class="tab === 'rol_plan' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
+                    class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Perencanaan ROL</span>
+            </button>
+            <button @click="tab = 'field_ops'" 
+                    :class="tab === 'field_ops' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
+                    class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-satellite-dish"></i>
+                <span>Operasi Lapangan ({{ data.field_logs|length }})</span>
+            </button>
+            <button @click="tab = 'close_out'" 
+                    :class="tab === 'close_out' ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
+                    class="px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fas fa-award"></i>
+                <span>Laporan Akhir & LPJ</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- TAB 1: IKHTISAR & DETAIL UMUM -->
+    <div x-show="tab === 'overview'" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <h3 class="text-base font-black text-slate-900 font-heading border-b border-slate-100 pb-2">Informasi Umum Ekspedisi</h3>
+        <form hx-post="/admin/activity/{{ act.id }}/update-basic" hx-target="#main-content" enctype="multipart/form-data" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Nama Ekspedisi</label>
+                    <input type="text" name="title" value="{{ act.title }}" required class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm font-semibold focus:ring-2 focus:ring-orange-500/20">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Wilayah / Lokasi</label>
+                    <input type="text" name="location" value="{{ act.location }}" required class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500/20">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Jadwal Tanggal</label>
+                    <input type="text" name="activity_date" value="{{ act.activity_date }}" required class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Tingkat Kesulitan</label>
+                    <select name="difficulty" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+                        <option value="Santai" {% if act.difficulty == 'Santai' %}selected{% endif %}>Santai</option>
+                        <option value="Menengah" {% if act.difficulty == 'Menengah' %}selected{% endif %}>Menengah</option>
+                        <option value="Ekstrem" {% if act.difficulty == 'Ekstrem' %}selected{% endif %}>Ekstrem</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Jenis Kegiatan & Divisi</label>
+                    <select name="category" class="w-full px-3.5 py-2 border border-orange-300 rounded-lg text-sm bg-white font-bold text-slate-800">
+                        <option value="Gunung Hutan" {% if (act.category or 'Gunung Hutan') == 'Gunung Hutan' %}selected{% endif %}>🏔️ Gunung Hutan</option>
+                        <option value="Panjat Tebing" {% if act.category == 'Panjat Tebing' %}selected{% endif %}>🧗 Panjat Tebing</option>
+                        <option value="Susur Gua" {% if act.category == 'Susur Gua' %}selected{% endif %}>🦇 Susur Gua (Caving)</option>
+                        <option value="Arung Jeram" {% if act.category == 'Arung Jeram' %}selected{% endif %}>🚣 Arung Jeram (Rafting)</option>
+                        <option value="Konservasi & LH" {% if act.category == 'Konservasi & LH' %}selected{% endif %}>🌱 Konservasi & LH</option>
+                        <option value="Pendidikan Dasar" {% if act.category == 'Pendidikan Dasar' %}selected{% endif %}>🎖️ Pendidikan Dasar</option>
+                        <option value="Camp & Wisata Alam" {% if act.category == 'Camp & Wisata Alam' %}selected{% endif %}>🏕️ Camp & Wisata</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Target Kuota</label>
+                    <input type="number" name="quota" value="{{ act.quota }}" min="1" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm">
+                </div>
+            </div>
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-700">Deskripsi & Tujuan</label>
+                <textarea name="description" rows="3" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-sm">{{ act.description }}</textarea>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Ganti Foto Sampul</label>
+                    <input type="file" name="image_file" accept="image/*" class="w-full text-xs text-slate-500 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-orange-50 file:text-orange-700">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Atau URL Gambar</label>
+                    <input type="url" name="image_url" value="{{ act.image_url }}" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs">
+                </div>
+            </div>
+            <div class="flex items-center gap-2 pt-2">
+                <input type="checkbox" name="is_open" id="act_is_open" value="1" {% if act.is_open %}checked{% endif %} class="rounded text-orange-600 focus:ring-orange-500">
+                <label for="act_is_open" class="text-xs font-bold text-slate-800">Buka Pendaftaran untuk Anggota di Portal Web</label>
+            </div>
+            <div class="pt-3 border-t border-slate-100 flex justify-end">
+                <button type="submit" class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition">
+                    Simpan Perubahan Ikhtisar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 2: MANIFEST TIM & PESERTA -->
+    <div x-show="tab === 'manifest'" class="space-y-6">
+        <!-- FORM TAMBAH PESERTA MANUAL -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-6 space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center gap-2">
+                <i class="fas fa-user-plus text-orange-600"></i>
+                <span>Tunjuk / Tambahkan Personil Anggota ke Manifest</span>
+            </h3>
+            <form hx-post="/admin/activity/{{ act.id }}/add-participant" hx-target="#main-content" class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Pilih Anggota GIMBAL</label>
+                    <select name="user_id" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white">
+                        <option value="">-- Pilih Anggota Aktif --</option>
+                        {% for m in data.all_members %}
+                        <option value="{{ m.id }}">{{ m.name }} ({{ m.nra or 'Anggota' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-700">Peran Operasional Lapangan</label>
+                    <select name="role" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white">
+                        <option value="Pimpinan Perjalanan">🎖️ Pimpinan Perjalanan (Trip Leader)</option>
+                        <option value="Navigator">🧭 Navigator Lapangan</option>
+                        <option value="Logistik & Konsumsi">🍲 Divisi Logistik & Konsumsi</option>
+                        <option value="Medis / P3K">🩹 Petugas Medis / First Aid</option>
+                        <option value="Dokumentasi & Publikasi">📸 Dokumentasi & Publikasi</option>
+                        <option value="Sweeper">🚶 Sweeper (Penyapu Belakang)</option>
+                        <option value="Anggota Tim" selected>Anggota Tim</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <i class="fas fa-plus"></i>
+                    <span>Tambahkan ke Manifest</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- TABEL MANIFEST PESERTA -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Manifest Personil Terdaftar ({{ data.participants|length }})</h3>
+                <span class="text-xs text-slate-500 font-semibold">Terkonfirmasi: <strong class="text-emerald-700">{{ act.total_confirmed }} orang</strong></span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                        <tr>
+                            <th class="p-3 w-10 text-center">No</th>
+                            <th class="p-3">Personil</th>
+                            <th class="p-3">NRA / Gol. Darah</th>
+                            <th class="p-3">Kontak & Darurat</th>
+                            <th class="p-3">Peran Lapangan</th>
+                            <th class="p-3 text-center">Status</th>
+                            <th class="p-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for part in data.participants %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="p-3 text-center text-slate-400">{{ loop.index }}</td>
+                            <td class="p-3">
+                                <div class="flex items-center gap-2.5">
+                                    <img src="{{ part.user.avatar or '/static/pics/cartoon/avatar_sekjen.jpg' }}" class="w-8 h-8 rounded-full object-cover border border-slate-200">
+                                    <div>
+                                        <p class="font-bold text-slate-900">{{ part.user.name if part.user else 'Peserta' }}</p>
+                                        <p class="text-[10px] text-slate-400">{{ part.user.email if part.user else '-' }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-3">
+                                <p class="font-mono text-slate-800 font-bold">{{ part.user.nra or '-' }}</p>
+                                <p class="text-[10px] text-slate-500">Gol. Darah: <strong class="text-slate-800">{{ part.user.blood_type or '-' }}</strong></p>
+                            </td>
+                            <td class="p-3">
+                                <p class="text-slate-800"><i class="fab fa-whatsapp text-emerald-600 mr-1"></i>{{ part.user.phone or '-' }}</p>
+                                <p class="text-[10px] text-slate-500">Darurat: {{ part.user.emergency_contact or '-' }}</p>
+                            </td>
+                            <td class="p-3">
+                                <form hx-post="/admin/activity/{{ act.id }}/participant-role/{{ part.id }}" hx-target="#main-content" class="flex items-center gap-1">
+                                    <select name="role" onchange="this.form.requestSubmit()" class="px-2 py-1 border border-slate-300 rounded text-xs font-semibold bg-white text-orange-700">
+                                        <option value="Pimpinan Perjalanan" {% if part.role == 'Pimpinan Perjalanan' %}selected{% endif %}>Pimpinan Perjalanan</option>
+                                        <option value="Navigator" {% if part.role == 'Navigator' %}selected{% endif %}>Navigator</option>
+                                        <option value="Logistik & Konsumsi" {% if part.role == 'Logistik & Konsumsi' %}selected{% endif %}>Logistik & Konsumsi</option>
+                                        <option value="Medis / P3K" {% if part.role == 'Medis / P3K' %}selected{% endif %}>Medis / P3K</option>
+                                        <option value="Dokumentasi & Publikasi" {% if part.role == 'Dokumentasi & Publikasi' %}selected{% endif %}>Dokumentasi</option>
+                                        <option value="Sweeper" {% if part.role == 'Sweeper' %}selected{% endif %}>Sweeper</option>
+                                        <option value="Anggota Tim" {% if part.role == 'Anggota Tim' %}selected{% endif %}>Anggota Tim</option>
+                                    </select>
+                                </form>
+                            </td>
+                            <td class="p-3 text-center">
+                                {% if part.status == 'confirmed' %}
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Lolos</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Menunggu</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3 text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    {% if part.status != 'confirmed' %}
+                                    <button type="button" hx-post="/admin/activity/participant-status/{{ part.id }}?status=confirmed" hx-target="#main-content"
+                                            class="p-1 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold" title="Setujui">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" hx-post="/admin/activity/{{ act.id }}/delete-participant/{{ part.id }}" hx-target="#main-content"
+                                            hx-confirm="Hapus {{ part.user.name }} dari manifest tim?"
+                                            class="p-1 px-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded text-[10px] font-bold" title="Hapus">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="p-8 text-center text-slate-400">Belum ada personil dalam manifest.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: PERENCANAAN ROL -->
+    <div x-show="tab === 'rol_plan'" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <div class="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+                <h3 class="text-base font-black text-slate-900 font-heading">Dokumen Perencanaan ROL (RAB, Rute, Logistik & Medis)</h3>
+                <p class="text-xs text-slate-500">Sesuaikan instrumen operasional lapangan sesuai standar divisi dan karakter medan kegiatan</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200 w-fit">
+                Divisi: {{ act.category or 'Gunung Hutan' }}
+            </span>
+        </div>
+
+        <!-- PANEL TEMPLATE PRESET ROL BERDASARKAN JENIS KEGIATAN -->
+        <div class="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border border-orange-200/90 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-orange-600 text-white flex items-center justify-center text-xs shadow-xs">
+                        <i class="fas fa-magic"></i>
+                    </span>
+                    <h4 class="text-xs font-black text-slate-900 font-heading">Template Rekomendasi ROL Sesuai Jenis Kegiatan</h4>
+                </div>
+                <p class="text-[11px] text-slate-600 mt-1">
+                    Pilih jenis kegiatan untuk memuat checklist alat, rute pos, ransum, dan kotak medis terstandarisasi KPAB GIMBAL ke form di bawah:
+                </p>
+            </div>
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <select id="rol_category_picker" class="px-3 py-1.5 border border-orange-300 rounded-lg text-xs bg-white font-bold text-slate-800 focus:ring-2 focus:ring-orange-500">
+                    <option value="Gunung Hutan" {% if (act.category or 'Gunung Hutan') == 'Gunung Hutan' %}selected{% endif %}>🏔️ Gunung Hutan</option>
+                    <option value="Panjat Tebing" {% if act.category == 'Panjat Tebing' %}selected{% endif %}>🧗 Panjat Tebing</option>
+                    <option value="Susur Gua" {% if act.category == 'Susur Gua' %}selected{% endif %}>🦇 Susur Gua (Caving)</option>
+                    <option value="Arung Jeram" {% if act.category == 'Arung Jeram' %}selected{% endif %}>🚣 Arung Jeram (Rafting)</option>
+                    <option value="Konservasi & LH" {% if act.category == 'Konservasi & LH' %}selected{% endif %}>🌱 Konservasi & LH</option>
+                    <option value="Pendidikan Dasar" {% if act.category == 'Pendidikan Dasar' %}selected{% endif %}>🎖️ Pendidikan Dasar (Diksar)</option>
+                    <option value="Camp & Wisata Alam" {% if act.category == 'Camp & Wisata Alam' %}selected{% endif %}>🏕️ Camp & Wisata Alam</option>
+                </select>
+                <button type="button" onclick="applyRolPreset()" class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition shrink-0 flex items-center gap-1.5 cursor-pointer">
+                    <i class="fas fa-file-import"></i>
+                    <span>Terapkan Template</span>
+                </button>
+            </div>
+        </div>
+        
+        <form hx-post="/admin/activity/{{ act.id }}/update-rol" hx-target="#main-content" class="space-y-6">
+
+            <!-- 1. RENCANA ANGGARAN BIAYA (RAB) -->
+            <div class="space-y-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-orange-700 bg-orange-50 px-2.5 py-1 rounded inline-block">
+                    1. Rencana Pembiayaan & Anggaran Biaya (RAB)
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-600">Transportasi & Carter (Rp)</label>
+                        <input type="number" name="expense_transport" value="{{ budget.expense_transport|default(0) }}" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-600">Simaksi / Izin Masuk (Rp)</label>
+                        <input type="number" name="expense_permit" value="{{ budget.expense_permit|default(0) }}" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-600">Logistik Makan & Minum (Rp)</label>
+                        <input type="number" name="expense_food" value="{{ budget.expense_food|default(0) }}" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-600">Sewa & Perawatan Alat (Rp)</label>
+                        <input type="number" name="expense_gear" value="{{ budget.expense_gear|default(0) }}" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-600">Kotak Medis & P3K (Rp)</label>
+                        <input type="number" name="expense_med" value="{{ budget.expense_med|default(0) }}" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-600">Dana Darurat (Rp)</label>
+                        <input type="number" name="expense_emergency" value="{{ budget.expense_emergency|default(0) }}" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-600">Iuran per Peserta (Rp)</label>
+                        <input type="number" name="fee_per_person" value="{{ budget.fee_per_person|default(0) }}" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-mono text-emerald-700 font-bold">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-600">Subsidi Kas Organisasi (Rp)</label>
+                        <input type="number" name="income_subsidy" value="{{ budget.income_subsidy|default(0) }}" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-600">Sponsorship / Donasi (Rp)</label>
+                        <input type="number" name="income_sponsor" value="{{ budget.income_sponsor|default(0) }}" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. RENCANA RUTE & PUSTAKA PETA -->
+            <div class="space-y-3 pt-3 border-t border-slate-200">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-orange-700 bg-orange-50 px-2.5 py-1 rounded inline-block">
+                    2. Rencana Rute Navigasi & Tautan Geodata
+                </h4>
+                <div class="space-y-2">
+                    <label class="text-[11px] font-bold text-slate-700">Tautkan dengan Peta Jalur dari Pustaka Repo Peta GIMBAL</label>
+                    <select name="map_repo_id" class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-xs bg-white">
+                        <option value="">-- Tidak Terhubung / Rute Belum Dipetakan --</option>
+                        {% for m in data.repo_maps %}
+                        <option value="{{ m.id }}" {% if act.map_repo_id == m.id %}selected{% endif %}>
+                            {{ m.title }} ({{ m.region }} • {{ m.file_type|upper }} • {{ m.total_distance_km }} km)
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] font-bold text-slate-700">Rencana Pos, Jalur Perjalanan & Titik Evakuasi Darurat</label>
+                    <textarea name="route_plan" rows="3" placeholder="Contoh: Basecamp Desa Tilongkabila -> Pos 1 (1.5 jam) -> Pos 2 Shelter Air (2 jam) -> Camp Area Puncak..."
+                              class="w-full px-3.5 py-2 border border-slate-300 rounded-lg text-xs font-mono leading-relaxed">{{ act.route_plan or '' }}</textarea>
+                </div>
+            </div>
+
+            <!-- 3. LOGISTIK, ALAT TIM & MEDIS -->
+            <div class="space-y-3 pt-3 border-t border-slate-200">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-orange-700 bg-orange-50 px-2.5 py-1 rounded inline-block">
+                    3. Rencana Logistik, Alat Tim & Kotak Medis (P3K)
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-700">Perlengkapan Tim & PIC</label>
+                        <textarea name="team_gear" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded text-xs font-mono">{{ gear.team_gear or '' }}</textarea>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-700">Kotak Medis & P3K</label>
+                        <textarea name="medical_kit" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded text-xs font-mono">{{ gear.medical_kit or '' }}</textarea>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-700">Standar Perlengkapan Pribadi</label>
+                        <textarea name="personal_gear" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded text-xs font-mono">{{ gear.personal_gear or '' }}</textarea>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-700">Ransum Logistik Konsumsi</label>
+                        <textarea name="food_ration" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded text-xs font-mono">{{ gear.food_ration or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex justify-end">
+                <button type="submit" class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs rounded-lg shadow-sm transition">
+                    Simpan Perencanaan ROL
+                </button>
+            </div>
+
+        </form>
+
+        <script>
+        function applyRolPreset() {
+            var picker = document.getElementById('rol_category_picker');
+            if (!picker) return;
+            var cat = picker.value;
+            if (!confirm('Terapkan template rekomendasi ROL untuk divisi "' + cat + '"?\n\nRute pos, alat tim, logistik dan P3K pada form akan diperbarui sesuai standar kegiatan ini.')) {
+                return;
+            }
+            fetch('/admin/activity/preset-rol?category=' + encodeURIComponent(cat))
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.status === 'success' && data.preset) {
+                        var p = data.preset;
+                        var rute = document.querySelector('textarea[name="route_plan"]');
+                        var teamGear = document.querySelector('textarea[name="team_gear"]');
+                        var persGear = document.querySelector('textarea[name="personal_gear"]');
+                        var food = document.querySelector('textarea[name="food_ration"]');
+                        var med = document.querySelector('textarea[name="medical_kit"]');
+                        
+                        if (rute && p.route_plan) rute.value = p.route_plan;
+                        if (teamGear && p.team_gear) teamGear.value = p.team_gear;
+                        if (persGear && p.personal_gear) persGear.value = p.personal_gear;
+                        if (food && p.food_ration) food.value = p.food_ration;
+                        if (med && p.medical_kit) med.value = p.medical_kit;
+                        
+                        alert('✅ Template ROL "' + cat + '" berhasil dimuat ke formulir! Anda dapat menyesuaikan item lalu klik "Simpan Perencanaan ROL".');
+                    } else {
+                        alert('Gagal memuat template.');
+                    }
+                })
+                .catch(function(err) {
+                    alert('Terjadi kesalahan jaringan: ' + err);
+                });
+        }
+        </script>
+    </div>
+
+    <!-- TAB 4: OPERASI LAPANGAN (START KEGIATAN & LOG LAPANGAN) -->
+    <div x-show="tab === 'field_ops'" class="space-y-6">
+        
+        <!-- STATUS BANNER SAAT IN PROGRESS -->
+        {% if act.phase == 'in_progress' %}
+        <div class="p-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-xl flex items-center justify-between gap-3 text-amber-900">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse">
+                    <i class="fas fa-satellite-dish"></i>
+                </div>
+                <div>
+                    <h4 class="font-extrabold text-xs sm:text-sm">Operasi Lapangan Sedang Berlangsung</h4>
+                    <p class="text-[11px] text-amber-800">Kanal pencatatan titik POI, rute GPS, dan dokumentasi terbuka dari Web dan Aplikasi Gimbal-Maps.</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- DUA PANEL INPUT LOG LAPANGAN -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- PANEL 1: MANUAL WEB INPUT -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-3">
+                <h4 class="text-xs font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <i class="fas fa-map-pin text-orange-600"></i>
+                    <span>Catat Titik POI / Laporan Pos Lapangan (Manual)</span>
+                </h4>
+                <form hx-post="/admin/activity/{{ act.id }}/add-field-log" hx-target="#main-content" enctype="multipart/form-data" class="space-y-3">
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-700">Nama Titik / Pos</label>
+                        <input type="text" name="title" required placeholder="Contoh: Pos 2 Shelter Mata Air" class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs font-semibold">
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-semibold text-slate-500">Latitude</label>
+                            <input type="number" step="any" name="latitude" placeholder="0.58412" class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-semibold text-slate-500">Longitude</label>
+                            <input type="number" step="any" name="longitude" placeholder="123.05192" class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-semibold text-slate-500">Elevasi (MDPL)</label>
+                            <input type="number" step="any" name="elevation" placeholder="1420" class="w-full px-2 py-1.5 border border-slate-300 rounded text-xs font-mono">
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-700">Catatan Situasi Lapangan</label>
+                        <textarea name="description" rows="2" placeholder="Kondisi fisik tim, ketersediaan air, cuaca..." class="w-full px-3 py-1.5 border border-slate-300 rounded text-xs"></textarea>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-bold text-slate-700">Foto Dokumentasi Lapangan</label>
+                        <input type="file" name="photo_file" accept="image/*" class="w-full text-xs text-slate-500 file:py-1 file:px-2.5 file:rounded file:border-0 file:bg-orange-50 file:text-orange-700">
+                    </div>
+                    <button type="submit" class="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg transition shadow-sm">
+                        Simpan Laporan Lapangan
+                    </button>
+                </form>
+            </div>
+
+            <!-- PANEL 2: IMPORT GIMBAL-MAPS EXPORT -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-3 flex flex-col justify-between">
+                <div class="space-y-3">
+                    <h4 class="text-xs font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <i class="fas fa-file-import text-blue-600"></i>
+                        <span>Impor Hasil Rekaman dari Aplikasi Gimbal-Maps</span>
+                    </h4>
+                    <p class="text-xs text-slate-600 leading-relaxed">
+                        Unggah berkas spasial hasil export dari ponsel Android tim survei (format <strong>.GPX</strong>, <strong>.GeoJSON</strong>, atau <strong>.KMZ</strong>). 
+                        Sistem akan otomatis mengekstrak titik-titik POI dan jalur peta aktual ke dalam rekapitulasi ekspedisi.
+                    </p>
+                    <form hx-post="/admin/activity/{{ act.id }}/upload-gimbal-maps" hx-target="#main-content" enctype="multipart/form-data" class="space-y-3">
+                        <div class="p-4 border-2 border-dashed border-slate-300 rounded-lg text-center bg-slate-50/50 hover:bg-slate-50 transition cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-2xl text-slate-400 mb-1"></i>
+                            <input type="file" name="geodata_file" required accept=".gpx,.geojson,.kml,.kmz,.json" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700">
+                            <p class="text-[10px] text-slate-400 mt-1">Mendukung berkas GPX, GeoJSON, KML & KMZ</p>
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg transition shadow-sm flex items-center justify-center gap-1.5">
+                            <i class="fas fa-file-import"></i>
+                            <span>Impor & Sinkronkan Berkas Gimbal-Maps</span>
+                        </button>
+                    </form>
+                </div>
+                <div class="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex items-center gap-1">
+                    <i class="fas fa-mobile-alt text-slate-400"></i>
+                    <span>Tersinkronisasi otomatis bila tim menggunakan API Sync di aplikasi</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- DAFTAR CATATAN & TITIK LAPANGAN (FEED) -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Rekapitulasi Titik POI & Log Lapangan ({{ data.field_logs|length }})</h3>
+                <span class="text-xs text-slate-500 font-semibold">Tersimpan dalam database</span>
+            </div>
+            
+            <div class="divide-y divide-slate-100">
+                {% for log in data.field_logs %}
+                <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/60 transition">
+                    <div class="flex items-start gap-3">
+                        {% if log.photo_url %}
+                        <img src="{{ log.photo_url }}" alt="{{ log.title }}" class="w-16 h-16 rounded-lg object-cover shrink-0 border border-slate-200 shadow-sm">
+                        {% else %}
+                        <div class="w-12 h-12 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center shrink-0 font-bold text-sm">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        {% endif %}
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-bold text-sm text-slate-900">{{ log.title }}</h4>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {% if log.source == 'gimbal_maps' %}bg-blue-100 text-blue-800{% else %}bg-orange-100 text-orange-800{% endif %}">
+                                    {{ log.source }}
+                                </span>
+                            </div>
+                            {% if log.latitude and log.longitude %}
+                            <p class="text-[11px] font-mono text-slate-600">
+                                Lat: {{ "%.5f"|format(log.latitude) }}, Lon: {{ "%.5f"|format(log.longitude) }}
+                                {% if log.elevation %} • Elevasi: {{ "%.0f"|format(log.elevation) }} mdpl{% endif %}
+                            </p>
+                            {% endif %}
+                            <p class="text-xs text-slate-600 leading-relaxed">{{ log.description or '-' }}</p>
+                            <p class="text-[10px] text-slate-400">{{ log.recorded_at.strftime('%d %b %Y %H:%M') if log.recorded_at else '' }}</p>
+                        </div>
+                    </div>
+
+                    <!-- AKSI LOG -->
+                    <div class="flex items-center gap-2 shrink-0">
+                        {% if log.photo_url %}
+                        <form hx-post="/admin/activity/{{ act.id }}/pin-field-photo/{{ log.id }}" hx-target="#main-content">
+                            <button type="submit" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs rounded-lg transition flex items-center gap-1">
+                                <i class="fas fa-thumbtack text-[10px]"></i>
+                                <span>Pin ke Galeri</span>
+                            </button>
+                        </form>
+                        {% endif %}
+                        <form hx-post="/admin/activity/{{ act.id }}/delete-field-log/{{ log.id }}" hx-target="#main-content">
+                            <button type="submit" hx-confirm="Hapus catatan lapangan ini?" class="p-1.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs rounded-lg transition">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-8 text-center text-slate-400">
+                    <i class="fas fa-map-marked-alt text-3xl mb-2 text-slate-300"></i>
+                    <p class="text-xs font-semibold">Belum ada titik POI atau rekaman rute yang masuk.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TAB 5: LAPORAN AKHIR & PENUTUPAN (LPJ) -->
+    <div x-show="tab === 'close_out'" class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+                <h3 class="text-base font-black text-slate-900 font-heading">Wrap-up Laporan Pertanggungjawaban (LPJ)</h3>
+                <p class="text-xs text-slate-500">Evaluasi keselamatan operasi lapangan, rekapitulasi akhir, dan publikasi cerita</p>
+            </div>
+            <a href="/admin/activity/{{ act.id }}/print" target="_blank"
+               class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-lg shadow-sm transition flex items-center gap-2">
+                <i class="fas fa-print"></i>
+                <span>Cetak Dokumen Resmi (PDF)</span>
+            </a>
+        </div>
+
+        <!-- FORM EVALUASI AKHIR -->
+        <form hx-post="/admin/activity/{{ act.id }}/update-phase" hx-target="#main-content" class="space-y-4">
+            <input type="hidden" name="phase" value="completed">
+            
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-700">Catatan Evaluasi Lapangan, Insiden & Rekomendasi</label>
+                <textarea name="evaluation_notes" rows="4" placeholder="Tuliskan evaluasi kondisi fisik personil, kendala jalur di lapangan, serta saran keselamatan untuk ekspedisi selanjutnya..."
+                          class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-xs leading-relaxed">{{ act.evaluation_notes or '' }}</textarea>
+            </div>
+
+            <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between gap-3">
+                <div class="space-y-0.5">
+                    <h5 class="text-xs font-bold text-emerald-900">Publikasi Otomatis ke Linimasa Komunitas</h5>
+                    <p class="text-[11px] text-emerald-700">Membagikan rekapitulasi resmi dan foto terbaik ekspedisi ke feed petualang anggota.</p>
+                </div>
+                <button type="button" 
+                        hx-post="/admin/activity/{{ act.id }}/publish-to-feed" 
+                        hx-target="#main-content"
+                        class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition shrink-0 flex items-center gap-1.5 shadow-sm">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Publish ke Feed</span>
+                </button>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-slate-100">
+                <button type="submit" class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs rounded-lg shadow-sm transition">
+                    Simpan Evaluasi LPJ
+                </button>
+            </div>
+        </form>
     </div>
 
 </div>

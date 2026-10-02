@@ -1186,3 +1186,95 @@ Sesuai arahan pengguna, tagihan/fitur sekunder **"Iuran Perawatan Tenda & Alat O
 5. **Verifikasi & Deployment Remote Server**:
    - Seluruh 21 unit test pada 	est_app.py lulus 100%.
    - Menyinkronkan pembaruan ke server remote via deploy_remote.py, me-restart gimbal.service, dan memverifikasi endpoint kembali aktif (HTTP 200 OK).
+---
+
+## 37. Manajemen Ekspedisi & ROL Multi-Jenis Kegiatan, Full-Page Command Hub, Print-Ready Preview, dan Integrasi Mobile Gimbal-Maps
+
+### 1. Latar Belakang & Kebutuhan Pengguna
+- **Tampilan Card Ekspedisi**: Mengubah kartu daftar ekspedisi di panel admin menjadi lebih ringkas dan proporsional (grid 3-4 kolom dengan rasio cover kompak).
+- **Full Page Add & Manage Ekspedisi**: Menggantikan modal pop-up sempit dengan halaman penuh (*Full-Page Command Hub*) untuk pengelolaan komprehensif agenda ekspedisi.
+- **Detail ROL Menyesuaikan Ragam Jenis Kegiatan**:
+  - Ekspedisi di organisasi petualang mencakup beragam divisi: **Gunung Hutan (Mountaineering)**, **Panjat Tebing (Rock Climbing)**, **Susur Gua (Caving / Speleologi)**, **Arung Jeram (Rafting / Water Rescue)**, **Konservasi & Lingkungan Hidup**, **Pendidikan Dasar (Diksar / Latsar KPAB)**, dan **Camp & Wisata Alam**.
+  - Setiap jenis kegiatan memiliki spesifikasi checklist ROL unik (alur pos/rute checkpoint, perlengkapan tim, perlengkapan pribadi, ransum logistik konsumsi, kotak obat medis khusus, dan rekomendasi peran operasional tim).
+- **Alur Siklus Hidup Ekspedisi**:
+  - **Planning (Draft ROL)**: Penyusunan anggaran biaya (RAB), penentuan rute & tautan Repo Peta, checklist logistik, dan kotak medis.
+  - **Open (Buka Pendaftaran)**: Penerimaan pendaftar, manajemen manifest tim, dan penunjukan peran operasional tim.
+  - **In Progress (Operasi Lapangan Dimulai)**: Penguncian registrasi, hanya menerima entri titik survei POI, elevasi, rute spasial, dan foto dokumentasi baik secara manual di web maupun langsung dari aplikasi mobile gimbal-maps.
+  - **Completed (Tutup Ekspedisi / LPJ)**: Evaluasi akhir, pembukuan realisasi RAB, penerbitan laporan LPJ resmi, publikasi rangkuman ke linimasa petualang anggota, dan pinning foto terbaik ke galeri beranda.
+- **Laporan Cetak Print-Ready HTML/CSS**:
+  - Pratinjau cetak resmi A4 portrait dengan kop surat resmi KPAB GIMBAL, identitas lengkap kegiatan & divisi, tabel manifest personil & peran, tabel RAB, checklist logistik & medis, log temuan lapangan, dan lembar pengesahan tanda tangan berjenjang.
+  - Dilengkapi floating action toolbar dengan tombol instan window.print() yang langsung memicu dialog cetak browser Ctrl+P -> *Save as PDF*.
+- **Integrasi Aplikasi Mobile gimbal-maps**:
+  - Login Google OAuth/token langsung di aplikasi mobile yang terhubung ke database keanggotaan GIMBAL.
+  - Sinkronisasi otomatis data lapangan (titik POI GPS, elevasi, foto base64, dan berkas jejak .gpx) langsung dari mobile canvas ke ekspedisi aktif di web.
+
+### 2. Implementasi Teknis & Perubahan Kode
+1. **Model Data ([models.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/models.py)) & Migrasi ([app.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/app.py))**:
+   - Tabel ctivities: Menambahkan kolom category (default 'Gunung Hutan'), phase (planning, open, in_progress, completed, rchived), udget_json, 
+oute_plan, map_repo_id, gear_json, dan evaluation_notes.
+   - Tabel ctivity_participants: Menambahkan kolom 
+ole (Pimpinan Perjalanan, Navigator, Logistik & Konsumsi, Medis / P3K, Dokumentasi & Publikasi, Sweeper, Anggota Tim).
+   - Tabel baru ctivity_field_logs: Mencatat POI titik survei lapangan, elevasi, koordinat GPS, foto dokumentasi, dan tautan berkas geodata dengan field source ('manual' atau 'gimbal_maps').
+2. **Preset ROL Multi-Jenis Kegiatan ([admin_pages.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/admin_pages.py))**:
+   - Fungsi kamus get_rol_category_presets() memetakan 7 modul kegiatan petualang dengan template rute checkpoint, perlengkapan tim, perlengkapan pribadi, logistik konsumsi, dan kotak medis khusus.
+   - Endpoint AJAX GET /admin/activity/preset-rol?category=<cat> yang mengembalikan JSON template rekomendasi secara asinkron.
+   - Penyesuaian dmin_activity_new dan dmin_activity_update_basic untuk menyimpan dan menerapkan preset kategori kegiatan secara otomatis.
+3. **Antarmuka Web Admin ([templates/admin/admin_pages.html](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/templates/admin/admin_pages.html))**:
+   - Menampilkan kartu ekspedisi lebih kecil dengan grid responsif 3/4 kolom (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4) disertai badge jenis kegiatan.
+   - Halaman Full Page /admin/activity/new dengan selektor jenis kegiatan & divisi, tingkat kesulitan, kuota, dan status awal.
+   - Halaman Full Page Command Hub /admin/activity/<id>/manage dengan 5 tab operasional: *Overview*, *Manifest Tim*, *Perencanaan ROL* (dilengkapi dropdown picker template preset + tombol AJAX auto-fill), *Operasi Lapangan*, dan *Tutup Kegiatan (LPJ)*.
+4. **Template Cetak Print-Ready ([templates/admin/print_rol.html](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/templates/admin/print_rol.html))**:
+   - Tata letak cetak A4 portrait standar KPAB GIMBAL dengan kop surat resmi, identitas kegiatan & jenis divisi, tabel manifest personil & peran, tabel RAB, rencana rute & logistik, daftar log POI lapangan, dan lembar tanda tangan pengesahan pimpinan perjalanan, pembina, serta ketua umum.
+5. **REST API Mobile & Web ([web_api.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/web_api.py))**:
+   - POST /api/v1/auth/google-login: Menerima email/token akun Google, mencocokkan keanggotaan, dan menerbitkan payload user serta auth token.
+   - GET /api/v1/activities/active: Mengembalikan daftar agenda ekspedisi berfase aktif untuk dipilih surveyor.
+   - POST /api/v1/activities/<id>/field-sync: Menerima titik survei lapangan (dengan decode foto base64) dan unggahan berkas spasial GPX/GeoJSON/KMZ dari mobile app.
+6. **Aplikasi Mobile Gimbal-Maps (Flutter)**:
+   - Menambahkan dependensi http: ^1.6.0 di [pubspec.yaml](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/pubspec.yaml).
+   - Mengembangkan [lib/services/api_sync_service.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/services/api_sync_service.dart) untuk menangani Google Login, pengecekan keanggotaan/langganan in-app Google Pay, dan sinkronisasi data lapangan.
+   - Mengembangkan dialog interaktif [lib/ui/widgets/expedition_sync_dialog.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/widgets/expedition_sync_dialog.dart).
+   - Mengintegrasikan tombol aksi sinkronisasi ke [lib/ui/screens/export_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/export_screen.dart) dan AppBar [lib/ui/screens/map_list_screen.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/screens/map_list_screen.dart).
+
+### 3. Verifikasi & Pengujian
+- **Backend Gimbal-Web**: Seluruh alur diuji via [test_rol_and_sync.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/test_rol_and_sync.py) dan lulus 100% OK (Preset API, Full Page Create, Update ROL, Transisi Fase, Print-ready Preview, dan Mobile API sync).
+
+### 4. Deployment ke Server Remote Production (10.75.0.51:8082)
+- **Sinkronisasi Kode & Template**: Mengunggah seluruh berkas inti (`app.py`, `models.py`, `admin_pages.py`, `web_api.py`, `members_page.py`, `helpers.py`), template admin (`admin_pages.html`, [print_rol.html](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/templates/admin/print_rol.html)), dan direktori baru `uploads/expeditions`.
+- **Migrasi Skema MySQL**: Berhasil memigrasi tabel `activity_field_logs`, kolom ROL pada `activities`, dan kolom peran pada `activity_participants`.
+- **Eksekusi Pengujian Remote**: Menjalankan pengujian [test_rol_and_sync.py](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/test_rol_and_sync.py) langsung di atas runtime Python venv & database MySQL server produksi dan lulus 100% OK.
+- **Status Layanan**: Service `gimbal.service` (Gunicorn WSGI) aktif dan beroperasi normal (HTTP 200 OK).
+- **Penyesuaian Signer Lembar Pengesahan Sesuai Jabatan**: Menghapus data hardcoded pada lembar tanda tangan [print_rol.html](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-web/templates/admin/print_rol.html). Signer dihubungkan langsung secara otomatis ke tabel `users` & `positions` di database (Pimpinan Perjalanan, Kepala Divisi terkait kategori kegiatan, dan Ketua Umum KPAB GIMBAL) disertai drawer penyesuaian pejabat interaktif pada toolbar pratinjau cetak.
+- **Kompilasi Biner Mobile Gimbal-Maps**: Berkas `.apk` rilis terbaru berhasil di-recompile (`flutter build apk --release`) dengan seluruh fitur integrasi (Google Login, cek keanggotaan, dan sinkronisasi titik survei/jejak GPX lapangan). Lokasi biner: `gimbal-maps/build/app/outputs/flutter-apk/app-release.apk` (25.5 MB).
+- **Mobile Gimbal-Maps**: Seluruh 44 tes unit pada suite Flutter (lutter test) lulus 100% OK.
+
+---
+
+## 34. Implementasi Opsi 2: Integrasi Native Google Sign-In SDK pada Mobile Gimbal-Maps & Rilis APK
+
+### 1. Konfigurasi Google Cloud Console & Keystore Fingerprint
+- **Package Name Android**: `com.gimbalmaps.app.gimbal_maps` (sesuai `android/app/build.gradle.kts`).
+- **Keystore SHA-1 Fingerprint**: `C3:63:31:2F:0E:3D:59:2F:7C:96:04:9A:43:C9:E0:D5:06:CA:54:F6` (diekstrak dari debug/release keystore lokal).
+- **Google Client IDs**:
+  - Web Client ID (backend verification & serverClientId): `192747044891-mjtv9db8063neuhkq6neivg7qlsillul.apps.googleusercontent.com`
+  - Android Client ID: `192747044891-m20naqcune3ho5vf8pbi5v8rgpmgucvl.apps.googleusercontent.com`
+
+### 2. Implementasi Teknis Opsi 2 (Native Google Sign-In SDK)
+- **Dependensi Flutter**: Menambahkan `google_sign_in: ^6.2.2` pada [pubspec.yaml](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/pubspec.yaml) yang stabil, kompatibel dengan Dart 3.7 / Flutter 3.29, serta mendukung parameter `serverClientId`.
+- **Izin Android ([AndroidManifest.xml](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/android/app/src/main/AndroidManifest.xml))**:
+  - Menambahkan izin `android.permission.INTERNET` dan `android.permission.ACCESS_NETWORK_STATE`.
+- **Layanan Sinkronisasi API ([lib/services/api_sync_service.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/services/api_sync_service.dart))**:
+  - Inisialisasi `GoogleSignIn` dengan `serverClientId: webClientId` dan scope `['email', 'profile']`.
+  - Method `signInWithGoogleNative()` yang memicu Google Account Picker dialog native di Android, mengambil ID Token dan Access Token, kemudian memanggil endpoint backend `/api/v1/auth/google-login`.
+  - Default URL diarahkan ke server produksi `http://10.75.0.51:8082`.
+- **Dialog Sinkronisasi Lapangan ([lib/ui/widgets/expedition_sync_dialog.dart](file:///d:/Projects/My Drive/priv_web_apps/gimbal/gimbal-maps/lib/ui/widgets/expedition_sync_dialog.dart))**:
+  - Mengubah tampilan dialog login menjadi 1-klik: tombol utama "Masuk dengan Akun Google" yang langsung membuka Google Account Picker bawaan sistem Android.
+  - Menyediakan accordion fallback ("Atau Masuk dengan Email Manual / Konfigurasi Server") bagi pengguna tanpa Google Play Services atau keperluan dev lokal.
+- **Pengujian Unit**: Seluruh 45 unit test pada `flutter test` lulus 100% OK.
+
+### 3. Kompilasi & Verifikasi Biner Rilis APK
+- **Perintah Kompilasi**: `flutter build apk --release` (Gradle `assembleRelease`).
+- **Berkas Hasil Kompilasi**: `d:\Projects\My Drive\priv_web_apps\gimbal\gimbal-maps\build\app\outputs\flutter-apk\app-release.apk`
+- **Ukuran File**: 26.915.785 bytes (~26.9 MB)
+- **Git Commit**: Commit hash `d370ede` pada branch `feature/auth-and-subscription` di repo `gimbal-maps`.
+
+- **Update Default Production Backend Endpoint**: Mengarahkan default server URL `_baseUrl` pada `ApiSyncService` langsung ke domain resmi produksi bersertifikat SSL `https://www.gimbal.my.id` (menggantikan IP internal staging `http://10.75.0.51:8082`).

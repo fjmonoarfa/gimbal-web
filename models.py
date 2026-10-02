@@ -223,13 +223,58 @@ class Activity(db.Model):
     location = db.Column(db.String(150), nullable=False)
     activity_date = db.Column(db.String(100), nullable=False)
     difficulty = db.Column(db.String(50), default='Menengah') # Santai, Menengah, Ekstrem
+    category = db.Column(db.String(80), default='Gunung Hutan') # Gunung Hutan, Panjat Tebing, Susur Gua, Arung Jeram, Konservasi, Diksar, Camp & Wisata
     quota = db.Column(db.Integer, default=20)
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(256), nullable=True)
     is_open = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # ROL & Lifecycle Fields
+    phase = db.Column(db.String(30), default='open')  # 'planning', 'open', 'in_progress', 'completed', 'archived'
+    budget_json = db.Column(db.Text, default='{}')
+    route_plan = db.Column(db.Text, nullable=True)
+    map_repo_id = db.Column(db.Integer, db.ForeignKey('map_repositories.id'), nullable=True)
+    gear_json = db.Column(db.Text, default='{}')
+    evaluation_notes = db.Column(db.Text, nullable=True)
+
     participants = db.relationship('ActivityParticipant', backref='activity', lazy='dynamic', cascade='all, delete-orphan')
+    field_logs = db.relationship('ActivityFieldLog', backref='activity', lazy='dynamic', cascade='all, delete-orphan', order_by='ActivityFieldLog.recorded_at.desc()')
+    map_repo = db.relationship('MapRepository', foreign_keys=[map_repo_id])
+
+    @property
+    def budget_data(self):
+        try:
+            import json
+            return json.loads(self.budget_json) if self.budget_json else {}
+        except Exception:
+            return {}
+
+    @property
+    def gear_data(self):
+        try:
+            import json
+            return json.loads(self.gear_json) if self.gear_json else {}
+        except Exception:
+            return {}
+
+    @property
+    def confirmed_participants(self):
+        return [p for p in self.participants if p.status == 'confirmed']
+
+    @property
+    def total_confirmed(self):
+        return len(self.confirmed_participants)
+
+    @property
+    def lead_person(self):
+        for p in self.participants:
+            if p.role == 'Pimpinan Perjalanan' and p.status == 'confirmed':
+                return p
+        for p in self.participants:
+            if p.status == 'confirmed':
+                return p
+        return None
 
     @property
     def documentation_media(self):
@@ -260,8 +305,30 @@ class ActivityParticipant(db.Model):
     activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     status = db.Column(db.String(20), default='registered')  # 'registered', 'confirmed', 'cancelled'
+    role = db.Column(db.String(50), default='Anggota')  # 'Pimpinan Perjalanan', 'Navigator', 'Logistik', 'Medis/P3K', 'Dokumentasi', 'Sweeper', 'Anggota'
     notes = db.Column(db.Text, nullable=True)
     registered_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', foreign_keys=[user_id])
+
+
+class ActivityFieldLog(db.Model):
+    """Log Laporan Lapangan Ekspedisi (POI, Waypoint, Track, Catatan, Foto dari Web & Gimbal-Maps)"""
+    __tablename__ = 'activity_field_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    log_type = db.Column(db.String(30), default='poi')  # 'poi', 'track', 'situation_report', 'photo'
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    elevation = db.Column(db.Float, nullable=True)
+    photo_url = db.Column(db.String(256), nullable=True)
+    source = db.Column(db.String(30), default='manual')  # 'manual', 'gimbal_maps'
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', foreign_keys=[user_id])
 

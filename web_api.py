@@ -6,7 +6,10 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import Blueprint, request, jsonify, session, current_app, redirect, send_from_directory
 
-from models import db, User, Dues, DuesPayment, SystemSetting, MapRepository, Post
+from models import (
+    db, User, Dues, DuesPayment, SystemSetting, MapRepository, Post,
+    Activity, ActivityFieldLog, ActivityParticipant
+)
 from helpers import get_current_user, login_required
 
 api_bp = Blueprint('api_bp', __name__)
@@ -499,4 +502,225 @@ def maps_share_track():
         'status': 'success',
         'message': 'Rute ekspedisi berhasil disinkronkan ke Repo Peta dan linimasa anggota!',
         'repo_id': repo_entry.id
+    })
+
+
+@api_bp.route('/api/v1/auth/google-login', methods=['POST'])
+def api_google_login():
+    """
+    Login endpoint khusus aplikasi mobile gimbal-maps dengan akun Google.
+    Menerima Google ID Token (id_token) atau email/google_id.
+    """
+    req_data = request.get_json(silent=True) or request.values.to_dict() or {}
+    id_token = req_data.get('id_token') or req_data.get('credential')
+    email = req_data.get('email', '').strip().lower()
+    
+    user_info = None
+    if id_token:
+        try:
+            verify_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
+            verify_resp = requests.get(verify_url, timeout=10)
+            if verify_resp.status_code == 200:
+                user_info = verify_resp.json()
+                email = user_info.get('email', email).strip().lower()
+        except Exception as e:
+            current_app.logger.warning(f"Mobile Google token verification warning: {e}")
+            
+    if not email:
+        return jsonify({'status': 'error', 'message': 'Email atau id_token akun Google diperlukan'}), 400
+        
+    user = User.query.filter_by(email=email).first()
+    if not user and user_info:
+        name = user_info.get('name') or email.split('@')[0]
+        google_id = user_info.get('sub')
+        avatar = user_info.get('picture')
+        user = User(
+            email=email,
+            name=name,
+            google_id=google_id,
+            avatar=avatar,
+            status='pending',
+            role='member'
+        )
+        db.session.add(user)
+        db.session.commit()
+    elif not user:
+        return jsonify({
+            'status': 'unregistered',
+            'message': 'Akun Google belum terdaftar sebagai anggota GIMBAL. Silakan registrasi terlebih dahulu di web resmi.',
+            'email': email
+        }), 404
+        
+    user_payload = {
+        'id': user.id,
+        'name': user.name,
+        'email': user.email,
+        'nra': user.nra,
+        'role': user.role,
+        'status': user.status,
+        'avatar': user.avatar,
+        'is_admin': user.is_admin,
+        'is_active_member': (user.status == 'active'),
+        'is_dues_paid': user.is_current_month_dues_paid
+    }
+    
+    return jsonify({
+        'status': 'success',
+        'message': f"Selamat datang, {user.name}!",
+        'user': user_payload,
+        'auth_token': f"gmb_{user.id}_{int(datetime.now().timestamp())}"
+    })
+
+
+@api_bp.route('/api/v1/activities/active', methods=['GET'])
+def api_get_active_activities():
+    """
+    Mengambil daftar ekspedisi yang sedang aktif / terbuka untuk dipilih
+    saat melakukan perekaman & sinkronisasi data lapangan dari aplikasi gimbal-maps.
+    """
+    activities = Activity.query.filter(Activity.phase.in_(['open', 'in_progress', 'planning'])).order_by(Activity.created_at.desc()).all()
+    results = []
+    for act in activities:
+        results.append({
+            'id': act.id,
+            'title': act.title,
+            'location': act.location,
+            'activity_date': act.activity_date,
+            'difficulty': act.difficulty,
+            'phase': act.phase or ('open' if act.is_open else 'planning'),
+            'quota': act.quota,
+            'total_confirmed': act.total_confirmed,
+            'lead_person': act.lead_person.user.name if (act.lead_person and act.lead_person.user) else None,
+            'category': act.category or 'Gunung Hutan',
+            'description': act.description or '',
+            'route_plan': act.route_plan or '',
+            'image_url': act.image_url
+        })
+    return jsonify({
+        'status': 'success',
+        'total': len(results),
+        'activities': results
+    })
+
+
+@api_bp.route('/api/v1/activities/<int:activity_id>/field-sync', methods=['POST'])
+def api_sync_activity_field_data(activity_id):
+    """
+    Menerima sinkronisasi data lapangan (titik survei POI, rute GPS, foto)
+    langsung dari aplikasi mobile gimbal-maps.
+    """
+    act = db.session.get(Activity, activity_id)
+    if not act:
+        return jsonify({'status': 'error', 'message': 'Agenda ekspedisi tidak ditemukan'}), 404
+        
+    req_json = request.get_json(silent=True) or {}
+    email = req_json.get('email') or request.form.get('email')
+    user = User.query.filter_by(email=email).first() if email else None
+    
+    synced_points = 0
+    # 1. Cek payload JSON points
+    points = req_json.get('points') or []
+    for pt in points:
+        title = pt.get('title') or pt.get('name') or 'Titik POI Lapangan'
+        desc = pt.get('description') or pt.get('notes') or ''
+        lat = pt.get('latitude')
+        lon = pt.get('longitude')
+        ele = pt.get('elevation')
+        photo_url = pt.get('photo_url')
+        
+        # Handle foto base64 jika ada
+        if pt.get('photo_base64'):
+            try:
+                b64_data = pt.get('photo_base64')
+                if ',' in b64_data:
+                    b64_data = b64_data.split(',')[1]
+                img_bytes = base64.b64decode(b64_data)
+                fname = f"poi_{act.id}_{int(datetime.now().timestamp())}_{synced_points}.jpg"
+                fpath = os.path.join(current_app.config['UPLOAD_FOLDER'], 'expeditions', fname)
+                with open(fpath, 'wb') as f_out:
+                    f_out.write(img_bytes)
+                photo_url = f"/uploads/expeditions/{fname}"
+            except Exception as e:
+                current_app.logger.warning(f"Failed decoding base64 photo: {e}")
+                
+        log = ActivityFieldLog(
+            activity_id=act.id,
+            user_id=user.id if user else None,
+            log_type='poi',
+            title=title,
+            description=desc,
+            latitude=float(lat) if lat is not None else None,
+            longitude=float(lon) if lon is not None else None,
+            elevation=float(ele) if ele is not None else None,
+            photo_url=photo_url,
+            source='gimbal_maps'
+        )
+        db.session.add(log)
+        synced_points += 1
+        
+    # 2. Cek upload file (GPX / GeoJSON / KMZ)
+    uploaded_file = request.files.get('file') or request.files.get('geodata_file')
+    if uploaded_file and uploaded_file.filename:
+        safe_name = f"sync_{act.id}_{int(datetime.now().timestamp())}_{secure_filename(uploaded_file.filename)}"
+        save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'expeditions', safe_name)
+        uploaded_file.save(save_path)
+        
+        # Parsing sederhana GPX jika file GPX
+        if safe_name.lower().endswith('.gpx'):
+            try:
+                import xml.etree.ElementTree as ET
+                tree = ET.parse(save_path)
+                root = tree.getroot()
+                for elem in root.iter():
+                    if elem.tag.endswith('wpt'):
+                        w_lat = elem.attrib.get('lat')
+                        w_lon = elem.attrib.get('lon')
+                        w_name = 'Waypoint Lapangan'
+                        w_desc = ''
+                        w_ele = None
+                        for child in elem:
+                            if child.tag.endswith('name') and child.text:
+                                w_name = child.text
+                            elif child.tag.endswith('desc') and child.text:
+                                w_desc = child.text
+                            elif child.tag.endswith('ele') and child.text:
+                                try:
+                                    w_ele = float(child.text)
+                                except Exception:
+                                    pass
+                        log = ActivityFieldLog(
+                            activity_id=act.id,
+                            user_id=user.id if user else None,
+                            log_type='poi',
+                            title=w_name,
+                            description=w_desc,
+                            latitude=float(w_lat) if w_lat else None,
+                            longitude=float(w_lon) if w_lon else None,
+                            elevation=w_ele,
+                            source='gimbal_maps'
+                        )
+                        db.session.add(log)
+                        synced_points += 1
+            except Exception as e:
+                current_app.logger.warning(f"GPX parsing error: {e}")
+                
+        # Simpan file rute juga sebagai catatan log
+        log_file = ActivityFieldLog(
+            activity_id=act.id,
+            user_id=user.id if user else None,
+            log_type='track',
+            title=f"Berkas Jejak: {uploaded_file.filename}",
+            description=f"Berkas spasial rute diunggah dari Gimbal Maps ({round(os.path.getsize(save_path)/1024, 1)} KB)",
+            photo_url=f"/uploads/expeditions/{safe_name}",
+            source='gimbal_maps'
+        )
+        db.session.add(log_file)
+        synced_points += 1
+        
+    db.session.commit()
+    return jsonify({
+        'status': 'success',
+        'message': f'Berhasil menyinkronkan {synced_points} data lapangan ke ekspedisi "{act.title}"!',
+        'activity_id': act.id,
+        'synced_items_count': synced_points
     })

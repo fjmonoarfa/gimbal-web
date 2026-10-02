@@ -80,11 +80,12 @@ def upload_templates_and_missing(client):
                     log(f"Uploaded: {rp}")
                     
     # Ensure core files are always up to date
-    for fname in ['app.py', 'helpers.py', 'web_api.py', 'admin_pages.py', 'members_page.py', 'models.py', 'cloudflare_email.py', 'seed.py', 'requirements.txt']:
+    for fname in ['app.py', 'helpers.py', 'web_api.py', 'admin_pages.py', 'members_page.py', 'models.py', 'cloudflare_email.py', 'seed.py', 'requirements.txt', 'test_rol_and_sync.py', 'CONVERSATION_HISTORY.md']:
         lp = os.path.join(LOCAL_DIR, fname)
-        rp = f"{REMOTE_DIR}/{fname}"
-        sftp.put(lp, rp)
-        log(f"Updated core file: {fname}")
+        if os.path.exists(lp):
+            rp = f"{REMOTE_DIR}/{fname}"
+            sftp.put(lp, rp)
+            log(f"Updated core file: {fname}")
         
     # Create / update .env file on remote server
     env_content = f"""DATABASE_URL=mysql+pymysql://{DB_USER}:{DB_PASS}@localhost/{DB_NAME}?charset=utf8mb4
@@ -131,7 +132,7 @@ def setup_python_env(client):
 
 def populate_database(client):
     log("Ensuring upload directories exist on server...")
-    run_ssh_cmd(client, f"mkdir -p {REMOTE_DIR}/uploads/proofs {REMOTE_DIR}/uploads/docs {REMOTE_DIR}/uploads/gallery {REMOTE_DIR}/uploads/posts {REMOTE_DIR}/uploads/avatars {REMOTE_DIR}/uploads/maps")
+    run_ssh_cmd(client, f"mkdir -p {REMOTE_DIR}/uploads/proofs {REMOTE_DIR}/uploads/docs {REMOTE_DIR}/uploads/gallery {REMOTE_DIR}/uploads/posts {REMOTE_DIR}/uploads/avatars {REMOTE_DIR}/uploads/maps {REMOTE_DIR}/uploads/expeditions")
     log("Upload directories ready.")
 
 def setup_systemd(client):
@@ -171,6 +172,8 @@ def verify_deployment(client):
     run_ssh_cmd(client, f"curl -s -o /dev/null -w 'HTTP Status [GET /]: %{{http_code}}\\n' http://127.0.0.1:{PORT}/")
     run_ssh_cmd(client, f"curl -s -o /dev/null -w 'HTTP Status [GET /login]: %{{http_code}}\\n' http://127.0.0.1:{PORT}/login")
     run_ssh_cmd(client, f"curl -s -o /dev/null -w 'HTTP Status [GET /verify-kta/R-01-26]: %{{http_code}}\\n' http://127.0.0.1:{PORT}/verify-kta/R-01-26")
+    run_ssh_cmd(client, f"curl -s -o /dev/null -w 'HTTP Status [GET /api/v1/activities/active]: %{{http_code}}\\n' http://127.0.0.1:{PORT}/api/v1/activities/active")
+    run_ssh_cmd(client, f"curl -s -o /dev/null -w 'HTTP Status [GET /admin/activity/preset-rol]: %{{http_code}}\\n' 'http://127.0.0.1:{PORT}/admin/activity/preset-rol?category=Gunung%20Hutan'")
 
 def main():
     log(f"Connecting to {SERVER_IP}...")
