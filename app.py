@@ -707,6 +707,9 @@ def login_or_register_google_user(user_info):
     db.session.commit()
 
     session['user_id'] = user.id
+    target = session.pop('login_next', None) or request.args.get('next') or request.form.get('next')
+    if target and (target.startswith('/') or 'gimbal.my.id' in target) and not target.endswith('/login'):
+        return redirect(target)
     if user.is_admin:
         return redirect('/admin/dashboard')
     if not user.is_profile_complete:
@@ -822,8 +825,15 @@ def switch_role():
 @app.route('/login')
 def login_page():
     """Halaman login & pendaftaran resmi KPAB GIMBAL Provinsi Gorontalo"""
+    next_url = request.args.get('next')
+    if next_url and (next_url.startswith('/') or 'gimbal.my.id' in next_url):
+        session['login_next'] = next_url
+
     user = get_current_user()
     if user:
+        target = session.pop('login_next', None) or next_url
+        if target and (target.startswith('/') or 'gimbal.my.id' in target) and not target.endswith('/login'):
+            return redirect(target)
         if user.is_admin:
             return redirect('/admin/dashboard')
         if not user.is_profile_complete:
@@ -834,7 +844,7 @@ def login_page():
     error_msg = request.args.get('error')
     return render_gimbal_modal(
         'login',
-        context={'google_client_id': GOOGLE_CLIENT_ID, 'error_msg': error_msg},
+        context={'google_client_id': GOOGLE_CLIENT_ID, 'error_msg': error_msg, 'next_url': next_url},
         active_page='login'
     )
 
@@ -907,6 +917,9 @@ def auth_login():
     db.session.commit()
 
     session['user_id'] = user.id
+    target = session.pop('login_next', None) or request.args.get('next') or request.form.get('next')
+    if target and (target.startswith('/') or 'gimbal.my.id' in target) and not target.endswith('/login'):
+        return redirect(target)
     if user.is_admin:
         return redirect('/admin/dashboard')
     if not user.is_profile_complete:
