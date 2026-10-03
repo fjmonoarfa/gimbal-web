@@ -893,3 +893,31 @@ class UserCertification(db.Model):
         self.certificate_no = val
 
 
+class Inquiry(db.Model):
+    """Pesan Masuk, Permintaan Pengawalan Pendakian & Kemitraan Publik KPAB GIMBAL"""
+    __tablename__ = 'inquiries'
+
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String(50), default='general')  # 'guiding', 'membership', 'sponsorship', 'general'
+    name = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(30), nullable=False)
+    email = db.Column(db.String(120), nullable=True)
+    subject = db.Column(db.String(200), nullable=True)
+    message = db.Column(db.Text, nullable=False)
+
+    # Khusus Permintaan Pengawalan Pendakian (Guiding / Escort)
+    destination = db.Column(db.String(150), nullable=True)
+    target_date = db.Column(db.String(100), nullable=True)
+    participants_count = db.Column(db.Integer, default=1)
+    services_needed = db.Column(db.String(255), nullable=True)
+
+    status = db.Column(db.String(30), default='pending')  # 'pending', 'contacted', 'assigned', 'completed', 'archived'
+    admin_notes = db.Column(db.Text, nullable=True)
+    assigned_guide_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    assigned_guide = db.relationship('User', foreign_keys=[assigned_guide_id])
+
+
+

@@ -3284,10 +3284,13 @@
                     <tr class="hover:bg-slate-50/60 transition">
                         <td class="px-6 py-4">
                             <span class="px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase
-                                {% if m.file_type == 'mbtiles' %}bg-purple-100 text-purple-800
-                                {% elif m.file_type == 'gpx' %}bg-emerald-100 text-emerald-800
-                                {% elif m.file_type == 'geojson' %}bg-sky-100 text-sky-800
-                                {% else %}bg-orange-100 text-orange-800{% endif %}">
+                                {% if m.file_type == 'mbtiles' %}bg-purple-100 text-purple-800 border border-purple-200
+                                {% elif m.file_type == 'gpx' %}bg-emerald-100 text-emerald-800 border border-emerald-200
+                                {% elif m.file_type == 'geojson' %}bg-sky-100 text-sky-800 border border-sky-200
+                                {% elif m.file_type == 'pdf' %}bg-rose-100 text-rose-800 border border-rose-200
+                                {% elif m.file_type in ['tif', 'tiff'] %}bg-amber-100 text-amber-800 border border-amber-200
+                                {% elif m.file_type in ['kml', 'kmz'] %}bg-blue-100 text-blue-800 border border-blue-200
+                                {% else %}bg-orange-100 text-orange-800 border border-orange-200{% endif %}">
                                 .{{ m.file_type|upper }}
                             </span>
                         </td>
@@ -3747,7 +3750,7 @@
 <div class="space-y-6" x-data="{ tab: '{{ active_tab }}' }">
 
     <!-- Top Header Card (Sesuai Warna Utama Tema) -->
-    <div class="theme-profile-header-card p-6 sm:p-8 rounded-2xl border border-orange-500/40 text-white shadow-xl relative overflow-hidden" style="background: var(--brand-600, #ea580c) !important;">
+    <div class="theme-profile-header-card p-6 sm:p-8 rounded-lg border border-orange-500/40 text-white shadow-xl relative overflow-hidden" style="background: var(--brand-600, #ea580c) !important;">
         <div class="absolute -right-6 -bottom-6 opacity-15 text-white text-9xl pointer-events-none">
             <i class="fas fa-graduation-cap"></i>
         </div>
@@ -3771,14 +3774,14 @@
     <div class="flex items-center gap-2 border-b border-slate-200 pb-2 text-xs font-bold">
         <button type="button" @click="tab = 'kurikulum'"
                 :class="tab === 'kurikulum' ? 'bg-orange-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
-                class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer">
+                class="px-4 py-2.5 rounded-lg transition flex items-center gap-2 cursor-pointer">
             <i class="fas fa-book-reader"></i>
             <span>Kurikulum & Modul SOP</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">{{ tiers|length }} Tingkat</span>
         </button>
         <button type="button" @click="tab = 'kepatuhan'"
                 :class="tab === 'kepatuhan' ? 'bg-orange-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
-                class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer">
+                class="px-4 py-2.5 rounded-lg transition flex items-center gap-2 cursor-pointer">
             <i class="fas fa-user-check"></i>
             <span>Kepatuhan & Wajib Sertifikasi</span>
             {% if data.pending_mandatory_count > 0 %}
@@ -3789,7 +3792,7 @@
         </button>
         <button type="button" @click="tab = 'riwayat'"
                 :class="tab === 'riwayat' ? 'bg-orange-600 text-white shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
-                class="px-4 py-2.5 rounded-xl transition flex items-center gap-2 cursor-pointer">
+                class="px-4 py-2.5 rounded-lg transition flex items-center gap-2 cursor-pointer">
             <i class="fas fa-history"></i>
             <span>Riwayat Sertifikat & Ujian</span>
             <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 text-white">{{ certifications|length }} Piagam</span>
@@ -3802,7 +3805,7 @@
     <div x-show="tab === 'kurikulum'" class="space-y-6">
 
         <!-- Top Action Buttons Bar -->
-        <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
+        <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-white rounded-lg border border-slate-200 shadow-2xs">
             <div class="flex items-center gap-2 text-xs text-slate-600">
                 <i class="fas fa-info-circle text-orange-600"></i>
                 <span>Susunan hierarki: <strong>Tingkatan (Tier) &rarr; Kursus &rarr; Bab Materi (SOP) &rarr; Ujian Kelulusan</strong></span>
@@ -3834,12 +3837,12 @@
         <!-- Tree View of Tiers, Courses, Lessons & Quizzes -->
         <div class="space-y-6">
             {% for tier in tiers %}
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="admin-tier-{{ tier.id }}">
+            <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden" id="admin-tier-{{ tier.id }}">
                 
                 <!-- Tier Header Bar -->
                 <div class="p-5 sm:p-6 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div class="flex items-start gap-3.5">
-                        <div class="w-12 h-12 rounded-xl text-white flex items-center justify-center text-xl shadow-md shrink-0"
+                        <div class="w-12 h-12 rounded-lg text-white flex items-center justify-center text-xl shadow-md shrink-0"
                              style="background-color: {{ tier.badge_color or '#f97316' }};">
                             <i class="fas {{ tier.badge_icon or 'fa-award' }}"></i>
                         </div>
@@ -3877,7 +3880,7 @@
                 <!-- Courses List inside Tier -->
                 <div class="p-5 sm:p-6 space-y-6">
                     {% for course in tier.courses %}
-                    <div class="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
+                    <div class="rounded-lg border border-slate-200 bg-white overflow-hidden shadow-2xs">
                         <div class="p-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
                             <div class="flex items-center gap-3">
                                 <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">
@@ -3954,10 +3957,10 @@
 
                     <!-- Quizzes in Tier -->
                     {% for quiz in tier.quizzes %}
-                    <div class="p-5 rounded-xl border border-amber-300 bg-amber-50/40 space-y-4">
+                    <div class="p-5 rounded-lg border border-amber-300 bg-amber-50/40 space-y-4">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div class="flex items-start gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-black shrink-0">
+                                <div class="w-10 h-10 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-black shrink-0">
                                     <i class="fas fa-file-signature"></i>
                                 </div>
                                 <div>
@@ -4043,7 +4046,7 @@
 
         <!-- STATS KEPATUHAN ANGGOTA -->
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Anggota</span>
                 <div class="flex items-center justify-between mt-1">
                     <span class="text-2xl font-black text-slate-800 font-heading">{{ data.total_members }}</span>
@@ -4052,7 +4055,7 @@
                 <p class="text-[11px] text-slate-400 mt-1">Anggota Aktif & Calon</p>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs">
                 <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block">Lulus Level 1 (Dasar)</span>
                 <div class="flex items-center justify-between mt-1">
                     <span class="text-2xl font-black text-emerald-600 font-heading">{{ data.certified_level1_count }}</span>
@@ -4061,7 +4064,7 @@
                 <p class="text-[11px] text-emerald-700 mt-1">Memiliki Brevet SAR Dasar</p>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs">
                 <span class="text-[10px] font-bold text-amber-600 uppercase tracking-wider block">Ditugaskan Wajib</span>
                 <div class="flex items-center justify-between mt-1">
                     <span class="text-2xl font-black text-amber-600 font-heading">{{ data.mandatory_active_count }}</span>
@@ -4070,7 +4073,7 @@
                 <p class="text-[11px] text-amber-700 mt-1">Status Mandat Aktif</p>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs">
                 <span class="text-[10px] font-bold text-rose-600 uppercase tracking-wider block">Belum Lulus (Pending)</span>
                 <div class="flex items-center justify-between mt-1">
                     <span class="text-2xl font-black text-rose-600 font-heading">{{ data.pending_mandatory_count }}</span>
@@ -4081,7 +4084,7 @@
         </div>
 
         <!-- 1-CLICK BATCH MANDATE CONTROL BAR (Sesuai Warna Utama Tema) -->
-        <div class="theme-profile-header-card p-5 sm:p-6 rounded-2xl text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-orange-500/40" style="background: var(--brand-600, #ea580c) !important;">
+        <div class="theme-profile-header-card p-5 sm:p-6 rounded-lg text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-orange-500/40" style="background: var(--brand-600, #ea580c) !important;">
             <div class="space-y-1">
                 <div class="flex items-center gap-2">
                     <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-white/20 text-white backdrop-blur-sm border border-white/30">
@@ -4101,7 +4104,7 @@
                 <form action="/admin/academy/mandate/all-candidates" method="POST"
                       onsubmit="return confirm('Wajibkan semua calon anggota & anggota yang belum tersertifikasi Level 1?')">
                     <button type="submit"
-                            class="px-5 py-3 rounded-xl bg-white text-orange-700 hover:bg-orange-50 font-black text-xs shadow-md transition flex items-center gap-2 cursor-pointer">
+                            class="px-5 py-3 rounded-lg bg-white text-orange-700 hover:bg-orange-50 font-black text-xs shadow-md transition flex items-center gap-2 cursor-pointer">
                         <i class="fas fa-bolt text-amber-500"></i>
                         <span>Wajibkan Semua Calon Anggota (1-Klik)</span>
                     </button>
@@ -4110,7 +4113,7 @@
                 <form action="/admin/academy/mandate/clear-all" method="POST"
                       onsubmit="return confirm('Hapus seluruh status penugasan wajib pada semua anggota?')">
                     <button type="submit"
-                            class="px-4 py-3 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs transition border border-white/30 cursor-pointer">
+                            class="px-4 py-3 rounded-lg bg-white/20 hover:bg-white/30 text-white font-bold text-xs transition border border-white/30 cursor-pointer">
                         Reset Status Wajib
                     </button>
                 </form>
@@ -4118,7 +4121,7 @@
         </div>
 
         <!-- TABEL ANGGOTA & KEPATUHAN SERTIFIKASI -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" x-data="{ search: '', filterStatus: 'all' }">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden" x-data="{ search: '', filterStatus: 'all' }">
             <div class="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50">
                 <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
                     <i class="fas fa-list-check text-orange-600"></i>
@@ -4239,7 +4242,7 @@
     <div x-show="tab === 'riwayat'" class="space-y-6">
         
         <!-- Tabel Sertifikat Resmi yang Telah Terbit -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
                 <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
                     <i class="fas fa-certificate text-amber-500 text-sm"></i>
@@ -4318,7 +4321,7 @@
         </div>
 
         <!-- Tabel Log Percobaan Ujian Terakhir -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
             <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
                 <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
                     <i class="fas fa-file-signature text-orange-600 text-sm"></i>
@@ -4382,7 +4385,7 @@
 
     <!-- Modal Tambah Tingkat (Tier) -->
     <div id="modal-add-tier" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h3 class="text-sm font-black text-slate-900 font-heading">Tambah Tingkatan (Tier) Baru</h3>
                 <button type="button" onclick="document.getElementById('modal-add-tier').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
@@ -4449,7 +4452,7 @@
 
     <!-- Modal Tambah Kursus -->
     <div id="modal-add-course" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h3 class="text-sm font-black text-slate-900 font-heading">Tambah Kursus Baru</h3>
                 <button type="button" onclick="document.getElementById('modal-add-course').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
@@ -4502,7 +4505,7 @@
 
     <!-- Modal Tambah Bab Materi / SOP -->
     <div id="modal-add-lesson" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-lg max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h3 class="text-sm font-black text-slate-900 font-heading">Tambah Bab Materi / SOP Digital</h3>
                 <button type="button" onclick="document.getElementById('modal-add-lesson').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
@@ -4585,7 +4588,7 @@
 
     <!-- Modal Tambah Ujian Sertifikasi -->
     <div id="modal-add-quiz" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <h3 class="text-sm font-black text-slate-900 font-heading">Tambah Ujian Sertifikasi</h3>
                 <button type="button" onclick="document.getElementById('modal-add-quiz').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
@@ -4640,7 +4643,7 @@
     {% for tier in tiers %}
     {% for quiz in tier.quizzes %}
     <div id="modal-add-question-{{ quiz.id }}" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-lg max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div>
                     <h3 class="text-sm font-black text-slate-900 font-heading">Tambah Butir Soal Ujian</h3>
@@ -4702,3 +4705,279 @@
 
 </div>
 {% endmacro %}
+
+
+<!-- ============================================================================== -->
+<!-- MACRO: MANAJEMEN PESAN, PERMOHONAN PENGAWALAN & SPONSORSHIP (ADMIN) -->
+<!-- ============================================================================== -->
+{% macro admin_inquiries(data) %}
+<div class="space-y-6">
+
+    <!-- Top Action & Header Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">
+                    <i class="fas fa-inbox"></i>
+                </span>
+                <h1 class="text-lg font-bold text-slate-900 font-heading">Pusat Pesan, Pengawalan & Kemitraan Publik</h1>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">
+                Kelola permohonan pemandu/pengawalan pendakian, pendaftaran calon anggota, proposal sponsorship, serta pesan publik dari landing page.
+            </p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="https://wa.me/{{ (org_phone or '6281234567890')|replace(' ', '')|replace('-', '')|replace('+', '') }}" target="_blank"
+               class="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5">
+                <i class="fab fa-whatsapp text-sm"></i>
+                <span>Hotline WhatsApp Sekretariat</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 Metrik Kartu Ringkasan -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Masuk</p>
+                <p class="text-2xl font-black font-mono text-slate-900 mt-0.5">{{ data.total_count }}</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-base">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Perlu Respon</p>
+                <p class="text-2xl font-black font-mono text-amber-600 mt-0.5">{{ data.pending_count }}</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-base">
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold text-orange-600 uppercase tracking-wider">Pengawalan Jalur</p>
+                <p class="text-2xl font-black font-mono text-orange-600 mt-0.5">{{ data.guiding_count }}</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-base">
+                <i class="fas fa-hiking"></i>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Sponsor & Mitra</p>
+                <p class="text-2xl font-black font-mono text-emerald-600 mt-0.5">{{ data.sponsor_count }}</p>
+            </div>
+            <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
+                <i class="fas fa-handshake"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tab Kategori -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        <a href="/admin/inquiries" hx-get="/admin/inquiries" hx-target="#main-content" hx-push-url="true"
+           class="px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 {% if not data.selected_category %}bg-orange-600 text-white shadow-xs{% else %}bg-white text-slate-600 border border-slate-200 hover:bg-slate-50{% endif %}">
+            <i class="fas fa-list"></i> Semua Pesan
+        </a>
+        <a href="/admin/inquiries?category=guiding" hx-get="/admin/inquiries?category=guiding" hx-target="#main-content" hx-push-url="true"
+           class="px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 {% if data.selected_category == 'guiding' %}bg-orange-600 text-white shadow-xs{% else %}bg-white text-slate-600 border border-slate-200 hover:bg-slate-50{% endif %}">
+            <i class="fas fa-hiking text-orange-500"></i> Pengawalan Pendakian
+        </a>
+        <a href="/admin/inquiries?category=sponsorship" hx-get="/admin/inquiries?category=sponsorship" hx-target="#main-content" hx-push-url="true"
+           class="px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 {% if data.selected_category == 'sponsorship' %}bg-orange-600 text-white shadow-xs{% else %}bg-white text-slate-600 border border-slate-200 hover:bg-slate-50{% endif %}">
+            <i class="fas fa-handshake text-emerald-500"></i> Sponsorship & Mitra
+        </a>
+        <a href="/admin/inquiries?category=membership" hx-get="/admin/inquiries?category=membership" hx-target="#main-content" hx-push-url="true"
+           class="px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 {% if data.selected_category == 'membership' %}bg-orange-600 text-white shadow-xs{% else %}bg-white text-slate-600 border border-slate-200 hover:bg-slate-50{% endif %}">
+            <i class="fas fa-id-card text-purple-500"></i> Calon Anggota (Diksar)
+        </a>
+        <a href="/admin/inquiries?category=general" hx-get="/admin/inquiries?category=general" hx-target="#main-content" hx-push-url="true"
+           class="px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 {% if data.selected_category == 'general' %}bg-orange-600 text-white shadow-xs{% else %}bg-white text-slate-600 border border-slate-200 hover:bg-slate-50{% endif %}">
+            <i class="fas fa-comments text-sky-500"></i> Pertanyaan Umum
+        </a>
+    </div>
+
+    <!-- Feed / Daftar Inquiries -->
+    <div class="space-y-3.5">
+        {% if not data.inquiries %}
+        <div class="bg-white rounded-lg p-12 text-center border border-slate-200 shadow-sm space-y-3">
+            <div class="w-14 h-14 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-2xl">
+                <i class="fas fa-inbox"></i>
+            </div>
+            <h3 class="font-bold text-slate-700 text-base">Belum Ada Pesan Masuk</h3>
+            <p class="text-xs text-slate-500 max-w-sm mx-auto">
+                Setiap pesan, pertanyaan publik, dan permohonan pengawalan pendakian dari landing page akan otomatis muncul di sini.
+            </p>
+        </div>
+        {% endif %}
+
+        {% for inq in data.inquiries %}
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-5 space-y-4 hover:border-orange-300 transition">
+            
+            <!-- Header Kartu -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                        {% if inq.category == 'guiding' %}bg-orange-100 text-orange-800 border border-orange-200
+                        {% elif inq.category == 'sponsorship' %}bg-emerald-100 text-emerald-800 border border-emerald-200
+                        {% elif inq.category == 'membership' %}bg-purple-100 text-purple-800 border border-purple-200
+                        {% else %}bg-slate-100 text-slate-700 border border-slate-200{% endif %}">
+                        {% if inq.category == 'guiding' %}<i class="fas fa-hiking mr-1"></i> Pengawalan Pendakian
+                        {% elif inq.category == 'sponsorship' %}<i class="fas fa-handshake mr-1"></i> Sponsorship
+                        {% elif inq.category == 'membership' %}<i class="fas fa-id-card mr-1"></i> Pendaftaran Diksar
+                        {% else %}<i class="fas fa-comment mr-1"></i> Pertanyaan Umum{% endif %}
+                    </span>
+                    <span class="text-[11px] font-mono text-slate-400">
+                        #{{ inq.id }} • {{ inq.created_at.strftime('%d %b %Y, %H:%M') if inq.created_at else '-' }} WITA
+                    </span>
+                </div>
+
+                <!-- Status Badge -->
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase
+                        {% if inq.status == 'pending' %}bg-amber-100 text-amber-800
+                        {% elif inq.status == 'contacted' %}bg-blue-100 text-blue-800
+                        {% elif inq.status == 'assigned' %}bg-purple-100 text-purple-800
+                        {% elif inq.status == 'completed' %}bg-emerald-100 text-emerald-800
+                        {% else %}bg-slate-100 text-slate-700{% endif %}">
+                        ● {{ inq.status|upper }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Konten Utama: 2 Kolom -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                <!-- Kolom Data Pemohon & Keperluan -->
+                <div class="lg:col-span-8 space-y-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <span>{{ inq.name }}</span>
+                            {% if inq.email %}
+                            <span class="text-slate-400 font-normal text-xs">&lt;{{ inq.email }}&gt;</span>
+                            {% endif %}
+                        </h3>
+                        <p class="text-xs font-semibold text-orange-600 mt-0.5">{{ inq.subject or 'Permohonan Layanan' }}</p>
+                    </div>
+
+                    <!-- Spesifikasi Khusus Pengawalan Pendakian -->
+                    {% if inq.category == 'guiding' or inq.destination %}
+                    <div class="p-3 bg-orange-50/70 border border-orange-200/80 rounded-lg text-xs space-y-1.5">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <div>
+                                <span class="text-[10px] text-orange-800/70 font-semibold block">Destinasi / Gunung:</span>
+                                <span class="font-bold text-orange-950 font-heading">{{ inq.destination or 'Belum ditentukan' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-orange-800/70 font-semibold block">Rencana Tanggal:</span>
+                                <span class="font-bold text-orange-950 font-mono">{{ inq.target_date or '-' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-orange-800/70 font-semibold block">Jumlah Rombongan:</span>
+                                <span class="font-bold text-orange-950 font-mono">{{ inq.participants_count or 1 }} Orang</span>
+                            </div>
+                        </div>
+                        {% if inq.services_needed %}
+                        <div class="pt-1.5 border-t border-orange-200/60 text-[11px] text-orange-900">
+                            <strong>Kebutuhan Layanan:</strong> {{ inq.services_needed }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Isi Pesan -->
+                    <div class="p-3 bg-slate-50 border border-slate-100 rounded-lg text-xs text-slate-700 whitespace-pre-wrap leading-relaxed">
+                        {{ inq.message }}
+                    </div>
+
+                    {% if inq.admin_notes %}
+                    <div class="text-[11px] text-slate-500 italic flex items-center gap-1.5">
+                        <i class="fas fa-sticky-note text-amber-500"></i>
+                        <span><strong>Catatan Admin:</strong> {{ inq.admin_notes }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Kolom Tindak Lanjut Admin & Kontak Cepat -->
+                <div class="lg:col-span-4 bg-slate-50/80 border border-slate-200/80 rounded-lg p-3.5 space-y-3 flex flex-col justify-between">
+                    <div class="space-y-2.5">
+                        <p class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Aksi Cepat Humas</p>
+                        
+                        <!-- Tombol Direct WhatsApp -->
+                        {% set clean_phone = inq.phone|replace(' ', '')|replace('-', '')|replace('+', '') %}
+                        {% if clean_phone.startswith('0') %}
+                            {% set clean_phone = '62' ~ clean_phone[1:] %}
+                        {% endif %}
+                        <a href="https://wa.me/{{ clean_phone }}?text=Halo%20{{ inq.name }},%20kami%20dari%20Pengurus%20KPAB%20GIMBAL%20menindaklanjuti%20permohonan%20Anda%20mengenai%20{{ inq.category }}."
+                           target="_blank"
+                           class="w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs transition flex items-center justify-center gap-2">
+                            <i class="fab fa-whatsapp text-sm"></i>
+                            <span>Chat WhatsApp Pemohon</span>
+                        </a>
+
+                        {% if inq.email %}
+                        <a href="mailto:{{ inq.email }}?subject=Tindak%20Lanjut%20Permohonan%20KPAB%20GIMBAL"
+                           class="w-full py-2 px-3 bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs rounded-lg border border-slate-200 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-envelope text-slate-500"></i>
+                            <span>Kirim Surel</span>
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <!-- Form Update Status & Disposisi Guide -->
+                    <form hx-post="/admin/inquiries/update-status/{{ inq.id }}"
+                          hx-target="#main-content"
+                          class="space-y-2 pt-2 border-t border-slate-200 text-xs">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Status Tiket:</label>
+                            <select name="status" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 font-semibold bg-white text-xs">
+                                <option value="pending" {% if inq.status == 'pending' %}selected{% endif %}>Pending (Belum Direspon)</option>
+                                <option value="contacted" {% if inq.status == 'contacted' %}selected{% endif %}>Sudah Dihubungi (Follow-up)</option>
+                                <option value="assigned" {% if inq.status == 'assigned' %}selected{% endif %}>Disposisi Tim / Guide</option>
+                                <option value="completed" {% if inq.status == 'completed' %}selected{% endif %}>Selesai / Terjadwal</option>
+                                <option value="archived" {% if inq.status == 'archived' %}selected{% endif %}>Arsip / Batal</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Disposisi Leader Guide / PIC:</label>
+                            <select name="assigned_guide_id" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs">
+                                <option value="">-- Belum Ditugaskan --</option>
+                                {% for g in data.guides %}
+                                <option value="{{ g.id }}" {% if inq.assigned_guide_id == g.id %}selected{% endif %}>
+                                    {{ g.name }} ({{ g.nra or 'Anggota' }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-1.5 pt-1">
+                            <button type="submit" class="flex-1 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg transition text-xs shadow-xs">
+                                Simpan Status
+                            </button>
+                            <button type="button"
+                                    hx-post="/admin/inquiries/delete/{{ inq.id }}"
+                                    hx-target="#main-content"
+                                    hx-confirm="Yakin ingin menghapus pesan dari '{{ inq.name }}'?"
+                                    class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition" title="Hapus Pesan">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endmacro %}
+

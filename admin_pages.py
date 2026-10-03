@@ -12,7 +12,7 @@ from models import (
     PostComment, PostLike, ChatMessage, SystemSetting, AdminAuditLog,
     MapRepository, Position, generate_next_nra, Sponsor, SponsorProduct,
     AcademyTier, AcademyCourse, AcademyLesson, AcademyQuiz, QuizQuestion, QuizOption,
-    UserLessonProgress, UserQuizAttempt, UserCertification
+    UserLessonProgress, UserQuizAttempt, UserCertification, Inquiry
 )
 from cloudflare_email import delete_cloudflare_email_rule, sync_cloudflare_email_routing
 from helpers import get_current_user, login_required, admin_required, render_gimbal_page
@@ -2857,7 +2857,7 @@ def admin_delete_gallery(item_id):
 @admin_bp.route('/admin/repo-maps')
 @login_required
 @admin_required
-def admin_repo_maps():
+def admin_repo_maps(alert_msg=None):
     category = request.args.get('category')
     region = request.args.get('region')
     query = MapRepository.query
@@ -2872,7 +2872,7 @@ def admin_repo_maps():
         'selected_category': category,
         'selected_region': region
     }
-    return render_gimbal_page('admin/admin_pages.html', 'admin_repo_maps', data, active_page='admin_repo_maps')
+    return render_gimbal_page('admin/admin_pages.html', 'admin_repo_maps', data, active_page='admin_repo_maps', alert_msg=alert_msg)
 
 
 @admin_bp.route('/admin/repo-maps/create-modal')
@@ -2889,7 +2889,16 @@ def admin_create_repo_map():
     admin = get_current_user()
     title = request.form.get('title', '').strip()
     region = request.form.get('region', 'Gorontalo').strip()
-    category = request.form.get('category', 'jalur_pendakian').strip()
+    cat_raw = request.form.get('category', 'jalur_pendakian').strip()
+    cat_map = {
+        'topo': 'topografi', 'topografi': 'topografi',
+        'trail': 'jalur_pendakian', 'jalur_pendakian': 'jalur_pendakian',
+        'geopdf': 'geopdf',
+        'conservation': 'cagar_alam', 'cagar_alam': 'cagar_alam',
+        'water_source': 'sumber_air', 'watershed': 'sumber_air', 'sumber_air': 'sumber_air',
+        'other': 'other'
+    }
+    category = cat_map.get(cat_raw, cat_raw)
     description = request.form.get('description', '').strip()
     file_type = request.form.get('file_type', 'gpx').strip().lower()
     total_waypoints = int(request.form.get('total_waypoints', 0) or 0)
@@ -2898,12 +2907,17 @@ def admin_create_repo_map():
 
     map_file = request.files.get('map_file')
     if not map_file or not map_file.filename:
-        return admin_repo_maps()
+        return admin_repo_maps(alert_msg="Peringatan: Berkas peta belum dipilih.")
 
     maps_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'maps')
     os.makedirs(maps_dir, exist_ok=True)
 
-    filename_clean = secure_filename(map_file.filename)
+    filename_raw = map_file.filename or 'peta_geodata.pdf'
+    filename_clean = secure_filename(filename_raw)
+    if not filename_clean or '.' not in filename_clean:
+        ext = filename_raw.rsplit('.', 1)[-1].lower() if '.' in filename_raw else 'pdf'
+        filename_clean = f"map_file_{int(datetime.now().timestamp())}.{ext}"
+
     safe_name = f"map_{int(datetime.now().timestamp())}_{filename_clean}"
     save_path = os.path.join(maps_dir, safe_name)
     map_file.save(save_path)
@@ -2917,10 +2931,13 @@ def admin_create_repo_map():
     if '.' in filename_clean:
         file_type = filename_clean.rsplit('.', 1)[1].lower()
 
+    if file_type == 'pdf' and category in ('other', 'topografi'):
+        category = 'geopdf'
+
     preview_file = request.files.get('preview_file')
     preview_image = None
     if preview_file and preview_file.filename:
-        preview_clean = secure_filename(preview_file.filename)
+        preview_clean = secure_filename(preview_file.filename) or f"prev_{int(datetime.now().timestamp())}.jpg"
         safe_preview = f"prev_{int(datetime.now().timestamp())}_{preview_clean}"
         preview_path = os.path.join(maps_dir, safe_preview)
         preview_file.save(preview_path)
@@ -2952,7 +2969,7 @@ def admin_create_repo_map():
     )
     db.session.add(log)
     db.session.commit()
-    return admin_repo_maps()
+    return admin_repo_maps(alert_msg=f"Peta '{title}' berhasil diunggah ke repositori geodata!")
 
 
 @admin_bp.route('/admin/repo-maps/edit-modal/<int:map_id>')
@@ -2972,7 +2989,16 @@ def admin_edit_repo_map(map_id):
 
     map_item.title = request.form.get('title', map_item.title).strip()
     map_item.region = request.form.get('region', map_item.region).strip()
-    map_item.category = request.form.get('category', map_item.category).strip()
+    cat_raw = request.form.get('category', map_item.category).strip()
+    cat_map = {
+        'topo': 'topografi', 'topografi': 'topografi',
+        'trail': 'jalur_pendakian', 'jalur_pendakian': 'jalur_pendakian',
+        'geopdf': 'geopdf',
+        'conservation': 'cagar_alam', 'cagar_alam': 'cagar_alam',
+        'water_source': 'sumber_air', 'watershed': 'sumber_air', 'sumber_air': 'sumber_air',
+        'other': 'other'
+    }
+    map_item.category = cat_map.get(cat_raw, cat_raw)
     map_item.description = request.form.get('description', map_item.description).strip()
     map_item.total_waypoints = int(request.form.get('total_waypoints', map_item.total_waypoints) or 0)
     map_item.total_distance_km = float(request.form.get('total_distance_km', map_item.total_distance_km) or 0.0)
@@ -3956,6 +3982,69 @@ def admin_academy_cert_revoke(cert_id):
         db.session.commit()
         flash(f"Sertifikat '{cert.certificate_no}' atas nama {cert.user.name} berhasil dicabut.", "warning")
     return redirect('/admin/academy?tab=riwayat')
+
+
+# ========== ADMIN INQUIRIES & PERMINTAAN PENGAWALAN ==============================
+
+@admin_bp.route('/admin/inquiries')
+@login_required
+@admin_required
+def admin_inquiries(alert_msg=None):
+    category = request.args.get('category')
+    status = request.args.get('status')
+    query = Inquiry.query
+    if category:
+        query = query.filter_by(category=category)
+    if status:
+        query = query.filter_by(status=status)
+    inquiries = query.order_by(Inquiry.id.desc()).all()
+    guides = User.query.filter_by(status='active').order_by(User.name.asc()).all()
+    data = {
+        'inquiries': inquiries,
+        'guides': guides,
+        'selected_category': category,
+        'selected_status': status,
+        'total_count': Inquiry.query.count(),
+        'pending_count': Inquiry.query.filter_by(status='pending').count(),
+        'guiding_count': Inquiry.query.filter_by(category='guiding').count(),
+        'sponsor_count': Inquiry.query.filter_by(category='sponsorship').count()
+    }
+    return render_gimbal_page('admin/admin_pages.html', 'admin_inquiries', data, active_page='admin_inquiries', alert_msg=alert_msg)
+
+
+@admin_bp.route('/admin/inquiries/update-status/<int:inquiry_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_inquiry_update_status(inquiry_id):
+    inquiry = db.session.get(Inquiry, inquiry_id)
+    if not inquiry:
+        return admin_inquiries(alert_msg="Permintaan tidak ditemukan.")
+    
+    status = request.form.get('status', inquiry.status).strip()
+    notes = request.form.get('admin_notes', inquiry.admin_notes or '').strip()
+    guide_id_raw = request.form.get('assigned_guide_id')
+    if guide_id_raw and guide_id_raw.isdigit():
+        inquiry.assigned_guide_id = int(guide_id_raw)
+    elif guide_id_raw == '':
+        inquiry.assigned_guide_id = None
+        
+    inquiry.status = status
+    inquiry.admin_notes = notes
+    db.session.commit()
+    return admin_inquiries(alert_msg=f"Status permohonan #{inquiry.id} dari '{inquiry.name}' berhasil diperbarui ({status.upper()}).")
+
+
+@admin_bp.route('/admin/inquiries/delete/<int:inquiry_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_inquiry_delete(inquiry_id):
+    inquiry = db.session.get(Inquiry, inquiry_id)
+    if inquiry:
+        db.session.delete(inquiry)
+        db.session.commit()
+        return admin_inquiries(alert_msg=f"Pesan/permohonan #{inquiry_id} berhasil dihapus.")
+    return admin_inquiries()
+
 
 
 

@@ -18,7 +18,7 @@ from models import (
     ActivityFieldLog, GalleryItem, SystemSetting, Position, ChatMessage, MapRepository,
     Sponsor, SponsorProduct,
     AcademyTier, AcademyCourse, AcademyLesson, AcademyQuiz, QuizQuestion, QuizOption,
-    UserLessonProgress, UserQuizAttempt, UserCertification
+    UserLessonProgress, UserQuizAttempt, UserCertification, Inquiry
 )
 from cloudflare_email import sync_cloudflare_email_routing, clean_username_for_alias
 from helpers import (
@@ -1212,6 +1212,91 @@ def verify_kta(nra):
         },
         active_page='verify_kta'
     )
+
+
+@app.route('/contact/send', methods=['POST'])
+def contact_send():
+    """Endpoint publik: Formulir Kontak, Permohonan Pengawalan Pendakian, Sponsorship & Pertanyaan Umum"""
+    import urllib.parse
+    category = request.form.get('category', 'general').strip()
+    name = request.form.get('name', '').strip()
+    phone = request.form.get('phone', '').strip()
+    email = request.form.get('email', '').strip()
+    subject = request.form.get('subject', '').strip()
+    message = request.form.get('message', '').strip()
+
+    destination = request.form.get('destination', '').strip()
+    target_date = request.form.get('target_date', '').strip()
+    participants_raw = request.form.get('participants_count', '1').strip()
+    try:
+        participants_count = max(1, int(participants_raw))
+    except (ValueError, TypeError):
+        participants_count = 1
+
+    services_list = request.form.getlist('services_needed')
+    services_needed = ", ".join(services_list) if services_list else request.form.get('services_needed', '').strip()
+
+    if not name or not phone or not message:
+        return """
+        <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs animate-shake">
+            <p class="font-bold flex items-center gap-1.5"><i class="fas fa-exclamation-triangle text-rose-600"></i> Mohon Lengkapi Kolom Wajib</p>
+            <p class="mt-1 text-[11px] text-rose-700">Nama lengkap, nomor WhatsApp aktif, dan pesan/keperluan wajib diisi agar pengurus dapat menghubungi Anda.</p>
+        </div>
+        """
+
+    cat_titles = {
+        'guiding': 'Pengawalan & Pemandu Pendakian',
+        'membership': 'Pendaftaran Calon Anggota (Diksar)',
+        'sponsorship': 'Kemitraan & Sponsorship',
+        'general': 'Pertanyaan Umum / Info Jalur'
+    }
+    cat_label = cat_titles.get(category, category.title())
+
+    inquiry = Inquiry(
+        category=category,
+        name=name,
+        phone=phone,
+        email=email,
+        subject=subject or f"Permohonan {cat_label}: {name}",
+        message=message,
+        destination=destination,
+        target_date=target_date,
+        participants_count=participants_count,
+        services_needed=services_needed,
+        status='pending'
+    )
+    db.session.add(inquiry)
+    db.session.commit()
+
+    wa_text = f"Halo Admin KPAB GIMBAL, saya *{name}*. Saya telah mengirim permohonan melalui form di website perihal *{cat_label}*."
+    if category == 'guiding' and destination:
+        wa_text += f"\n- *Tujuan Gunung*: {destination}\n- *Rencana Tanggal*: {target_date or '-'}\n- *Peserta*: {participants_count} orang\n- *Kebutuhan*: {services_needed or 'Pemandu Jalur'}"
+    wa_text += f"\n\nMohon konfirmasi dan informasinya, terima kasih! Salam Lestari."
+    
+    clean_org_phone = os.environ.get('ORG_PHONE', '6281234567890').replace(' ', '').replace('-', '').replace('+', '')
+    wa_url = f"https://wa.me/{clean_org_phone}?text={urllib.parse.quote(wa_text)}"
+
+    return f"""
+    <div class="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-center space-y-3 animate-fade-in shadow-sm">
+        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto text-xl shadow-xs">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h4 class="font-bold text-base font-heading text-emerald-900">Permohonan Berhasil Terkirim!</h4>
+        <p class="text-xs text-emerald-800 leading-relaxed max-w-md mx-auto">
+            Terima kasih <strong>{name}</strong>. Permohonan Anda mengenai <strong>{cat_label}</strong> telah tercatat di sistem sekretariat KPAB GIMBAL.
+        </p>
+        <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+            <a href="{wa_url}" target="_blank"
+               class="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center justify-center gap-2">
+                <i class="fab fa-whatsapp text-sm"></i> <span>Konfirmasi Cepat via WhatsApp</span>
+            </a>
+            <button type="button" onclick="if(window.resetContactForm) window.resetContactForm(); else location.reload();"
+                    class="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-emerald-100/60 text-emerald-800 font-semibold text-xs rounded-lg border border-emerald-300 transition">
+                Kirim Pesan Lainnya
+            </button>
+        </div>
+    </div>
+    """
 
 
 # ========== AUTHENTICATION & GOOGLE SSO ==========================================

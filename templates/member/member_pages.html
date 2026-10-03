@@ -1823,6 +1823,10 @@
                class="px-3 py-1.5 rounded-lg font-bold transition {% if data.selected_category == 'topografi' %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
                 🗺️ Topografi Offline (MBTiles)
             </a>
+            <a href="/member/repo-maps?category=geopdf" hx-get="/member/repo-maps?category=geopdf" hx-target="#main-content" hx-push-url="true"
+               class="px-3 py-1.5 rounded-lg font-bold transition {% if data.selected_category == 'geopdf' %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                📄 Peta GeoPDF A3
+            </a>
             <a href="/member/repo-maps?category=cagar_alam" hx-get="/member/repo-maps?category=cagar_alam" hx-target="#main-content" hx-push-url="true"
                class="px-3 py-1.5 rounded-lg font-bold transition {% if data.selected_category == 'cagar_alam' %}bg-orange-600 text-white shadow-sm{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
                 🌳 Konservasi & Cagar Alam
@@ -1841,10 +1845,13 @@
             <div class="p-5 flex-1 space-y-3">
                 <div class="flex items-center justify-between">
                     <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase
-                        {% if m.file_type == 'mbtiles' %}bg-purple-100 text-purple-800
-                        {% elif m.file_type == 'gpx' %}bg-emerald-100 text-emerald-800
-                        {% elif m.file_type == 'geojson' %}bg-sky-100 text-sky-800
-                        {% else %}bg-orange-100 text-orange-800{% endif %}">
+                        {% if m.file_type == 'mbtiles' %}bg-purple-100 text-purple-800 border border-purple-200
+                        {% elif m.file_type == 'gpx' %}bg-emerald-100 text-emerald-800 border border-emerald-200
+                        {% elif m.file_type == 'geojson' %}bg-sky-100 text-sky-800 border border-sky-200
+                        {% elif m.file_type == 'pdf' %}bg-rose-100 text-rose-800 border border-rose-200
+                        {% elif m.file_type in ['tif', 'tiff'] %}bg-amber-100 text-amber-800 border border-amber-200
+                        {% elif m.file_type in ['kml', 'kmz'] %}bg-blue-100 text-blue-800 border border-blue-200
+                        {% else %}bg-orange-100 text-orange-800 border border-orange-200{% endif %}">
                         .{{ m.file_type|upper }}
                     </span>
                     <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1">
@@ -2482,7 +2489,7 @@
 <div class="space-y-6">
 
     <!-- Top Header Banner (Sesuai Warna Utama Tema) -->
-    <div class="theme-profile-header-card p-6 sm:p-8 rounded-2xl border border-orange-500/40 text-white shadow-xl relative overflow-hidden" style="background: var(--brand-600, #ea580c) !important;">
+    <div class="theme-profile-header-card p-6 sm:p-8 rounded-lg border border-orange-500/40 text-white shadow-xl relative overflow-hidden" style="background: var(--brand-600, #ea580c) !important;">
         <div class="absolute -right-8 -bottom-8 opacity-15 text-white text-9xl pointer-events-none">
             <i class="fas fa-graduation-cap"></i>
         </div>
@@ -2504,9 +2511,9 @@
 
     <!-- MANDATORY CERTIFICATION WARNING BANNER (Jika diwajibkan oleh Admin) -->
     {% if data.is_mandatory_pending %}
-    <div class="p-5 rounded-2xl bg-gradient-to-r from-rose-900 via-rose-800 to-amber-900 text-white shadow-xl border-2 border-rose-500/80 relative overflow-hidden animate-pulse">
+    <div class="p-5 rounded-lg bg-gradient-to-r from-rose-900 via-rose-800 to-amber-900 text-white shadow-xl border-2 border-rose-500/80 relative overflow-hidden animate-pulse">
         <div class="flex items-start gap-3.5 relative z-10">
-            <div class="w-12 h-12 rounded-xl bg-rose-600 text-white flex items-center justify-center text-xl shadow-md shrink-0 border border-white/20">
+            <div class="w-12 h-12 rounded-lg bg-rose-600 text-white flex items-center justify-center text-xl shadow-md shrink-0 border border-white/20">
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
             <div class="flex-1">
@@ -2526,7 +2533,7 @@
     {% endif %}
 
     <!-- RINGKASAN BREVET & LENCANA RESMI ANGGOTA -->
-    <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-3">
+    <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-sm space-y-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <i class="fas fa-shield-alt text-orange-600 text-base"></i>
@@ -2548,9 +2555,9 @@
                 {% endif %}
             {% endfor %}
 
-            <div class="p-4 rounded-xl border relative overflow-hidden transition {% if user_cert %}bg-gradient-to-br from-orange-600 via-orange-500 to-amber-600 border-amber-300 text-white shadow-md{% else %}bg-slate-50 border-slate-200/80 text-slate-400{% endif %}">
+            <div class="p-4 rounded-lg border relative overflow-hidden transition {% if user_cert %}bg-gradient-to-br from-orange-600 via-orange-500 to-amber-600 border-amber-300 text-white shadow-md{% else %}bg-slate-50 border-slate-200/80 text-slate-400{% endif %}">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-inner shrink-0 {% if user_cert %}text-white border border-white/20{% else %}bg-slate-200 text-slate-400{% endif %}"
+                    <div class="w-12 h-12 rounded-lg flex items-center justify-center text-xl shadow-inner shrink-0 {% if user_cert %}text-white border border-white/20{% else %}bg-slate-200 text-slate-400{% endif %}"
                          style="{% if user_cert %}background-color: {{ tier.badge_color or '#f97316' }};{% endif %}">
                         <i class="fas {{ tier.badge_icon or 'fa-award' }}"></i>
                     </div>
@@ -2598,11 +2605,11 @@
         {% for tier in tiers %}
         {% set is_tier_certified = tier.id in certified_tier_ids %}
         
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden" id="tier-{{ tier.id }}">
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden" id="tier-{{ tier.id }}">
             <!-- Header Tingkat -->
             <div class="p-5 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r {% if is_tier_certified %}from-emerald-50/50 via-white to-white{% else %}from-orange-50/40 via-white to-white{% endif %}">
                 <div class="flex items-start gap-3.5">
-                    <div class="w-12 h-12 rounded-xl text-white flex items-center justify-center text-xl shadow-md shrink-0"
+                    <div class="w-12 h-12 rounded-lg text-white flex items-center justify-center text-xl shadow-md shrink-0"
                          style="background-color: {{ tier.badge_color or '#f97316' }};">
                         <i class="fas {{ tier.badge_icon or 'fa-award' }}"></i>
                     </div>
@@ -2637,7 +2644,7 @@
             <!-- Kursus & Modul di dalam Tingkat ini -->
             <div class="p-5 sm:p-6 space-y-6">
                 {% for course in tier.courses %}
-                <div class="rounded-xl border border-slate-200/90 overflow-hidden bg-slate-50/50">
+                <div class="rounded-lg border border-slate-200/90 overflow-hidden bg-slate-50/50">
                     <div class="p-4 bg-white border-b border-slate-200 flex items-center justify-between">
                         <div class="flex items-center gap-2.5">
                             <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold text-xs">
@@ -2701,9 +2708,9 @@
 
                 <!-- Ujian Sertifikasi Tingkat -->
                 {% for quiz in tier.quizzes %}
-                <div class="p-5 rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-50/70 via-orange-50/40 to-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="p-5 rounded-lg border border-amber-300/80 bg-gradient-to-r from-amber-50/70 via-orange-50/40 to-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div class="flex items-start gap-3.5">
-                        <div class="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-black shadow-sm shrink-0">
+                        <div class="w-10 h-10 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-black shadow-sm shrink-0">
                             <i class="fas fa-file-signature"></i>
                         </div>
                         <div>
@@ -2721,7 +2728,7 @@
 
                     <a href="/member/academy/quiz/{{ quiz.id }}"
                        hx-get="/member/academy/quiz/{{ quiz.id }}" hx-target="#main-content" hx-push-url="true"
-                       class="px-5 py-2.5 rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-2 shrink-0 {% if is_tier_certified %}bg-emerald-600 hover:bg-emerald-700 text-white{% else %}bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white{% endif %}">
+                       class="px-5 py-2.5 rounded-lg text-xs font-black shadow-md transition flex items-center justify-center gap-2 shrink-0 {% if is_tier_certified %}bg-emerald-600 hover:bg-emerald-700 text-white{% else %}bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white{% endif %}">
                         <i class="fas {% if is_tier_certified %}fa-certificate{% else %}fa-play{% endif %}"></i>
                         <span>{% if is_tier_certified %}Lihat Hasil / Sertifikat{% else %}Mulai Ujian Sertifikasi{% endif %}</span>
                     </a>
@@ -2767,7 +2774,7 @@
     </div>
 
     <!-- Main Content Container -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
+    <div class="bg-white rounded-lg border border-slate-200 shadow-md overflow-hidden">
         
         <!-- Header Materi -->
         <div class="p-6 sm:p-8 border-b border-slate-100 bg-gradient-to-b from-orange-50/30 to-white">
@@ -2791,7 +2798,7 @@
         <!-- Video Embed (Jika Ada) -->
         {% if lesson.video_url %}
         <div class="p-6 border-b border-slate-100 bg-black/95">
-            <div class="aspect-video w-full rounded-xl overflow-hidden shadow-lg border border-stone-800">
+            <div class="aspect-video w-full rounded-lg overflow-hidden shadow-lg border border-stone-800">
                 <iframe class="w-full h-full" src="{{ lesson.video_url }}" title="{{ lesson.title }}" frameborder="0" allowfullscreen></iframe>
             </div>
         </div>
@@ -2801,7 +2808,7 @@
         {% if lesson.doc or lesson.map_repo %}
         <div class="p-5 sm:p-6 bg-slate-50 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {% if lesson.doc %}
-            <div class="p-4 rounded-xl bg-white border border-rose-200 shadow-2xs flex items-center justify-between gap-3">
+            <div class="p-4 rounded-lg bg-white border border-rose-200 shadow-2xs flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-lg font-bold shrink-0">
                         <i class="fas fa-file-pdf"></i>
@@ -2820,7 +2827,7 @@
             {% endif %}
 
             {% if lesson.map_repo %}
-            <div class="p-4 rounded-xl bg-white border border-blue-200 shadow-2xs flex items-center justify-between gap-3">
+            <div class="p-4 rounded-lg bg-white border border-blue-200 shadow-2xs flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-lg font-bold shrink-0">
                         <i class="fas fa-map-marked-alt"></i>
@@ -2852,7 +2859,7 @@
             {% if prev_l %}
             <a href="/member/academy/lesson/{{ prev_l.id }}"
                hx-get="/member/academy/lesson/{{ prev_l.id }}" hx-target="#main-content" hx-push-url="true"
-               class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-2">
+               class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold rounded-lg transition flex items-center gap-2">
                 <i class="fas fa-chevron-left text-[10px]"></i>
                 <span>Bab Sebelumnya</span>
             </a>
@@ -2862,7 +2869,7 @@
 
             <form action="/member/academy/lesson/{{ lesson.id }}/complete" method="POST">
                 <button type="submit"
-                        class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center gap-2 cursor-pointer">
+                        class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-lg shadow-lg transition flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-check-circle"></i>
                     <span>{% if is_completed %}Sudah Diselesaikan (Lanjut){% else %}Tandai Selesai & Lanjut &rarr;{% endif %}</span>
                 </button>
@@ -2871,7 +2878,7 @@
             {% if next_l %}
             <a href="/member/academy/lesson/{{ next_l.id }}"
                hx-get="/member/academy/lesson/{{ next_l.id }}" hx-target="#main-content" hx-push-url="true"
-               class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold rounded-xl transition flex items-center gap-2">
+               class="px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold rounded-lg transition flex items-center gap-2">
                 <span>Bab Berikutnya</span>
                 <i class="fas fa-chevron-right text-[10px]"></i>
             </a>
@@ -2912,7 +2919,7 @@
         {% if messages %}
         <div class="space-y-2">
             {% for category, message in messages %}
-            <div class="p-4 rounded-xl border text-xs font-bold flex items-center justify-between {% if category == 'success' %}bg-emerald-50 border-emerald-300 text-emerald-900{% else %}bg-amber-50 border-amber-300 text-amber-900{% endif %}">
+            <div class="p-4 rounded-lg border text-xs font-bold flex items-center justify-between {% if category == 'success' %}bg-emerald-50 border-emerald-300 text-emerald-900{% else %}bg-amber-50 border-amber-300 text-amber-900{% endif %}">
                 <div class="flex items-center gap-2">
                     <i class="fas {% if category == 'success' %}fa-check-circle text-emerald-600{% else %}fa-exclamation-triangle text-amber-600{% endif %} text-base"></i>
                     <span>{{ message }}</span>
@@ -2925,7 +2932,7 @@
 
     {% if not is_exam_mode %}
     <!-- OVERVIEW / INSTRUCTIONS CARD -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
+    <div class="bg-white rounded-lg border border-slate-200 shadow-md overflow-hidden">
         <div class="theme-profile-header-card p-6 sm:p-8 text-white relative border-b border-orange-500/30" style="background: var(--brand-600, #ea580c) !important;">
             <div class="flex items-center gap-2 mb-2">
                 <span class="px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-white/20 text-white backdrop-blur-sm border border-white/30">
@@ -2944,19 +2951,19 @@
         <div class="p-6 sm:p-8 space-y-6">
             <!-- Parameter Ujian -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80">
                     <span class="text-[10px] text-slate-400 uppercase font-bold block">Jumlah Soal</span>
                     <span class="text-base font-black text-slate-800">{{ quiz.questions|length }} Soal</span>
                 </div>
-                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80">
                     <span class="text-[10px] text-slate-400 uppercase font-bold block">Passing Score</span>
                     <span class="text-base font-black text-emerald-600">{{ quiz.passing_score }}%</span>
                 </div>
-                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80">
                     <span class="text-[10px] text-slate-400 uppercase font-bold block">Batas Waktu</span>
                     <span class="text-base font-black text-slate-800">{{ quiz.time_limit_minutes }} Menit</span>
                 </div>
-                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200/80">
                     <span class="text-[10px] text-slate-400 uppercase font-bold block">Pengerjaan Anda</span>
                     <span class="text-base font-black text-slate-800">{{ attempts|length }} Kali</span>
                 </div>
@@ -2964,9 +2971,9 @@
 
             <!-- Status Kelulusan Anda -->
             {% if has_passed %}
-            <div class="p-5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 flex items-center justify-between gap-4">
+            <div class="p-5 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-300 flex items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-2xl shadow-sm shrink-0">
+                    <div class="w-12 h-12 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-2xl shadow-sm shrink-0">
                         <i class="fas fa-medal"></i>
                     </div>
                     <div>
@@ -2984,7 +2991,7 @@
 
                 {% if user_cert %}
                 <a href="/member/academy/certificate/{{ user_cert.certificate_no }}" target="_blank"
-                   class="px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs shadow transition flex items-center gap-1.5 shrink-0">
+                   class="px-4 py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xs shadow transition flex items-center gap-1.5 shrink-0">
                     <i class="fas fa-certificate"></i> Buka Piagam
                 </a>
                 {% endif %}
@@ -2995,7 +3002,7 @@
             {% if attempts %}
             <div class="space-y-2">
                 <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Riwayat Percobaan Terakhir</h4>
-                <div class="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden text-xs">
+                <div class="divide-y divide-slate-100 rounded-lg border border-slate-200 overflow-hidden text-xs">
                     {% for a in attempts[:5] %}
                     <div class="p-3 flex items-center justify-between bg-white">
                         <div class="flex items-center gap-2">
@@ -3020,11 +3027,11 @@
             <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
                 <a href="/member/academy"
                    hx-get="/member/academy" hx-target="#main-content" hx-push-url="true"
-                   class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">
+                   class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs">
                     Kembali
                 </a>
                 <a href="/member/academy/quiz/{{ quiz.id }}?exam=1"
-                   class="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-black text-xs sm:text-sm shadow-lg transition flex items-center gap-2">
+                   class="px-6 py-3 rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-black text-xs sm:text-sm shadow-lg transition flex items-center gap-2">
                     <i class="fas fa-play"></i>
                     <span>{% if attempts %}Ujian Ulang{% else %}Mulai Ujian Sekarang{% endif %} &rarr;</span>
                 </a>
@@ -3034,7 +3041,7 @@
 
     {% else %}
     <!-- LEMBAR PENGERJAAN SOAL UJIAN (EXAM MODE) -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+    <div class="bg-white rounded-lg border border-slate-200 shadow-xl overflow-hidden">
         <div class="theme-profile-header-card p-6 text-white border-b border-orange-500/30 flex items-center justify-between" style="background: var(--brand-600, #ea580c) !important;">
             <div>
                 <span class="text-[10px] text-orange-100 font-bold uppercase tracking-wider">Ujian Sedang Berlangsung</span>
@@ -3047,7 +3054,7 @@
 
         <form action="/member/academy/quiz/{{ quiz.id }}/submit" method="POST" class="p-6 sm:p-8 space-y-8">
             {% for q in quiz.questions %}
-            <div class="space-y-3 p-4 sm:p-5 rounded-xl border border-slate-200 bg-slate-50/50">
+            <div class="space-y-3 p-4 sm:p-5 rounded-lg border border-slate-200 bg-slate-50/50">
                 <div class="flex items-start gap-3">
                     <span class="w-7 h-7 rounded-lg bg-orange-600 text-white font-black text-xs flex items-center justify-center shrink-0">
                         {{ loop.index }}
@@ -3073,7 +3080,7 @@
             {% endfor %}
 
             <!-- Pernyataan Integritas & Tombol Submit -->
-            <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
+            <div class="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
                 <label class="flex items-center gap-2 cursor-pointer font-bold">
                     <input type="checkbox" required class="w-4 h-4 text-amber-600 rounded">
                     <span>Saya mengerjakan seluruh soal ujian ini dengan jujur dan bersungguh-sungguh demi kesiapan operasional lapangan.</span>
@@ -3085,7 +3092,7 @@
                     Batalkan
                 </a>
                 <button type="submit"
-                        class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center gap-2 cursor-pointer">
+                        class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm rounded-lg shadow-lg transition flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-check-circle"></i>
                     <span>Kirim Jawaban & Evaluasi Hasil</span>
                 </button>
@@ -3117,7 +3124,7 @@
             <span>Kembali ke Portal Akademi</span>
         </a>
         <button onclick="window.print()"
-                class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-black rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
+                class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-black rounded-lg shadow transition flex items-center gap-1.5 cursor-pointer">
             <i class="fas fa-print"></i>
             <span>Cetak / Unduh PDF</span>
         </button>
@@ -3132,7 +3139,7 @@
         </div>
 
         <!-- Frame Border Line -->
-        <div class="border border-amber-400/40 rounded-2xl p-6 sm:p-10 relative z-10 space-y-6">
+        <div class="border border-amber-400/40 rounded-lg p-6 sm:p-10 relative z-10 space-y-6">
             
             <!-- Header Institusi -->
             <div class="flex items-center justify-center gap-3">
@@ -3176,7 +3183,7 @@
                 <p class="text-xs sm:text-sm text-stone-300 leading-relaxed font-serif">
                     Telah menyelesaikan seluruh modul pembelajaran, penguasaan SOP kebencanaan, navigasi rimba, dan dinyatakan <strong>LULUS</strong> pada Ujian Kualifikasi:
                 </p>
-                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-300 font-black text-sm sm:text-base">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-400 text-amber-300 font-black text-sm sm:text-base">
                     <i class="fas {{ tier.badge_icon or 'fa-award' }} text-amber-400"></i>
                     <span>{{ tier.title }} &mdash; {{ tier.badge_name }}</span>
                 </div>
