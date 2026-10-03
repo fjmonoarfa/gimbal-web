@@ -532,6 +532,16 @@ def api_google_login():
         return jsonify({'status': 'error', 'message': 'Email atau id_token akun Google diperlukan'}), 400
         
     user = User.query.filter_by(email=email).first()
+    if not user and '@gmail.com' in email:
+        norm_input = email.split('@')[0].replace('.', '').lower()
+        all_users = User.query.all()
+        for u in all_users:
+            if u.email and '@gmail.com' in u.email.lower():
+                norm_db = u.email.lower().split('@')[0].replace('.', '')
+                if norm_db == norm_input:
+                    user = u
+                    break
+
     if not user:
         return jsonify({
             'status': 'error',
