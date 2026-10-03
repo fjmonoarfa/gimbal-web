@@ -1,6 +1,12 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from sqlalchemy import func
+
+WITA_TZ = timezone(timedelta(hours=8))
+
+def now_wita():
+    """Mengembalikan datetime saat ini dalam zona waktu WITA (Asia/Makassar, UTC+8) tanpa tzinfo (naive) untuk SQLite"""
+    return datetime.now(WITA_TZ).replace(tzinfo=None)
 
 db = SQLAlchemy()
 
@@ -64,15 +70,15 @@ class User(db.Model):
     consent_agreed = db.Column(db.Boolean, default=False)
     consent_agreed_at = db.Column(db.DateTime, nullable=True)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
+    updated_at = db.Column(db.DateTime, default=now_wita, onupdate=now_wita)
 
     @property
     def is_online(self):
         """Mengecek apakah pengguna aktif dalam 5 menit terakhir"""
         if not self.last_seen:
             return False
-        return (datetime.utcnow() - self.last_seen).total_seconds() <= 300
+        return (now_wita() - self.last_seen).total_seconds() <= 300
 
     # Relasi
     payments = db.relationship('DuesPayment', foreign_keys='DuesPayment.user_id', backref='user', lazy='dynamic')
@@ -94,14 +100,14 @@ class User(db.Model):
     def has_active_google_subscription(self):
         """Mengecek apakah pengguna memiliki langganan aktif via Google Pay"""
         if self.subscription_channel == 'google_pay' and self.subscription_expiry:
-            return self.subscription_expiry > datetime.utcnow()
+            return self.subscription_expiry > now_wita()
         return False
 
     @property
     def subscription_days_remaining(self):
         """Menghitung sisa hari aktif langganan Google Pay"""
         if self.has_active_google_subscription:
-            delta = self.subscription_expiry - datetime.utcnow()
+            delta = self.subscription_expiry - now_wita()
             return max(0, delta.days)
         return 0
 
@@ -143,7 +149,7 @@ class User(db.Model):
             return True
         if self.has_active_google_subscription:
             return True
-        now = datetime.utcnow()
+        now = now_wita()
         latest = self.payments.filter_by(status='approved').order_by(DuesPayment.id.desc()).first()
         if not latest:
             return False
@@ -199,7 +205,7 @@ class Dues(db.Model):
     due_date = db.Column(db.String(30), nullable=True)
     description = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     payments = db.relationship('DuesPayment', backref='dues', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -212,7 +218,7 @@ class DuesPayment(db.Model):
     dues_id = db.Column(db.Integer, db.ForeignKey('dues.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
-    payment_date = db.Column(db.DateTime, default=datetime.utcnow)
+    payment_date = db.Column(db.DateTime, default=now_wita)
     bank_name = db.Column(db.String(50), nullable=True)
     proof_image = db.Column(db.String(256), nullable=True)  # Path file bukti transfer (opsional jika Midtrans)
     order_id = db.Column(db.String(64), unique=True, nullable=True)  # Midtrans Order ID
@@ -224,7 +230,7 @@ class DuesPayment(db.Model):
     admin_notes = db.Column(db.Text, nullable=True)
     verified_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     verified_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
 
 class DocumentCategory(db.Model):
@@ -238,7 +244,7 @@ class DocumentCategory(db.Model):
     color = db.Column(db.String(50), default='text-amber-500')
     description = db.Column(db.String(255), nullable=True)
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
 
 class Document(db.Model):
@@ -255,8 +261,8 @@ class Document(db.Model):
     is_public_to_members = db.Column(db.Boolean, default=True)
     is_shared_to_timeline = db.Column(db.Boolean, default=False)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
+    updated_at = db.Column(db.DateTime, default=now_wita, onupdate=now_wita)
 
 
 class Activity(db.Model):
@@ -274,7 +280,7 @@ class Activity(db.Model):
     image_url = db.Column(db.String(256), nullable=True)
     is_open = db.Column(db.Boolean, default=True)
     is_shared_to_timeline = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     # ROL & Lifecycle Fields
     phase = db.Column(db.String(30), default='open')  # 'planning', 'open', 'in_progress', 'completed', 'archived'
@@ -353,7 +359,7 @@ class ActivityParticipant(db.Model):
     status = db.Column(db.String(20), default='registered')  # 'registered', 'confirmed', 'cancelled'
     role = db.Column(db.String(50), default='Anggota')  # 'Pimpinan Perjalanan', 'Navigator', 'Logistik', 'Medis/P3K', 'Dokumentasi', 'Sweeper', 'Anggota'
     notes = db.Column(db.Text, nullable=True)
-    registered_at = db.Column(db.DateTime, default=datetime.utcnow)
+    registered_at = db.Column(db.DateTime, default=now_wita)
 
     user = db.relationship('User', foreign_keys=[user_id])
 
@@ -373,8 +379,8 @@ class ActivityFieldLog(db.Model):
     elevation = db.Column(db.Float, nullable=True)
     photo_url = db.Column(db.String(256), nullable=True)
     source = db.Column(db.String(30), default='manual')  # 'manual', 'gimbal_maps'
-    recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    recorded_at = db.Column(db.DateTime, default=now_wita)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     user = db.relationship('User', foreign_keys=[user_id])
 
@@ -392,7 +398,7 @@ class GalleryItem(db.Model):
     is_pinned = db.Column(db.Boolean, default=True)  # Pin-down ke Galeri Utama Landing Page
     activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'), nullable=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     activity = db.relationship('Activity', backref=db.backref('gallery_items', lazy='dynamic'))
     post = db.relationship('Post', backref=db.backref('gallery_items', lazy='dynamic'))
@@ -444,8 +450,8 @@ class Sponsor(db.Model):
     order_index = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True)
     is_shared_to_timeline = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
+    updated_at = db.Column(db.DateTime, default=now_wita, onupdate=now_wita)
 
     owner = db.relationship('User', foreign_keys=[owner_user_id], backref=db.backref('businesses', lazy='dynamic'))
     products = db.relationship('SponsorProduct', backref='sponsor', cascade='all, delete-orphan', order_by='SponsorProduct.order_index.asc()')
@@ -465,7 +471,7 @@ class SponsorProduct(db.Model):
     badge = db.Column(db.String(50), nullable=True)  # e.g., 'Best Seller', 'Khas Gorontalo', 'Menu Favorit'
     is_available = db.Column(db.Boolean, default=True)
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
 
 # ========== SOCIAL & COMMUNITY FEED MODELS (LINI MASA PETUALANG) ==================
@@ -484,7 +490,7 @@ class Post(db.Model):
     map_repo_id = db.Column(db.Integer, db.ForeignKey('map_repositories.id'), nullable=True)
     sponsor_id = db.Column(db.Integer, db.ForeignKey('sponsors.id'), nullable=True)
     post_type = db.Column(db.String(30), default='general')  # 'general', 'activity', 'document', 'map', 'sponsor'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     user = db.relationship('User', foreign_keys=[user_id])
     activity = db.relationship('Activity', backref=db.backref('posts', lazy='dynamic'))
@@ -534,7 +540,7 @@ class PostMedia(db.Model):
     media_url = db.Column(db.String(256), nullable=False)
     caption = db.Column(db.String(200), nullable=True)
     order_index = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     def to_dict(self):
         return {
@@ -554,7 +560,7 @@ class PostComment(db.Model):
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     user = db.relationship('User', foreign_keys=[user_id])
 
@@ -566,7 +572,7 @@ class PostLike(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     __table_args__ = (db.UniqueConstraint('post_id', 'user_id', name='uq_post_user_like'),)
 
@@ -580,7 +586,7 @@ class ChatMessage(db.Model):
     recipient_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # None = Obrolan Publik Basecamp; Integer = Pesan Pribadi DM
     message = db.Column(db.String(500), nullable=False)
     is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     user = db.relationship('User', foreign_keys=[user_id])
     recipient = db.relationship('User', foreign_keys=[recipient_id])
@@ -593,7 +599,7 @@ class SystemSetting(db.Model):
     key = db.Column(db.String(64), primary_key=True)
     value = db.Column(db.Text, nullable=True)
     description = db.Column(db.String(255), nullable=True)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=now_wita, onupdate=now_wita)
 
     @classmethod
     def get(cls, key, default=None):
@@ -625,7 +631,7 @@ class AdminAuditLog(db.Model):
     target_id = db.Column(db.String(64), nullable=True)
     details = db.Column(db.Text, nullable=True)
     ip_address = db.Column(db.String(64), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     admin = db.relationship('User', foreign_keys=[admin_id])
 
@@ -649,8 +655,8 @@ class MapRepository(db.Model):
     is_shared_to_timeline = db.Column(db.Boolean, default=False)
     downloads_count = db.Column(db.Integer, default=0)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
+    updated_at = db.Column(db.DateTime, default=now_wita, onupdate=now_wita)
 
     uploader = db.relationship('User', foreign_keys=[uploaded_by])
 
@@ -665,7 +671,7 @@ class Position(db.Model):
     order_index = db.Column(db.Integer, default=0)
     description = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
 
     @property
     def member_count(self):
@@ -691,8 +697,8 @@ class AcademyTier(db.Model):
     order_index = db.Column(db.Integer, default=1)
     passing_grade = db.Column(db.Integer, default=75)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
+    updated_at = db.Column(db.DateTime, default=now_wita, onupdate=now_wita)
 
     courses = db.relationship('AcademyCourse', backref='tier', cascade='all, delete-orphan', order_by='AcademyCourse.order_index')
     quizzes = db.relationship('AcademyQuiz', backref='tier', cascade='all, delete-orphan')
@@ -739,8 +745,8 @@ class AcademyCourse(db.Model):
     target_duration_mins = db.Column(db.Integer, default=30)
     order_index = db.Column(db.Integer, default=1)
     is_published = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
+    updated_at = db.Column(db.DateTime, default=now_wita, onupdate=now_wita)
 
     lessons = db.relationship('AcademyLesson', backref='course', cascade='all, delete-orphan', order_by='AcademyLesson.order_index')
     quiz = db.relationship('AcademyQuiz', backref='course', uselist=False, cascade='all, delete-orphan')
@@ -759,8 +765,8 @@ class AcademyLesson(db.Model):
     doc_id = db.Column(db.Integer, db.ForeignKey('documents.id'), nullable=True)
     map_repo_id = db.Column(db.Integer, db.ForeignKey('map_repositories.id'), nullable=True)
     order_index = db.Column(db.Integer, default=1)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
+    updated_at = db.Column(db.DateTime, default=now_wita, onupdate=now_wita)
 
     doc = db.relationship('Document', foreign_keys=[doc_id])
     map_repo = db.relationship('MapRepository', foreign_keys=[map_repo_id])
@@ -814,8 +820,8 @@ class AcademyQuiz(db.Model):
     passing_score = db.Column(db.Integer, default=75) # Minimal persen benar (0-100)
     time_limit_mins = db.Column(db.Integer, default=20)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
+    updated_at = db.Column(db.DateTime, default=now_wita, onupdate=now_wita)
 
     questions = db.relationship('QuizQuestion', backref='quiz', cascade='all, delete-orphan', order_by='QuizQuestion.order_index')
     attempts = db.relationship('UserQuizAttempt', backref='quiz', cascade='all, delete-orphan')
@@ -863,7 +869,7 @@ class UserLessonProgress(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     lesson_id = db.Column(db.Integer, db.ForeignKey('academy_lessons.id'), nullable=False)
     is_completed = db.Column(db.Boolean, default=True)
-    completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, default=now_wita)
 
     user = db.relationship('User', foreign_keys=[user_id])
     lesson = db.relationship('AcademyLesson', foreign_keys=[lesson_id])
@@ -881,7 +887,7 @@ class UserQuizAttempt(db.Model):
     total_questions = db.Column(db.Integer, default=0)
     correct_answers = db.Column(db.Integer, default=0)
     answers_json = db.Column(db.Text, nullable=True)
-    completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, default=now_wita)
 
     user = db.relationship('User', foreign_keys=[user_id])
 
@@ -896,7 +902,7 @@ class UserCertification(db.Model):
     certificate_no = db.Column(db.String(64), unique=True, nullable=False)
     status = db.Column(db.String(20), default='active') # 'active', 'expired', 'revoked'
     score_achieved = db.Column(db.Float, default=100.0)
-    issued_at = db.Column(db.DateTime, default=datetime.utcnow)
+    issued_at = db.Column(db.DateTime, default=now_wita)
     valid_until = db.Column(db.DateTime, nullable=True)
 
     user = db.relationship('User', foreign_keys=[user_id])
@@ -932,8 +938,8 @@ class Inquiry(db.Model):
     status = db.Column(db.String(30), default='pending')  # 'pending', 'contacted', 'assigned', 'completed', 'archived'
     admin_notes = db.Column(db.Text, nullable=True)
     assigned_guide_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=now_wita)
+    updated_at = db.Column(db.DateTime, default=now_wita, onupdate=now_wita)
 
     assigned_guide = db.relationship('User', foreign_keys=[assigned_guide_id])
 

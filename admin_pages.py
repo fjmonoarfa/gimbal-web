@@ -12,7 +12,8 @@ from models import (
     PostComment, PostLike, ChatMessage, SystemSetting, AdminAuditLog,
     MapRepository, Position, generate_next_nra, Sponsor, SponsorProduct,
     AcademyTier, AcademyCourse, AcademyLesson, AcademyQuiz, QuizQuestion, QuizOption,
-    UserLessonProgress, UserQuizAttempt, UserCertification, Inquiry
+    UserLessonProgress, UserQuizAttempt, UserCertification, Inquiry,
+    now_wita, WITA_TZ
 )
 from cloudflare_email import delete_cloudflare_email_rule, sync_cloudflare_email_routing
 from helpers import get_current_user, login_required, admin_required, render_gimbal_page
@@ -95,14 +96,14 @@ def admin_approve_member(user_id):
         user.nra_sequence = seq_num
         user.status = 'active'
         user.approved_by = admin.id
-        user.approved_at = datetime.utcnow()
+        user.approved_at = now_wita()
 
         # Otomatis verifikasi pembayaran iuran calon anggota menjadi approved
         pending_payments = DuesPayment.query.filter_by(user_id=user.id, status='pending').all()
         for p in pending_payments:
             p.status = 'approved'
             p.verified_by = admin.id
-            p.verified_at = datetime.utcnow()
+            p.verified_at = now_wita()
 
         log = AdminAuditLog(
             admin_id=admin.id,
@@ -202,7 +203,7 @@ def admin_create_member():
         orig_filename = secure_filename(avatar_file.filename)
         ext = os.path.splitext(orig_filename)[1].lower()
         if ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif']:
-            safe_name = f"avatar_member_{int(datetime.utcnow().timestamp())}{ext}"
+            safe_name = f"avatar_member_{int(now_wita().timestamp())}{ext}"
             save_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars')
             os.makedirs(save_dir, exist_ok=True)
             avatar_file.save(os.path.join(save_dir, safe_name))
@@ -227,7 +228,7 @@ def admin_create_member():
         member.nra_year = year_2digit
         member.nra_sequence = seq_num
         member.approved_by = admin.id
-        member.approved_at = datetime.utcnow()
+        member.approved_at = now_wita()
         
     db.session.add(member)
     log = AdminAuditLog(
@@ -274,7 +275,7 @@ def admin_edit_member(user_id):
         orig_filename = secure_filename(avatar_file.filename)
         ext = os.path.splitext(orig_filename)[1].lower()
         if ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif']:
-            safe_name = f"avatar_{member.id}_{int(datetime.utcnow().timestamp())}{ext}"
+            safe_name = f"avatar_{member.id}_{int(now_wita().timestamp())}{ext}"
             save_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars')
             os.makedirs(save_dir, exist_ok=True)
             avatar_file.save(os.path.join(save_dir, safe_name))
@@ -303,7 +304,7 @@ def admin_edit_member(user_id):
         member.nra_year = year_2digit
         member.nra_sequence = seq_num
         member.approved_by = admin.id
-        member.approved_at = datetime.utcnow()
+        member.approved_at = now_wita()
         
     member.status = new_status
     member.birth_place = request.form.get('birth_place', member.birth_place)
@@ -689,7 +690,7 @@ def admin_verify_dues(payment_id):
     
     pay.status = status
     pay.verified_by = admin.id
-    pay.verified_at = datetime.utcnow()
+    pay.verified_at = now_wita()
     db.session.commit()
     return admin_dues()
 
@@ -2526,7 +2527,7 @@ def admin_activity_publish_to_feed(activity_id):
         post.content = content
         post.location = act.location
         post.image_url = act.image_url
-        post.created_at = datetime.utcnow()
+        post.created_at = now_wita()
         PostMedia.query.filter_by(post_id=post.id).delete()
     else:
         post = Post(
@@ -2536,7 +2537,7 @@ def admin_activity_publish_to_feed(activity_id):
             activity_id=act.id,
             image_url=act.image_url,
             post_type='activity',
-            created_at=datetime.utcnow()
+            created_at=now_wita()
         )
         db.session.add(post)
         db.session.flush()
@@ -3721,7 +3722,7 @@ def admin_sponsor_toggle_share(sponsor_id):
             existing.image_url = None
             existing.location = sponsor.address or f"{sponsor.name} Official"
             existing.post_type = 'sponsor'
-            existing.created_at = datetime.utcnow()
+            existing.created_at = now_wita()
         else:
             post = Post(
                 user_id=admin.id,
@@ -3730,7 +3731,7 @@ def admin_sponsor_toggle_share(sponsor_id):
                 image_url=None,
                 location=sponsor.address or f"{sponsor.name} Official",
                 post_type='sponsor',
-                created_at=datetime.utcnow()
+                created_at=now_wita()
             )
             db.session.add(post)
     else:

@@ -590,7 +590,7 @@
                         </td>
                         <td class="px-5 py-3.5">
                             {% if m.last_login %}
-                                <span class="font-mono text-slate-800 font-semibold block text-[11px]">{{ m.last_login.strftime('%d/%m/%Y %H:%M') }} WIB</span>
+                                <span class="font-mono text-slate-800 font-semibold block text-[11px]">{{ m.last_login.strftime('%d/%m/%Y %H:%M') }} WITA</span>
                                 <span class="text-[10px] text-emerald-600 flex items-center gap-1 font-medium">
                                     <i class="fas fa-check-circle text-[9px]"></i> Terdata
                                 </span>
@@ -2194,7 +2194,7 @@
                             </p>
                             {% endif %}
                             <p class="text-xs text-slate-600 leading-relaxed">{{ log.description or '-' }}</p>
-                            <p class="text-[10px] text-slate-400">{{ log.recorded_at.strftime('%d %b %Y %H:%M') if log.recorded_at else '' }}</p>
+                            <p class="text-[10px] text-slate-400">{{ log.recorded_at.strftime('%d %b %Y %H:%M') if log.recorded_at else '' }} WITA</p>
                         </div>
                     </div>
 
@@ -3543,7 +3543,7 @@
                 <table class="w-full text-left text-xs text-slate-700">
                     <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
                         <tr>
-                            <th class="px-6 py-3.5">Waktu</th>
+                            <th class="px-6 py-3.5">Waktu (WITA)</th>
                             <th class="px-6 py-3.5">Admin Pelaksana</th>
                             <th class="px-6 py-3.5">Aksi Tindakan</th>
                             <th class="px-6 py-3.5">Target</th>
@@ -3553,7 +3553,7 @@
                     <tbody class="divide-y divide-slate-100">
                         {% for log in data.audit_logs %}
                         <tr class="hover:bg-slate-50/60 transition">
-                            <td class="px-6 py-3.5 font-mono text-[11px] text-slate-500">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else '-' }}</td>
+                            <td class="px-6 py-3.5 font-mono text-[11px] text-slate-500">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') if log.created_at else '-' }} WITA</td>
                             <td class="px-6 py-3.5 font-bold text-slate-900">{{ log.admin.name if log.admin else 'Sistem / Superadmin' }}</td>
                             <td class="px-6 py-3.5">
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-orange-100 text-orange-800">

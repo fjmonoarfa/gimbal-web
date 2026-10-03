@@ -19,7 +19,7 @@ from models import (
     Sponsor, SponsorProduct,
     AcademyTier, AcademyCourse, AcademyLesson, AcademyQuiz, QuizQuestion, QuizOption,
     UserLessonProgress, UserQuizAttempt, UserCertification, Inquiry,
-    DocumentCategory, Document
+    DocumentCategory, Document, now_wita, WITA_TZ
 )
 from cloudflare_email import sync_cloudflare_email_routing, clean_username_for_alias
 from helpers import (
@@ -68,7 +68,7 @@ def update_user_last_seen():
     try:
         user = get_current_user()
         if user:
-            now = datetime.utcnow()
+            now = now_wita()
             if not user.last_seen or (now - user.last_seen).total_seconds() > 60:
                 user.last_seen = now
                 db.session.commit()
@@ -121,6 +121,20 @@ def render_markdown_filter(text):
     return _render_md(text)
 
 app.jinja_env.globals['render_markdown'] = _render_md
+
+@app.template_filter('wita')
+def filter_wita(dt, fmt='%d %b %Y • %H:%M'):
+    if not dt:
+        return '-'
+    if fmt == 'time':
+        fmt = '%H:%M'
+    elif fmt == 'date':
+        fmt = '%d %b %Y'
+    elif fmt == 'full':
+        fmt = '%Y-%m-%d %H:%M:%S'
+    return dt.strftime(fmt)
+
+app.jinja_env.globals['now_wita'] = now_wita
 
 
 # ========== DATABASE INITIALIZATION & MIGRATIONS =================================
@@ -270,6 +284,55 @@ def init_database_and_defaults():
                         pass
         except Exception as e:
             app.logger.warning(f"Column migration check note: {e}")
+
+        # Migrasi Database: Penyesuaian Timestamp Database ke WITA (UTC+8, Asia/Makassar)
+        if SystemSetting.get('tz_migrated_v2_wita') != 'true':
+            try:
+                tables_dt = [
+                    ('academy_courses', ['created_at', 'updated_at']),
+                    ('academy_lessons', ['created_at', 'updated_at']),
+                    ('academy_quizzes', ['created_at', 'updated_at']),
+                    ('academy_tiers', ['created_at', 'updated_at']),
+                    ('activities', ['created_at']),
+                    ('activity_field_logs', ['recorded_at', 'created_at']),
+                    ('activity_participants', ['registered_at']),
+                    ('admin_audit_logs', ['created_at']),
+                    ('chat_messages', ['created_at']),
+                    ('document_categories', ['created_at']),
+                    ('documents', ['created_at', 'updated_at']),
+                    ('dues', ['created_at']),
+                    ('dues_payments', ['payment_date', 'verified_at', 'created_at']),
+                    ('gallery_items', ['created_at']),
+                    ('inquiries', ['created_at', 'updated_at']),
+                    ('map_repositories', ['created_at', 'updated_at']),
+                    ('positions', ['created_at']),
+                    ('post_comments', ['created_at']),
+                    ('post_likes', ['created_at']),
+                    ('post_media', ['created_at']),
+                    ('posts', ['created_at']),
+                    ('sponsor_products', ['created_at']),
+                    ('sponsors', ['created_at', 'updated_at']),
+                    ('user_certifications', ['issued_at', 'valid_until']),
+                    ('user_lesson_progress', ['completed_at']),
+                    ('user_quiz_attempts', ['completed_at']),
+                    ('users', ['approved_at', 'created_at', 'updated_at', 'last_login', 'last_seen', 'consent_agreed_at']),
+                ]
+                is_mysql = 'mysql' in str(engine.url).lower() or 'mariadb' in str(engine.url).lower()
+                with engine.connect() as conn:
+                    for tbl, cols in tables_dt:
+                        for col in cols:
+                            try:
+                                if is_mysql:
+                                    conn.execute(db.text(f"UPDATE {tbl} SET {col} = DATE_ADD({col}, INTERVAL 8 HOUR) WHERE {col} IS NOT NULL"))
+                                else:
+                                    conn.execute(db.text(f"UPDATE {tbl} SET {col} = datetime({col}, '+8 hours') WHERE {col} IS NOT NULL"))
+                            except Exception:
+                                pass
+                    conn.commit()
+                SystemSetting.set('tz_migrated_v2_wita', 'true', 'Penanda migrasi timestamp database ke WITA (UTC+8)')
+                app.logger.info("Migrasi timestamp database ke zona waktu WITA (UTC+8) selesai.")
+            except Exception as e_tz:
+                app.logger.warning(f"Error on tz_migrated_v2_wita: {e_tz}")
 
         # Pastikan Master Jabatan Organisasi terinisialisasi
         if Position.query.count() == 0:
@@ -1423,7 +1486,7 @@ def login_or_register_google_user(user_info):
         db.session.commit()
 
     # Perbarui waktu terakhir masuk (Last Login) & Sinkronisasi Email Forwarding Cloudflare
-    user.last_login = datetime.utcnow()
+    user.last_login = now_wita()
     try:
         sync_cloudflare_email_routing(user)
     except Exception as _e_cf:
@@ -1635,7 +1698,7 @@ def auth_login():
         return redirect('/login?error=Kata+sandi+salah')
         
     # Perbarui waktu terakhir masuk (Last Login) & Sinkronisasi Email Forwarding Cloudflare
-    user.last_login = datetime.utcnow()
+    user.last_login = now_wita()
     try:
         sync_cloudflare_email_routing(user)
     except Exception as _e_cf:

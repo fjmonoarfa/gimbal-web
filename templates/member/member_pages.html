@@ -690,7 +690,7 @@
                                     {% endif %}
                                 </div>
                                 <div class="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-slate-500">
-                                    <span>{{ post.created_at.strftime('%d %b %Y • %H:%M') }}</span>
+                                    <span>{{ post.created_at.strftime('%d %b %Y • %H:%M') }} WITA</span>
                                     {% if post.location %}
                                     <span>&bull;</span>
                                     <span class="text-orange-700 font-semibold flex items-center gap-1">
@@ -1124,7 +1124,7 @@
                                 <div class="flex-1">
                                     <div class="flex items-center justify-between">
                                         <span class="font-bold text-slate-900 text-[11px]">{{ c.user.name }}</span>
-                                        <span class="text-[9px] text-slate-400">{{ c.created_at.strftime('%H:%M') }}</span>
+                                        <span class="text-[9px] text-slate-400">{{ c.created_at.strftime('%H:%M') }} WITA</span>
                                     </div>
                                     <p class="text-slate-700 text-xs mt-0.5 leading-snug">{{ c.content }}</p>
                                 </div>
@@ -1238,7 +1238,7 @@
             <div class="flex-1">
                 <div class="flex items-center justify-between">
                     <span class="font-bold text-slate-900 text-[11px]">{{ c.user.name }}</span>
-                    <span class="text-[9px] text-slate-400">{{ c.created_at.strftime('%H:%M') }}</span>
+                    <span class="text-[9px] text-slate-400">{{ c.created_at.strftime('%H:%M') }} WITA</span>
                 </div>
                 <p class="text-slate-700 text-xs mt-0.5 leading-snug">{{ c.content }}</p>
             </div>
@@ -1274,7 +1274,7 @@
             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shadow-xs shrink-0" title="Online"></span>
             {% endif %}
         </div>
-        <span class="text-[9px] text-slate-400 font-mono shrink-0">{{ chat.created_at.strftime('%H:%M') }}</span>
+        <span class="text-[9px] text-slate-400 font-mono shrink-0">{{ chat.created_at.strftime('%H:%M') }} WITA</span>
     </div>
     <p class="text-slate-800 text-xs leading-relaxed break-words">{{ chat.message }}</p>
 </div>
@@ -1547,7 +1547,7 @@
                     <tr class="hover:bg-slate-50/50">
                         <td class="px-6 py-3 font-semibold text-slate-900">{{ pay.dues.title if pay.dues else 'Iuran Anggota' }}</td>
                         <td class="px-6 py-3 font-bold font-mono text-slate-800">Rp {{ "{:,.0f}".format(pay.amount_paid).replace(',', '.') }}</td>
-                        <td class="px-6 py-3 text-slate-500">{{ pay.payment_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td class="px-6 py-3 text-slate-500">{{ pay.payment_date.strftime('%d/%m/%Y %H:%M') }} WITA</td>
                         <td class="px-6 py-3">{{ pay.bank_name or '-' }}</td>
                         <td class="px-6 py-3">
                             <a href="{{ pay.proof_image }}" target="_blank" class="text-orange-600 hover:underline font-bold flex items-center gap-1">
@@ -3007,7 +3007,7 @@
                     <div class="p-3 flex items-center justify-between bg-white">
                         <div class="flex items-center gap-2">
                             <span class="font-bold text-slate-700">Percobaan #{{ loop.revindex }}</span>
-                            <span class="text-slate-400 text-[11px]">&bull; {{ a.completed_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                            <span class="text-slate-400 text-[11px]">&bull; {{ a.completed_at.strftime('%d/%m/%Y %H:%M') }} WITA</span>
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="font-bold {% if a.passed %}text-emerald-600{% else %}text-rose-600{% endif %}">

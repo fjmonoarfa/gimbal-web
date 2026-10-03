@@ -8,7 +8,7 @@ from flask import Blueprint, request, jsonify, session, current_app, redirect, s
 
 from models import (
     db, User, Dues, DuesPayment, SystemSetting, MapRepository, Post,
-    Activity, ActivityFieldLog, ActivityParticipant
+    Activity, ActivityFieldLog, ActivityParticipant, now_wita, WITA_TZ
 )
 from helpers import get_current_user, login_required
 
@@ -129,7 +129,7 @@ def midtrans_notification():
             payment.status = 'pending'
         else:
             payment.status = 'approved'
-            payment.verified_at = datetime.utcnow()
+            payment.verified_at = now_wita()
     elif transaction_status in ['cancel', 'deny', 'expire']:
         payment.status = 'rejected'
     elif transaction_status == 'pending':
@@ -156,7 +156,7 @@ def member_payment_midtrans_finish():
     if payment and result_status in ['success', 'settlement', 'capture']:
         payment.status = 'approved'
         payment.transaction_status = 'settlement'
-        payment.verified_at = datetime.utcnow()
+        payment.verified_at = now_wita()
         db.session.commit()
         
     if request.headers.get('HX-Request') or request.is_json:
@@ -321,7 +321,7 @@ def maps_subscription_google_pay():
 
     # Hitung batas waktu expiry langganan (perpanjangan dari expiry sebelumnya jika masih aktif)
     from datetime import timedelta
-    now = datetime.utcnow()
+    now = now_wita()
     if user.subscription_expiry and user.subscription_expiry > now:
         new_expiry = user.subscription_expiry + timedelta(days=duration_days)
     else:

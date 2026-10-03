@@ -12,7 +12,8 @@ from models import (
     PostLike, ChatMessage, SystemSetting, MapRepository, PostMedia,
     Sponsor, SponsorProduct,
     AcademyTier, AcademyCourse, AcademyLesson, AcademyQuiz, QuizQuestion, QuizOption,
-    UserLessonProgress, UserQuizAttempt, UserCertification
+    UserLessonProgress, UserQuizAttempt, UserCertification,
+    now_wita, WITA_TZ
 )
 from helpers import get_current_user, login_required, check_member_access, render_gimbal_page, render_gimbal_modal
 
@@ -43,7 +44,7 @@ def member_onboarding_consent():
                 active_page='onboarding_consent'
             )
         user.consent_agreed = True
-        user.consent_agreed_at = datetime.utcnow()
+        user.consent_agreed_at = now_wita()
         db.session.commit()
         return redirect('/member/complete-profile')
 
@@ -234,7 +235,7 @@ def member_profile_modal_update():
         orig_filename = secure_filename(avatar_file.filename)
         ext = os.path.splitext(orig_filename)[1].lower()
         if ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif']:
-            safe_name = f"avatar_{user.id}_{int(datetime.utcnow().timestamp())}{ext}"
+            safe_name = f"avatar_{user.id}_{int(now_wita().timestamp())}{ext}"
             save_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'avatars')
             os.makedirs(save_dir, exist_ok=True)
             avatar_file.save(os.path.join(save_dir, safe_name))
@@ -368,7 +369,7 @@ def member_post_create():
     # Anti Double-Posting Linimasa: Cek duplikasi postingan identik dalam 24 jam terakhir (oleh member yang sama maupun admin/member lain)
     cleaned_input = " ".join(content.strip().split()).lower()
     if cleaned_input:
-        recent_posts = Post.query.filter(Post.created_at >= datetime.utcnow() - timedelta(hours=24)).all()
+        recent_posts = Post.query.filter(Post.created_at >= now_wita() - timedelta(hours=24)).all()
         for rp in recent_posts:
             if rp.content and " ".join(rp.content.strip().split()).lower() == cleaned_input:
                 flash(
@@ -1041,7 +1042,7 @@ def member_activity_share_to_timeline(activity_id):
         existing.content = content
         existing.location = act.location
         existing.image_url = act.image_url
-        existing.created_at = datetime.utcnow()
+        existing.created_at = now_wita()
     else:
         post = Post(
             user_id=user.id,
@@ -1303,7 +1304,7 @@ def member_business_toggle_share(sponsor_id):
             existing.location = biz.address or f"{biz.name}, Gorontalo"
             existing.image_url = None
             existing.post_type = 'sponsor'
-            existing.created_at = datetime.utcnow()
+            existing.created_at = now_wita()
         else:
             post = Post(
                 user_id=user.id,
@@ -1312,7 +1313,7 @@ def member_business_toggle_share(sponsor_id):
                 location=biz.address or f"{biz.name}, Gorontalo",
                 image_url=None,
                 post_type='sponsor',
-                created_at=datetime.utcnow()
+                created_at=now_wita()
             )
             db.session.add(post)
     else:
@@ -1476,7 +1477,7 @@ def member_academy_lesson_complete(lesson_id):
 
     prog = UserLessonProgress.query.filter_by(user_id=user.id, lesson_id=lesson.id).first()
     if not prog:
-        prog = UserLessonProgress(user_id=user.id, lesson_id=lesson.id, is_completed=True, completed_at=datetime.utcnow())
+        prog = UserLessonProgress(user_id=user.id, lesson_id=lesson.id, is_completed=True, completed_at=now_wita())
         db.session.add(prog)
         db.session.commit()
 
@@ -1574,7 +1575,7 @@ def member_academy_quiz_submit(quiz_id):
         total_questions=total_questions,
         correct_answers=correct_count,
         answers_json=json.dumps(user_answers),
-        completed_at=datetime.utcnow()
+        completed_at=now_wita()
     )
     db.session.add(attempt)
     db.session.flush()
@@ -1590,14 +1591,14 @@ def member_academy_quiz_submit(quiz_id):
 
         if not existing_cert:
             tier = quiz.tier
-            cert_no = f"CERT-GIMBAL-{tier.order_index:02d}-{user.id:04d}-{datetime.utcnow().strftime('%y%m%d')}"
+            cert_no = f"CERT-GIMBAL-{tier.order_index:02d}-{user.id:04d}-{now_wita().strftime('%y%m%d')}"
             new_cert = UserCertification(
                 user_id=user.id,
                 tier_id=tier.id,
                 certificate_no=cert_no,
                 status='active',
                 score_achieved=score_percentage,
-                issued_at=datetime.utcnow()
+                issued_at=now_wita()
             )
             db.session.add(new_cert)
 
