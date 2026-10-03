@@ -7,7 +7,7 @@ from flask import Blueprint, request, redirect, render_template, make_response, 
 from werkzeug.utils import secure_filename
 from sqlalchemy.exc import IntegrityError
 from models import (
-    db, User, Dues, DuesPayment, Document, Activity,
+    db, User, Dues, DuesPayment, Document, DocumentCategory, Activity,
     ActivityParticipant, ActivityFieldLog, GalleryItem, Post, PostMedia,
     PostComment, PostLike, ChatMessage, SystemSetting, AdminAuditLog,
     MapRepository, Position, generate_next_nra, Sponsor, SponsorProduct,
@@ -1285,22 +1285,33 @@ def admin_delete_position(pos_id):
 @login_required
 @admin_required
 def admin_documents():
-    CATEGORY_METAS = {
-        'ad_art': {'name': 'AD / ART & Dasar Hukum Organisasi', 'icon': 'fa-landmark', 'color': 'text-amber-500'},
-        'sop': {'name': 'SOP Keselamatan & Teknis Lapangan', 'icon': 'fa-shield-alt', 'color': 'text-rose-500'},
-        'materi': {'name': 'Materi & Modul Pelatihan', 'icon': 'fa-graduation-cap', 'color': 'text-blue-500'},
-        'sk_resmi': {'name': 'Surat Keputusan (SK) & Notulensi', 'icon': 'fa-stamp', 'color': 'text-emerald-500'},
-    }
+    # Ambil master kategori dari database
+    cats = DocumentCategory.query.order_by(DocumentCategory.order_index.asc(), DocumentCategory.id.asc()).all()
+    if not cats:
+        # Jika belum di-seed, buat kategori standar
+        default_cats = [
+            DocumentCategory(slug='ad_art', name='AD / ART & Dasar Hukum Organisasi', icon='fa-landmark', color='text-amber-500', description='Konstitusi resmi, AD/ART dan legalitas organisasi KPAB GIMBAL', order_index=1),
+            DocumentCategory(slug='sop', name='SOP Keselamatan & Teknis Lapangan', icon='fa-shield-alt', color='text-rose-500', description='Standar Operasional Prosedur penjelajahan rimba dan mitigasi bahaya', order_index=2),
+            DocumentCategory(slug='materi', name='Materi & Modul Pelatihan', icon='fa-graduation-cap', color='text-blue-500', description='Kurikulum dan materi pelatihan dasar & lanjutan anggota', order_index=3),
+            DocumentCategory(slug='sk_resmi', name='Surat Keputusan (SK) & Notulensi', icon='fa-stamp', color='text-emerald-500', description='SK pelantikan, kepengurusan, dan berita acara musyawarah', order_index=4),
+            DocumentCategory(slug='lainnya', name='Arsip & Berkas Lainnya', icon='fa-folder', color='text-slate-500', description='Dokumen pelengkap dan arsip umum organisasi', order_index=5),
+        ]
+        db.session.add_all(default_cats)
+        db.session.commit()
+        cats = DocumentCategory.query.order_by(DocumentCategory.order_index.asc(), DocumentCategory.id.asc()).all()
 
     docs = Document.query.order_by(Document.created_at.desc()).all()
 
     grouped_docs = {}
-    for k, meta in CATEGORY_METAS.items():
-        grouped_docs[k] = {
-            'key': k,
-            'name': meta['name'],
-            'icon': meta['icon'],
-            'color': meta['color'],
+    for c in cats:
+        grouped_docs[c.slug] = {
+            'id': c.id,
+            'key': c.slug,
+            'name': c.name,
+            'icon': c.icon or 'fa-folder',
+            'color': c.color or 'text-amber-500',
+            'description': c.description or '',
+            'order_index': c.order_index or 0,
             'docs': []
         }
 
@@ -1308,16 +1319,20 @@ def admin_documents():
         cat_key = doc.category or 'lainnya'
         if cat_key not in grouped_docs:
             grouped_docs[cat_key] = {
+                'id': None,
                 'key': cat_key,
                 'name': cat_key.replace('_', ' ').title(),
                 'icon': 'fa-folder',
                 'color': 'text-amber-500',
+                'description': '',
+                'order_index': 99,
                 'docs': []
             }
         grouped_docs[cat_key]['docs'].append(doc)
 
     data = {
         'documents': docs,
+        'categories': cats,
         'grouped_docs': list(grouped_docs.values()),
         'total_docs': len(docs)
     }
@@ -1328,7 +1343,162 @@ def admin_documents():
 @login_required
 @admin_required
 def admin_create_doc_modal():
-    return render_template('components/modals.html', modal_type='create_document')
+    categories = DocumentCategory.query.order_by(DocumentCategory.order_index.asc(), DocumentCategory.name.asc()).all()
+    return render_template('components/modals.html', modal_type='create_document', categories=categories)
+
+
+@admin_bp.route('/admin/documents/categories-modal')
+@login_required
+@admin_required
+def admin_document_categories_modal():
+    """Modal daftar manajemen kategori dokumen organisasi"""
+    cats = DocumentCategory.query.order_by(DocumentCategory.order_index.asc(), DocumentCategory.id.asc()).all()
+    doc_counts = {}
+    for c in cats:
+        doc_counts[c.slug] = Document.query.filter_by(category=c.slug).count()
+    return render_template('components/modals.html', modal_type='manage_document_categories', categories=cats, doc_counts=doc_counts)
+
+
+@admin_bp.route('/admin/documents/category/create-modal')
+@login_required
+@admin_required
+def admin_create_document_category_modal():
+    return render_template('components/modals.html', modal_type='create_document_category')
+
+
+@admin_bp.route('/admin/documents/category/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_create_document_category():
+    admin = get_current_user()
+    name = request.form.get('name', '').strip()
+    if not name:
+        flash("Nama kategori wajib diisi.", "error")
+        return admin_documents()
+
+    raw_slug = request.form.get('slug', '').strip()
+    if not raw_slug:
+        import re
+        raw_slug = re.sub(r'[^a-zA-Z0-9]+', '_', name.lower()).strip('_')
+
+    base_slug = raw_slug or 'kategori'
+    slug = base_slug
+    counter = 1
+    while DocumentCategory.query.filter_by(slug=slug).first():
+        slug = f"{base_slug}_{counter}"
+        counter += 1
+
+    icon = request.form.get('icon', 'fa-folder').strip() or 'fa-folder'
+    color = request.form.get('color', 'text-amber-500').strip() or 'text-amber-500'
+    description = request.form.get('description', '').strip()
+    order_index = int(request.form.get('order_index', 0) or 0)
+
+    cat = DocumentCategory(
+        slug=slug,
+        name=name,
+        icon=icon,
+        color=color,
+        description=description,
+        order_index=order_index
+    )
+    db.session.add(cat)
+
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='create_document_category',
+        target_type='document_category',
+        target_id=slug,
+        details=f"Menambahkan kategori dokumen '{name}' ({slug})",
+        ip_address=request.remote_addr
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash(f"Kategori '{name}' berhasil dibuat.", "success")
+    return admin_documents()
+
+
+@admin_bp.route('/admin/documents/category/edit-modal/<int:cat_id>')
+@login_required
+@admin_required
+def admin_edit_document_category_modal(cat_id):
+    cat = db.session.get(DocumentCategory, cat_id)
+    if not cat:
+        return "<div class='p-4 text-rose-500 font-bold'>Kategori tidak ditemukan.</div>", 404
+    return render_template('components/modals.html', modal_type='edit_document_category', category=cat)
+
+
+@admin_bp.route('/admin/documents/category/edit/<int:cat_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_edit_document_category(cat_id):
+    admin = get_current_user()
+    cat = db.session.get(DocumentCategory, cat_id)
+    if not cat:
+        flash("Kategori tidak ditemukan.", "error")
+        return admin_documents()
+
+    name = request.form.get('name', cat.name).strip()
+    new_slug = request.form.get('slug', cat.slug).strip()
+    old_slug = cat.slug
+
+    if new_slug and new_slug != old_slug:
+        existing = DocumentCategory.query.filter_by(slug=new_slug).first()
+        if existing and existing.id != cat.id:
+            flash(f"Kode slug '{new_slug}' sudah digunakan oleh kategori lain.", "error")
+        else:
+            cat.slug = new_slug
+            Document.query.filter_by(category=old_slug).update({'category': new_slug})
+
+    cat.name = name
+    cat.icon = request.form.get('icon', cat.icon).strip() or 'fa-folder'
+    cat.color = request.form.get('color', cat.color).strip() or 'text-amber-500'
+    cat.description = request.form.get('description', cat.description).strip()
+    cat.order_index = int(request.form.get('order_index', cat.order_index) or 0)
+
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='edit_document_category',
+        target_type='document_category',
+        target_id=str(cat.id),
+        details=f"Memperbarui kategori dokumen '{cat.name}'",
+        ip_address=request.remote_addr
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash(f"Kategori '{cat.name}' berhasil diperbarui.", "success")
+    return admin_documents()
+
+
+@admin_bp.route('/admin/documents/category/delete/<int:cat_id>', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_document_category(cat_id):
+    admin = get_current_user()
+    cat = db.session.get(DocumentCategory, cat_id)
+    if not cat:
+        flash("Kategori tidak ditemukan.", "error")
+        return admin_documents()
+
+    cat_name = cat.name
+    cat_slug = cat.slug
+
+    affected_docs = Document.query.filter_by(category=cat_slug).all()
+    for d in affected_docs:
+        d.category = 'lainnya'
+
+    db.session.delete(cat)
+    log = AdminAuditLog(
+        admin_id=admin.id,
+        action='delete_document_category',
+        target_type='document_category',
+        target_id=str(cat_id),
+        details=f"Menghapus kategori dokumen '{cat_name}' ({len(affected_docs)} berkas dipindahkan ke kategori 'lainnya')",
+        ip_address=request.remote_addr
+    )
+    db.session.add(log)
+    db.session.commit()
+    flash(f"Kategori '{cat_name}' dihapus. {len(affected_docs)} berkas dipindahkan ke Arsip Lainnya.", "success")
+    return admin_documents()
 
 
 @admin_bp.route('/admin/documents/create', methods=['POST'])
@@ -1394,7 +1564,8 @@ def admin_create_doc():
 @admin_required
 def admin_edit_doc_modal(doc_id):
     doc = Document.query.get_or_404(doc_id)
-    return render_template('components/modals.html', modal_type='edit_document', document=doc)
+    categories = DocumentCategory.query.order_by(DocumentCategory.order_index.asc(), DocumentCategory.name.asc()).all()
+    return render_template('components/modals.html', modal_type='edit_document', document=doc, categories=categories)
 
 
 @admin_bp.route('/admin/documents/edit/<int:doc_id>', methods=['POST'])

@@ -165,12 +165,23 @@
             </div>
 
             <div>
-                <label class="block font-semibold text-slate-700 mb-1">Kategori Dokumen</label>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block font-semibold text-slate-700">Kategori Dokumen</label>
+                    <button type="button" hx-get="/admin/documents/category/create-modal" hx-target="#modal-container"
+                            class="text-[10px] text-orange-600 font-bold hover:underline cursor-pointer">+ Kategori Baru</button>
+                </div>
                 <select name="category" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
-                    <option value="ad_art">AD / ART & Legalitas</option>
-                    <option value="sop">SOP Keselamatan & Pendakian</option>
-                    <option value="materi">Materi & Modul Pelatihan</option>
-                    <option value="sk_resmi">Surat Keputusan / Notulensi</option>
+                    {% if categories %}
+                        {% for c in categories %}
+                        <option value="{{ c.slug }}">{{ c.name }}</option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="ad_art">AD / ART & Legalitas</option>
+                        <option value="sop">SOP Keselamatan & Pendakian</option>
+                        <option value="materi">Materi & Modul Pelatihan</option>
+                        <option value="sk_resmi">Surat Keputusan / Notulensi</option>
+                        <option value="lainnya">Arsip Lainnya</option>
+                    {% endif %}
                 </select>
             </div>
 
@@ -233,12 +244,23 @@
             </div>
 
             <div>
-                <label class="block font-semibold text-slate-700 mb-1">Kategori Dokumen</label>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block font-semibold text-slate-700">Kategori Dokumen</label>
+                    <button type="button" hx-get="/admin/documents/category/create-modal" hx-target="#modal-container"
+                            class="text-[10px] text-orange-600 font-bold hover:underline cursor-pointer">+ Kategori Baru</button>
+                </div>
                 <select name="category" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 font-bold focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
-                    <option value="ad_art" {% if document.category == 'ad_art' %}selected{% endif %}>AD / ART & Legalitas</option>
-                    <option value="sop" {% if document.category == 'sop' %}selected{% endif %}>SOP Keselamatan & Pendakian</option>
-                    <option value="materi" {% if document.category == 'materi' %}selected{% endif %}>Materi & Modul Pelatihan</option>
-                    <option value="sk_resmi" {% if document.category == 'sk_resmi' %}selected{% endif %}>Surat Keputusan / Notulensi</option>
+                    {% if categories %}
+                        {% for c in categories %}
+                        <option value="{{ c.slug }}" {% if document.category == c.slug %}selected{% endif %}>{{ c.name }}</option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="ad_art" {% if document.category == 'ad_art' %}selected{% endif %}>AD / ART & Legalitas</option>
+                        <option value="sop" {% if document.category == 'sop' %}selected{% endif %}>SOP Keselamatan & Pendakian</option>
+                        <option value="materi" {% if document.category == 'materi' %}selected{% endif %}>Materi & Modul Pelatihan</option>
+                        <option value="sk_resmi" {% if document.category == 'sk_resmi' %}selected{% endif %}>Surat Keputusan / Notulensi</option>
+                        <option value="lainnya" {% if document.category == 'lainnya' %}selected{% endif %}>Arsip Lainnya</option>
+                    {% endif %}
                 </select>
             </div>
 
@@ -4002,6 +4024,278 @@
                     Batal
                 </button>
                 <button type="submit" class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-sm transition">
+                    Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- 4. MODAL MANAJEMEN KATEGORI DOKUMEN (ADMIN CRUD) -->
+{% elif modal_type == 'manage_document_categories' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-manage-doc-categories">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 relative my-6 max-h-[90vh] overflow-y-auto">
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" 
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div>
+                <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase">Struktur Folder</span>
+                <h2 class="text-lg font-bold text-slate-900 font-heading mt-1">Kelola Kategori Dokumen Organisasi</h2>
+                <p class="text-xs text-slate-500">Atur folder kategori dokumen untuk penataan arsip berkas KPAB GIMBAL.</p>
+            </div>
+            <button type="button"
+                    hx-get="/admin/documents/category/create-modal"
+                    hx-target="#modal-container"
+                    class="px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <i class="fas fa-plus"></i>
+                <span>Tambah Kategori</span>
+            </button>
+        </div>
+
+        <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-200">
+                    <tr>
+                        <th class="px-4 py-3">Nama Kategori &amp; Slug</th>
+                        <th class="px-3 py-3 text-center">Ikon</th>
+                        <th class="px-3 py-3 text-center">Urutan</th>
+                        <th class="px-3 py-3 text-center">Berkas</th>
+                        <th class="px-4 py-3 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for cat in categories %}
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-sm {{ cat.color or 'text-amber-500' }} shrink-0">
+                                    <i class="fas {{ cat.icon or 'fa-folder' }}"></i>
+                                </span>
+                                <div>
+                                    <p class="font-bold text-slate-900 text-xs">{{ cat.name }}</p>
+                                    <p class="text-[10px] text-slate-400 font-mono">slug: {{ cat.slug }}</p>
+                                    {% if cat.description %}
+                                    <p class="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{{ cat.description }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-3 py-3 text-center font-mono text-[10px] text-slate-400">
+                            {{ cat.icon }}
+                        </td>
+                        <td class="px-3 py-3 text-center font-mono font-bold text-slate-700">
+                            {{ cat.order_index }}
+                        </td>
+                        <td class="px-3 py-3 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 font-mono">
+                                {{ doc_counts.get(cat.slug, 0) }} berkas
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+                            <button type="button"
+                                    hx-get="/admin/documents/category/edit-modal/{{ cat.id }}"
+                                    hx-target="#modal-container"
+                                    class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition">
+                                <i class="fas fa-edit mr-1"></i> Edit
+                            </button>
+                            {% if cat.slug != 'lainnya' %}
+                            <button type="button"
+                                    hx-post="/admin/documents/category/delete/{{ cat.id }}"
+                                    hx-target="#main-content"
+                                    hx-confirm="Yakin ingin menghapus kategori '{{ cat.name }}'? Seluruh berkas di dalamnya akan dipindahkan ke kategori 'Arsip Lainnya'."
+                                    hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
+                                    class="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-[11px] transition">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pt-4 flex justify-end">
+            <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''"
+                    class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 5. MODAL TAMBAH KATEGORI DOKUMEN -->
+{% elif modal_type == 'create_document_category' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-create-doc-category">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative my-6">
+        <button type="button" hx-get="/admin/documents/categories-modal" hx-target="#modal-container"
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+
+        <div class="mb-4">
+            <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase">Kategori Baru</span>
+            <h2 class="text-lg font-bold text-slate-900 font-heading mt-1">Tambah Kategori Dokumen</h2>
+            <p class="text-xs text-slate-500">Buat folder pengelompokan arsip berkas baru.</p>
+        </div>
+
+        <form hx-post="/admin/documents/category/create"
+              hx-target="#main-content"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-4 text-xs">
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Nama Kategori Folder <span class="text-rose-500">*</span></label>
+                <input type="text" name="name" required placeholder="Contoh: Laporan Ekspedisi & Riset Lapangan"
+                       class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Kode Slug (Opsional)</label>
+                    <input type="text" name="slug" placeholder="otomatis jika kosong"
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Urutan Indeks</label>
+                    <input type="number" name="order_index" value="10" min="0"
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Pilihan Ikon</label>
+                    <select name="icon" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="fa-folder">Folder Standar (fa-folder)</option>
+                        <option value="fa-landmark">AD/ART Hukum (fa-landmark)</option>
+                        <option value="fa-shield-alt">SOP Keamanan (fa-shield-alt)</option>
+                        <option value="fa-graduation-cap">Materi Modul (fa-graduation-cap)</option>
+                        <option value="fa-stamp">SK Keputusan (fa-stamp)</option>
+                        <option value="fa-compass">Navigasi / Ekspedisi (fa-compass)</option>
+                        <option value="fa-tree">Konservasi Lingkungan (fa-tree)</option>
+                        <option value="fa-camera">Dokumentasi Media (fa-camera)</option>
+                        <option value="fa-box-archive">Arsip Berkas (fa-box-archive)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Warna Folder</label>
+                    <select name="color" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="text-amber-500">Kuning Amber (Default)</option>
+                        <option value="text-orange-500">Oranye GIMBAL</option>
+                        <option value="text-rose-500">Merah Rose</option>
+                        <option value="text-blue-500">Biru Laut</option>
+                        <option value="text-emerald-500">Hijau Emerald</option>
+                        <option value="text-purple-500">Ungu</option>
+                        <option value="text-slate-500">Abu-abu Slate</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Keterangan / Deskripsi Singkat</label>
+                <textarea name="description" rows="2" placeholder="Penjelasan isi berkas dalam kategori ini..."
+                          class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none"></textarea>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button type="button" hx-get="/admin/documents/categories-modal" hx-target="#modal-container"
+                        class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition">
+                    Kembali
+                </button>
+                <button type="submit" class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-xs transition">
+                    Simpan Kategori
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 6. MODAL EDIT KATEGORI DOKUMEN -->
+{% elif modal_type == 'edit_document_category' %}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+     id="modal-edit-doc-category">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative my-6">
+        <button type="button" hx-get="/admin/documents/categories-modal" hx-target="#modal-container"
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+
+        <div class="mb-4">
+            <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase">Ubah Kategori</span>
+            <h2 class="text-lg font-bold text-slate-900 font-heading mt-1">Edit Kategori Dokumen</h2>
+            <p class="text-xs text-slate-500">Perbarui nama, ikon, atau urutan kategori.</p>
+        </div>
+
+        <form hx-post="/admin/documents/category/edit/{{ category.id }}"
+              hx-target="#main-content"
+              hx-on::after-request="if(event.detail.successful) document.getElementById('modal-container').innerHTML = ''"
+              class="space-y-4 text-xs">
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Nama Kategori Folder <span class="text-rose-500">*</span></label>
+                <input type="text" name="name" value="{{ category.name }}" required
+                       class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none font-semibold">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Kode Slug</label>
+                    <input type="text" name="slug" value="{{ category.slug }}" required
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Urutan Indeks</label>
+                    <input type="number" name="order_index" value="{{ category.order_index }}" min="0"
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Pilihan Ikon</label>
+                    <select name="icon" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="fa-folder" {% if category.icon == 'fa-folder' %}selected{% endif %}>Folder Standar (fa-folder)</option>
+                        <option value="fa-landmark" {% if category.icon == 'fa-landmark' %}selected{% endif %}>AD/ART Hukum (fa-landmark)</option>
+                        <option value="fa-shield-alt" {% if category.icon == 'fa-shield-alt' %}selected{% endif %}>SOP Keamanan (fa-shield-alt)</option>
+                        <option value="fa-graduation-cap" {% if category.icon == 'fa-graduation-cap' %}selected{% endif %}>Materi Modul (fa-graduation-cap)</option>
+                        <option value="fa-stamp" {% if category.icon == 'fa-stamp' %}selected{% endif %}>SK Keputusan (fa-stamp)</option>
+                        <option value="fa-compass" {% if category.icon == 'fa-compass' %}selected{% endif %}>Navigasi / Ekspedisi (fa-compass)</option>
+                        <option value="fa-tree" {% if category.icon == 'fa-tree' %}selected{% endif %}>Konservasi Lingkungan (fa-tree)</option>
+                        <option value="fa-camera" {% if category.icon == 'fa-camera' %}selected{% endif %}>Dokumentasi Media (fa-camera)</option>
+                        <option value="fa-box-archive" {% if category.icon == 'fa-box-archive' %}selected{% endif %}>Arsip Berkas (fa-box-archive)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Warna Folder</label>
+                    <select name="color" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none bg-white">
+                        <option value="text-amber-500" {% if category.color == 'text-amber-500' %}selected{% endif %}>Kuning Amber (Default)</option>
+                        <option value="text-orange-500" {% if category.color == 'text-orange-500' %}selected{% endif %}>Oranye GIMBAL</option>
+                        <option value="text-rose-500" {% if category.color == 'text-rose-500' %}selected{% endif %}>Merah Rose</option>
+                        <option value="text-blue-500" {% if category.color == 'text-blue-500' %}selected{% endif %}>Biru Laut</option>
+                        <option value="text-emerald-500" {% if category.color == 'text-emerald-500' %}selected{% endif %}>Hijau Emerald</option>
+                        <option value="text-purple-500" {% if category.color == 'text-purple-500' %}selected{% endif %}>Ungu</option>
+                        <option value="text-slate-500" {% if category.color == 'text-slate-500' %}selected{% endif %}>Abu-abu Slate</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-700 mb-1">Keterangan / Deskripsi Singkat</label>
+                <textarea name="description" rows="2" placeholder="Penjelasan isi berkas dalam kategori ini..."
+                          class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none">{{ category.description or '' }}</textarea>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button type="button" hx-get="/admin/documents/categories-modal" hx-target="#modal-container"
+                        class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition">
+                    Kembali
+                </button>
+                <button type="submit" class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-xs transition">
                     Simpan Perubahan
                 </button>
             </div>

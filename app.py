@@ -18,7 +18,8 @@ from models import (
     ActivityFieldLog, GalleryItem, SystemSetting, Position, ChatMessage, MapRepository,
     Sponsor, SponsorProduct,
     AcademyTier, AcademyCourse, AcademyLesson, AcademyQuiz, QuizQuestion, QuizOption,
-    UserLessonProgress, UserQuizAttempt, UserCertification, Inquiry
+    UserLessonProgress, UserQuizAttempt, UserCertification, Inquiry,
+    DocumentCategory, Document
 )
 from cloudflare_email import sync_cloudflare_email_routing, clean_username_for_alias
 from helpers import (
@@ -88,8 +89,39 @@ def apply_htmx_cache_headers(response):
     if request.headers.get('HX-Request'):
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
         response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
     return response
+
+
+# ========== MARKDOWN RENDERING FILTER & ENGINE ===================================
+
+try:
+    import markdown
+    def _render_md(text):
+        if not text:
+            return ''
+        return markdown.markdown(text, extensions=['extra', 'nl2br', 'sane_lists', 'tables'])
+except ImportError:
+    import html, re
+    def _render_md(text):
+        if not text:
+            return ''
+        s = html.escape(text)
+        s = re.sub(r'^#### (.*?)$', r'<h4 class="font-bold text-base text-slate-800 mt-4 mb-2">\1</h4>', s, flags=re.MULTILINE)
+        s = re.sub(r'^### (.*?)$', r'<h3 class="font-bold text-lg text-orange-950 mt-5 mb-2">\1</h3>', s, flags=re.MULTILINE)
+        s = re.sub(r'^## (.*?)$', r'<h2 class="font-black text-xl text-slate-900 mt-6 mb-3 border-b pb-1">\1</h2>', s, flags=re.MULTILINE)
+        s = re.sub(r'^# (.*?)$', r'<h1 class="font-black text-2xl text-slate-900 mt-6 mb-3 border-b pb-1">\1</h1>', s, flags=re.MULTILINE)
+        s = re.sub(r'\*\*(.*?)\*\*', r'<strong class="font-bold text-slate-900">\1</strong>', s)
+        s = re.sub(r'\*(.*?)\*', r'<em>\1</em>', s)
+        s = re.sub(r'^- (.*?)$', r'<li class="ml-4 list-disc text-slate-700">\1</li>', s, flags=re.MULTILINE)
+        s = s.replace('\n', '<br>')
+        return s
+
+@app.template_filter('render_markdown')
+def render_markdown_filter(text):
+    return _render_md(text)
+
+app.jinja_env.globals['render_markdown'] = _render_md
+
 
 # ========== DATABASE INITIALIZATION & MIGRATIONS =================================
 
@@ -368,6 +400,18 @@ def init_database_and_defaults():
                 is_active=True
             )
             db.session.add(d)
+            db.session.commit()
+
+        # Inisialisasi Master Kategori Dokumen Organisasi jika masih kosong
+        if DocumentCategory.query.count() == 0:
+            default_doc_cats = [
+                DocumentCategory(slug='ad_art', name='AD / ART & Dasar Hukum Organisasi', icon='fa-landmark', color='text-amber-500', description='Konstitusi resmi, AD/ART dan legalitas organisasi KPAB GIMBAL', order_index=1),
+                DocumentCategory(slug='sop', name='SOP Keselamatan & Teknis Lapangan', icon='fa-shield-alt', color='text-rose-500', description='Standar Operasional Prosedur penjelajahan rimba dan mitigasi bahaya', order_index=2),
+                DocumentCategory(slug='materi', name='Materi & Modul Pelatihan', icon='fa-graduation-cap', color='text-blue-500', description='Kurikulum dan materi pelatihan dasar & lanjutan anggota', order_index=3),
+                DocumentCategory(slug='sk_resmi', name='Surat Keputusan (SK) & Notulensi', icon='fa-stamp', color='text-emerald-500', description='SK pelantikan, kepengurusan, dan berita acara musyawarah', order_index=4),
+                DocumentCategory(slug='lainnya', name='Arsip & Berkas Lainnya', icon='fa-folder', color='text-slate-500', description='Dokumen pelengkap dan arsip umum organisasi', order_index=5),
+            ]
+            db.session.add_all(default_doc_cats)
             db.session.commit()
 
         # Inisialisasi Kurikulum & SOP Akademi jika masih kosong

@@ -227,6 +227,20 @@ class DuesPayment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class DocumentCategory(db.Model):
+    """Kategori Folder Dokumen Organisasi (Bisa Dikelola / CRUD oleh Pengurus)"""
+    __tablename__ = 'document_categories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    slug = db.Column(db.String(64), unique=True, nullable=False)
+    name = db.Column(db.String(150), nullable=False)
+    icon = db.Column(db.String(50), default='fa-folder')
+    color = db.Column(db.String(50), default='text-amber-500')
+    description = db.Column(db.String(255), nullable=True)
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 class Document(db.Model):
     """Dokumen Internal Organisasi (AD/ART, SOP, Materi Pelatihan)"""
     __tablename__ = 'documents'

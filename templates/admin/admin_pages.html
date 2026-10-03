@@ -968,6 +968,14 @@
                 <span class="hidden sm:inline">Ciutkan</span>
             </button>
 
+            <!-- Kelola Kategori Master -->
+            <button class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg border border-slate-300 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    hx-get="/admin/documents/categories-modal" hx-target="#modal-container"
+                    title="Kelola & Tambah Kategori Dokumen">
+                <i class="fas fa-tags text-orange-600"></i>
+                <span class="hidden sm:inline">Kelola Kategori</span>
+            </button>
+
             <!-- Unggah Dokumen Baru -->
             <button class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2 cursor-pointer"
                     hx-get="/admin/documents/create-modal" hx-target="#modal-container">
@@ -1013,7 +1021,7 @@
                     
                     {% for group in data.grouped_docs %}
                     <!-- FOLDER HEADER ROW (WINDOWS EXPLORER STYLE) -->
-                    <tr class="bg-slate-50/90 hover:bg-slate-100 transition cursor-pointer select-none border-t border-b border-slate-200/90"
+                    <tr class="group/folder bg-slate-50/90 hover:bg-slate-100 transition cursor-pointer select-none border-t border-b border-slate-200/90"
                         @click="openFolders['{{ group.key }}'] = !openFolders['{{ group.key }}']">
                         <td class="px-5 py-3" colspan="2">
                             <div class="flex items-center gap-2.5">
@@ -1024,9 +1032,9 @@
                                 </button>
                                 
                                 <!-- Folder Icon (Open vs Closed) -->
-                                <span class="text-base text-amber-500 flex items-center">
+                                <span class="text-base {{ group.color or 'text-amber-500' }} flex items-center">
                                     <i class="fas fa-folder-open" x-show="openFolders['{{ group.key }}']"></i>
-                                    <i class="fas fa-folder" x-show="!openFolders['{{ group.key }}']"></i>
+                                    <i class="fas {{ group.icon or 'fa-folder' }}" x-show="!openFolders['{{ group.key }}']"></i>
                                 </span>
 
                                 <span class="font-bold text-slate-900 text-xs sm:text-sm font-heading">
@@ -1036,6 +1044,17 @@
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-slate-600 border border-slate-200 font-mono shadow-2xs">
                                     {{ group.docs|length }} berkas
                                 </span>
+
+                                {% if group.id %}
+                                <button type="button"
+                                        @click.stop
+                                        hx-get="/admin/documents/category/edit-modal/{{ group.id }}"
+                                        hx-target="#modal-container"
+                                        class="opacity-0 group-hover/folder:opacity-100 px-1.5 py-0.5 rounded text-[10px] font-semibold text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition border border-transparent hover:border-orange-200"
+                                        title="Ubah Kategori Ini">
+                                    <i class="fas fa-pen-to-square text-[9px] mr-0.5"></i> Edit
+                                </button>
+                                {% endif %}
                             </div>
                         </td>
                         <td class="px-4 py-3 text-slate-400 font-mono text-[10px] uppercase">Folder</td>
