@@ -2710,11 +2710,14 @@
 
             <!-- Card 2: Identitas & Kontak Resmi Organisasi -->
             <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-4">
-                <div class="border-b border-slate-100 pb-3">
-                    <h2 class="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
-                        <i class="fas fa-id-badge text-orange-600"></i> Identitas & Kontak Resmi Organisasi
-                    </h2>
-                    <p class="text-xs text-slate-500">Informasi kesekretariatan untuk kop dokumen, invoice iuran, dan kontak publik</p>
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+                            <i class="fas fa-id-badge text-orange-600"></i> Identitas & Kontak Resmi Organisasi
+                        </h2>
+                        <p class="text-xs text-slate-500">Informasi kesekretariatan untuk kop dokumen, invoice iuran, dan kontak publik</p>
+                    </div>
+                    <span class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-full uppercase">Profil Lembaga</span>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -2736,12 +2739,120 @@
                                class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
                     </div>
                 </div>
+            </div>
 
-                <div>
-                    <label class="block font-semibold text-slate-700 text-xs mb-1">Alamat Sekretariat Lengkap</label>
-                    <textarea name="org_address" rows="2"
-                              class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"
-                              placeholder="Alamat kantor sekretariat pusat...">{{ data.settings.org_address or 'Sekretariat Pusat KPAB GIMBAL, Gorontalo' }}</textarea>
+            <!-- Card 3: Lokasi 1 - Kantor Sekretariat Utama -->
+            <div class="bg-white p-5 rounded-lg border border-orange-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-orange-100 pb-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+                            <i class="fas fa-building text-orange-600"></i> Lokasi 1: Kantor Sekretariat Utama KPAB GIMBAL
+                        </h2>
+                        <p class="text-xs text-slate-500">Pusat administrasi, koordinasi pengurus, pendaftaran diksar, dan penerimaan tamu resmi</p>
+                    </div>
+                    <span class="px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-full uppercase">Pusat Administrasi</span>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block font-semibold text-slate-700 text-xs mb-1">Alamat Lengkap Kantor Sekretariat</label>
+                        <textarea name="org_address" rows="2" required
+                                  class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                  placeholder="Contoh: Jl. Pangeran Hidayat No. 45, Kota Gorontalo">{{ data.settings.org_address or 'Jl. Pangeran Hidayat, Kota Tengah, Kota Gorontalo, Gorontalo 96115' }}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 text-xs mb-1">Deskripsi & Fungsi Kantor Sekretariat</label>
+                        <textarea name="sekretariat_desc" rows="2"
+                                  class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                  placeholder="Deskripsi kegiatan/layanan di kantor sekretariat...">{{ data.settings.sekretariat_desc or 'Tempat koordinasi pengurus harian, pendaftaran diksar, rapat ekspedisi resmi, arsip dokumen organisasi, dan penerimaan tamu perorangan atau sponsor.' }}</textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3.5 bg-orange-50/50 rounded-lg border border-orange-100">
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1 flex items-center gap-1">
+                                <i class="fas fa-map-pin text-orange-600"></i> Titik Koordinat Latitude (Lintang)
+                            </label>
+                            <input type="text" name="sekretariat_lat" value="{{ data.settings.sekretariat_lat or '0.5512' }}" required
+                                   placeholder="Contoh: 0.5512"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-xs font-bold text-slate-800 focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1 flex items-center gap-1">
+                                <i class="fas fa-map-pin text-orange-600"></i> Titik Koordinat Longitude (Bujur)
+                            </label>
+                            <input type="text" name="sekretariat_lng" value="{{ data.settings.sekretariat_lng or '123.0611' }}" required
+                                   placeholder="Contoh: 123.0611"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-xs font-bold text-slate-800 focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1">Tautan Khusus Google Maps (Opsional)</label>
+                            <input type="url" name="sekretariat_maps_url" value="{{ data.settings.sekretariat_maps_url or '' }}"
+                                   placeholder="Kosongkan untuk otomatis link koordinat"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-medium focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: Lokasi 2 - Kantor Operasional & Posko Riset Arboretum -->
+            <div class="bg-white p-5 rounded-lg border border-emerald-200 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-emerald-100 pb-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900 font-heading flex items-center gap-2">
+                            <i class="fas fa-tree text-emerald-600"></i> Lokasi 2: Kantor Operasional & Stasiun Riset Arboretum
+                        </h2>
+                        <p class="text-xs text-slate-500">Posko rimba gunung, balai pembibitan pohon hutan, gudang logistik teknis & pos SAR alam bebas</p>
+                    </div>
+                    <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full uppercase">Posko Riset & Hutan</span>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block font-semibold text-slate-700 text-xs mb-1">Nama Posko / Fasilitas</label>
+                        <input type="text" name="arboretum_name" value="{{ data.settings.arboretum_name or 'Kantor Operasional & Arboretum KPAB GIMBAL' }}" required
+                               placeholder="Contoh: Kantor Operasional & Arboretum KPAB GIMBAL"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 text-xs mb-1">Alamat Lengkap Kawasan Arboretum</label>
+                        <textarea name="arboretum_address" rows="2" required
+                                  class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                  placeholder="Contoh: Kawasan Konservasi & Hutan Arboretum KPAB GIMBAL, Bone Bolango, Provinsi Gorontalo">{{ data.settings.arboretum_address or 'Kawasan Konservasi & Hutan Arboretum KPAB GIMBAL, Bone Bolango, Provinsi Gorontalo' }}</textarea>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-slate-700 text-xs mb-1">Deskripsi & Fungsi Posko Arboretum</label>
+                        <textarea name="arboretum_desc" rows="2"
+                                  class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                  placeholder="Deskripsi posko, pembibitan, logistik dan koordinasi SAR...">{{ data.settings.arboretum_desc or 'Posko lapangan rimba gunung, balai pembibitan pohon hutan (Arboretum), gudang logistik teknis ekspedisi, titik briefing navigasi, serta pos koordinasi SAR alam bebas.' }}</textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3.5 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1 flex items-center gap-1">
+                                <i class="fas fa-map-pin text-emerald-600"></i> Titik Koordinat Latitude (Lintang)
+                            </label>
+                            <input type="text" name="arboretum_lat" value="{{ data.settings.arboretum_lat or '0.5892' }}" required
+                                   placeholder="Contoh: 0.5892"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1 flex items-center gap-1">
+                                <i class="fas fa-map-pin text-emerald-600"></i> Titik Koordinat Longitude (Bujur)
+                            </label>
+                            <input type="text" name="arboretum_lng" value="{{ data.settings.arboretum_lng or '123.1485' }}" required
+                                   placeholder="Contoh: 123.1485"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-700 text-xs mb-1">Tautan Khusus Google Maps (Opsional)</label>
+                            <input type="url" name="arboretum_maps_url" value="{{ data.settings.arboretum_maps_url or '' }}"
+                                   placeholder="Kosongkan untuk otomatis link koordinat"
+                                   class="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+                    </div>
                 </div>
             </div>
 

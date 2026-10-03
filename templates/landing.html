@@ -1301,7 +1301,7 @@
                             </div>
                             <h4 class="text-sm font-bold text-stone-900 font-heading">Sekretariat Utama KPAB GIMBAL</h4>
                             <p class="text-stone-600 leading-relaxed text-[11px]">
-                                Tempat koordinasi pengurus harian, pendaftaran diksar, rapat ekspedisi resmi, arsip dokumen organisasi, dan penerimaan tamu perorangan atau sponsor.
+                                {{ sekretariat_desc or 'Tempat koordinasi pengurus harian, pendaftaran diksar, rapat ekspedisi resmi, arsip dokumen organisasi, dan penerimaan tamu perorangan atau sponsor.' }}
                             </p>
                             <div class="pt-1 text-[11px] text-stone-700 flex items-start gap-2">
                                 <i class="fas fa-map-marker-alt text-orange-600 mt-0.5 flex-shrink-0"></i>
@@ -1312,18 +1312,18 @@
                         <!-- Embedded Interactive Map 1 -->
                         <div class="rounded-xl overflow-hidden border border-stone-200 shadow-xs h-64 relative bg-stone-100">
                             <iframe class="w-full h-full border-0"
-                                    src="https://www.openstreetmap.org/export/embed.html?bbox=123.0450%2C0.5350%2C123.0750%2C0.5650&amp;layer=mapnik&amp;marker=0.5512%2C123.0611"
+                                    src="https://www.openstreetmap.org/export/embed.html?bbox={{ (sekretariat_lng|float - 0.015)|round(4) }}%2C{{ (sekretariat_lat|float - 0.015)|round(4) }}%2C{{ (sekretariat_lng|float + 0.015)|round(4) }}%2C{{ (sekretariat_lat|float + 0.015)|round(4) }}&amp;layer=mapnik&amp;marker={{ sekretariat_lat }}%2C{{ sekretariat_lng }}"
                                     loading="lazy"></iframe>
                         </div>
 
                         <div class="flex items-center justify-between pt-1">
-                            <a href="https://maps.google.com/?q={{ (org_address or 'KPAB GIMBAL Gorontalo')|urlencode }}" target="_blank"
+                            <a href="{{ sekretariat_maps_url or ('https://maps.google.com/?q=' ~ (sekretariat_lat or '0.5512') ~ ',' ~ (sekretariat_lng or '123.0611')) }}" target="_blank"
                                class="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs rounded-lg shadow-xs transition flex items-center gap-1.5">
                                 <i class="fas fa-directions text-orange-400"></i>
                                 <span>Buka Rute Google Maps</span>
                                 <i class="fas fa-external-link-alt text-[9px] opacity-70"></i>
                             </a>
-                            <span class="text-[11px] text-stone-400 font-mono">0.5512° N, 123.0611° E</span>
+                            <span class="text-[11px] text-stone-400 font-mono">{{ sekretariat_lat or '0.5512' }}° N, {{ sekretariat_lng or '123.0611' }}° E</span>
                         </div>
                     </div>
 
@@ -1334,31 +1334,31 @@
                                 <span class="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-bold uppercase">Posko Lapangan & Konservasi</span>
                                 <span class="text-[11px] text-emerald-700 font-mono font-bold"><i class="fas fa-check-circle mr-1"></i>Siaga 24 Jam</span>
                             </div>
-                            <h4 class="text-sm font-bold text-stone-900 font-heading">Kantor Operasional & Arboretum KPAB GIMBAL</h4>
+                            <h4 class="text-sm font-bold text-stone-900 font-heading">{{ arboretum_name or 'Kantor Operasional & Arboretum KPAB GIMBAL' }}</h4>
                             <p class="text-stone-600 leading-relaxed text-[11px]">
-                                Posko lapangan rimba gunung, balai pembibitan pohon hutan (Arboretum), gudang logistik teknis ekspedisi, titik briefing navigasi, serta pos koordinasi SAR alam bebas.
+                                {{ arboretum_desc or 'Posko lapangan rimba gunung, balai pembibitan pohon hutan (Arboretum), gudang logistik teknis ekspedisi, titik briefing navigasi, serta pos koordinasi SAR alam bebas.' }}
                             </p>
                             <div class="pt-1 text-[11px] text-stone-700 flex items-start gap-2">
                                 <i class="fas fa-tree text-emerald-600 mt-0.5 flex-shrink-0"></i>
-                                <span>Kawasan Konservasi & Hutan Arboretum KPAB GIMBAL, Bone Bolango, Provinsi Gorontalo</span>
+                                <span>{{ arboretum_address or 'Kawasan Konservasi & Hutan Arboretum KPAB GIMBAL, Bone Bolango, Provinsi Gorontalo' }}</span>
                             </div>
                         </div>
 
                         <!-- Embedded Interactive Map 2 -->
                         <div class="rounded-xl overflow-hidden border border-stone-200 shadow-xs h-64 relative bg-stone-100">
                             <iframe class="w-full h-full border-0"
-                                    src="https://www.openstreetmap.org/export/embed.html?bbox=123.1300%2C0.5750%2C123.1650%2C0.6050&amp;layer=mapnik&amp;marker=0.5892%2C123.1485"
+                                    src="https://www.openstreetmap.org/export/embed.html?bbox={{ (arboretum_lng|float - 0.015)|round(4) }}%2C{{ (arboretum_lat|float - 0.015)|round(4) }}%2C{{ (arboretum_lng|float + 0.015)|round(4) }}%2C{{ (arboretum_lat|float + 0.015)|round(4) }}&amp;layer=mapnik&amp;marker={{ arboretum_lat }}%2C{{ arboretum_lng }}"
                                     loading="lazy"></iframe>
                         </div>
 
                         <div class="flex items-center justify-between pt-1">
-                            <a href="https://maps.google.com/?q=Arboretum+GIMBAL+Gorontalo" target="_blank"
+                            <a href="{{ arboretum_maps_url or ('https://maps.google.com/?q=' ~ (arboretum_lat or '0.5892') ~ ',' ~ (arboretum_lng or '123.1485')) }}" target="_blank"
                                class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg shadow-xs transition flex items-center gap-1.5">
                                 <i class="fas fa-directions text-emerald-300"></i>
                                 <span>Buka Rute Google Maps</span>
                                 <i class="fas fa-external-link-alt text-[9px] opacity-70"></i>
                             </a>
-                            <span class="text-[11px] text-stone-400 font-mono">0.5892° N, 123.1485° E</span>
+                            <span class="text-[11px] text-stone-400 font-mono">{{ arboretum_lat or '0.5892' }}° N, {{ arboretum_lng or '123.1485' }}° E</span>
                         </div>
                     </div>
 

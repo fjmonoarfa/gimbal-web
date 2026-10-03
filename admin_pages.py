@@ -728,6 +728,16 @@ def admin_settings(initial_tab=None, active_page='admin_settings'):
         'org_phone': SystemSetting.get('org_phone', '+62 812-3456-7890'),
         'org_email': SystemSetting.get('org_email', 'sekretariat@gimbal.org'),
         'org_address': SystemSetting.get('org_address', 'Jl. Pangeran Hidayat No. 45, Kota Gorontalo'),
+        'sekretariat_desc': SystemSetting.get('sekretariat_desc', 'Tempat koordinasi pengurus harian, pendaftaran diksar, rapat ekspedisi resmi, arsip dokumen organisasi, dan penerimaan tamu perorangan atau sponsor.'),
+        'sekretariat_lat': SystemSetting.get('sekretariat_lat', '0.5512'),
+        'sekretariat_lng': SystemSetting.get('sekretariat_lng', '123.0611'),
+        'sekretariat_maps_url': SystemSetting.get('sekretariat_maps_url', ''),
+        'arboretum_name': SystemSetting.get('arboretum_name', 'Kantor Operasional & Arboretum KPAB GIMBAL'),
+        'arboretum_address': SystemSetting.get('arboretum_address', 'Kawasan Konservasi & Hutan Arboretum KPAB GIMBAL, Bone Bolango, Provinsi Gorontalo'),
+        'arboretum_desc': SystemSetting.get('arboretum_desc', 'Posko lapangan rimba gunung, balai pembibitan pohon hutan (Arboretum), gudang logistik teknis ekspedisi, titik briefing navigasi, serta pos koordinasi SAR alam bebas.'),
+        'arboretum_lat': SystemSetting.get('arboretum_lat', '0.5892'),
+        'arboretum_lng': SystemSetting.get('arboretum_lng', '123.1485'),
+        'arboretum_maps_url': SystemSetting.get('arboretum_maps_url', ''),
         'payment_instructions': SystemSetting.get('payment_instructions', 'Silakan transfer tepat sejumlah tarif iuran, lalu simpan dan lampirkan bukti transfer.'),
         'theme_color': SystemSetting.get('theme_color', 'orange'),
         'site_width': SystemSetting.get('site_width', '85%'),
@@ -848,7 +858,22 @@ def admin_settings_organization():
     org_name = request.form.get('org_name', 'KPAB GIMBAL Provinsi Gorontalo').strip()
     org_phone = request.form.get('org_phone', '+62 812-3456-7890').strip()
     org_email = request.form.get('org_email', 'sekretariat@gimbal.org').strip()
+
+    # Lokasi 1: Sekretariat Utama
     org_address = request.form.get('org_address', 'Jl. Pangeran Hidayat No. 45, Kota Gorontalo').strip()
+    sekretariat_desc = request.form.get('sekretariat_desc', '').strip()
+    sekretariat_lat = request.form.get('sekretariat_lat', '0.5512').strip()
+    sekretariat_lng = request.form.get('sekretariat_lng', '123.0611').strip()
+    sekretariat_maps_url = request.form.get('sekretariat_maps_url', '').strip()
+
+    # Lokasi 2: Kantor & Basecamp Arboretum
+    arboretum_name = request.form.get('arboretum_name', 'Kantor Operasional & Arboretum KPAB GIMBAL').strip()
+    arboretum_address = request.form.get('arboretum_address', '').strip()
+    arboretum_desc = request.form.get('arboretum_desc', '').strip()
+    arboretum_lat = request.form.get('arboretum_lat', '0.5892').strip()
+    arboretum_lng = request.form.get('arboretum_lng', '123.1485').strip()
+    arboretum_maps_url = request.form.get('arboretum_maps_url', '').strip()
+
     payment_instructions = request.form.get('payment_instructions', '').strip()
     
     SystemSetting.set('bank_primary_name', bank_primary_name)
@@ -860,7 +885,30 @@ def admin_settings_organization():
     SystemSetting.set('org_name', org_name)
     SystemSetting.set('org_phone', org_phone)
     SystemSetting.set('org_email', org_email)
+    
+    # Simpan Lokasi 1 Sekretariat
     SystemSetting.set('org_address', org_address)
+    if sekretariat_desc:
+        SystemSetting.set('sekretariat_desc', sekretariat_desc)
+    if sekretariat_lat:
+        SystemSetting.set('sekretariat_lat', sekretariat_lat)
+    if sekretariat_lng:
+        SystemSetting.set('sekretariat_lng', sekretariat_lng)
+    SystemSetting.set('sekretariat_maps_url', sekretariat_maps_url)
+
+    # Simpan Lokasi 2 Arboretum
+    if arboretum_name:
+        SystemSetting.set('arboretum_name', arboretum_name)
+    if arboretum_address:
+        SystemSetting.set('arboretum_address', arboretum_address)
+    if arboretum_desc:
+        SystemSetting.set('arboretum_desc', arboretum_desc)
+    if arboretum_lat:
+        SystemSetting.set('arboretum_lat', arboretum_lat)
+    if arboretum_lng:
+        SystemSetting.set('arboretum_lng', arboretum_lng)
+    SystemSetting.set('arboretum_maps_url', arboretum_maps_url)
+
     if payment_instructions:
         SystemSetting.set('payment_instructions', payment_instructions)
         
@@ -868,11 +916,11 @@ def admin_settings_organization():
         admin_id=admin.id,
         action='update_organization_settings',
         target_type='SystemSetting',
-        details=f"Memperbarui rekening bank & profil organisasi oleh {admin.name}"
+        details=f"Memperbarui rekening bank, lokasi sekretariat & arboretum oleh {admin.name}"
     )
     db.session.add(log)
     db.session.commit()
-    flash("Pengaturan rekening kas dan identitas organisasi berhasil disimpan.", "success")
+    flash("Pengaturan rekening kas, profil, serta lokasi kantor sekretariat & arboretum berhasil disimpan.", "success")
     if request.headers.get('HX-Request'):
         return admin_settings(initial_tab='organization')
     return redirect('/admin/settings?tab=organization')

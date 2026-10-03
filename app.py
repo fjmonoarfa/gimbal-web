@@ -379,6 +379,28 @@ def init_database_and_defaults():
             SystemSetting.set('org_email', 'sekretariat@gimbal.org')
         if not SystemSetting.query.filter_by(key='org_address').first():
             SystemSetting.set('org_address', 'Jl. Pangeran Hidayat No. 45, Kota Gorontalo')
+        if not SystemSetting.query.filter_by(key='sekretariat_desc').first():
+            SystemSetting.set('sekretariat_desc', 'Tempat koordinasi pengurus harian, pendaftaran diksar, rapat ekspedisi resmi, arsip dokumen organisasi, dan penerimaan tamu perorangan atau sponsor.')
+        if not SystemSetting.query.filter_by(key='sekretariat_lat').first():
+            SystemSetting.set('sekretariat_lat', '0.5512')
+        if not SystemSetting.query.filter_by(key='sekretariat_lng').first():
+            SystemSetting.set('sekretariat_lng', '123.0611')
+        if not SystemSetting.query.filter_by(key='sekretariat_maps_url').first():
+            SystemSetting.set('sekretariat_maps_url', '')
+
+        # Pengaturan Lokasi 2: Posko Lapangan & Arboretum KPAB GIMBAL
+        if not SystemSetting.query.filter_by(key='arboretum_name').first():
+            SystemSetting.set('arboretum_name', 'Kantor Operasional & Arboretum KPAB GIMBAL')
+        if not SystemSetting.query.filter_by(key='arboretum_address').first():
+            SystemSetting.set('arboretum_address', 'Kawasan Konservasi & Hutan Arboretum KPAB GIMBAL, Bone Bolango, Provinsi Gorontalo')
+        if not SystemSetting.query.filter_by(key='arboretum_desc').first():
+            SystemSetting.set('arboretum_desc', 'Posko lapangan rimba gunung, balai pembibitan pohon hutan (Arboretum), gudang logistik teknis ekspedisi, titik briefing navigasi, serta pos koordinasi SAR alam bebas.')
+        if not SystemSetting.query.filter_by(key='arboretum_lat').first():
+            SystemSetting.set('arboretum_lat', '0.5892')
+        if not SystemSetting.query.filter_by(key='arboretum_lng').first():
+            SystemSetting.set('arboretum_lng', '123.1485')
+        if not SystemSetting.query.filter_by(key='arboretum_maps_url').first():
+            SystemSetting.set('arboretum_maps_url', '')
 
         # Pengaturan Cloudflare Email Routing (@gimbal.my.id)
         if not SystemSetting.query.filter_by(key='cloudflare_enabled').first():
@@ -986,6 +1008,16 @@ def inject_global_settings():
             'org_phone': SystemSetting.get('org_phone', '+62 812-3456-7890'),
             'org_email': SystemSetting.get('org_email', 'sekretariat@gimbal.org'),
             'org_address': SystemSetting.get('org_address', 'Jl. Pangeran Hidayat No. 45, Kota Gorontalo'),
+            'sekretariat_desc': SystemSetting.get('sekretariat_desc', 'Tempat koordinasi pengurus harian, pendaftaran diksar, rapat ekspedisi resmi, arsip dokumen organisasi, dan penerimaan tamu perorangan atau sponsor.'),
+            'sekretariat_lat': SystemSetting.get('sekretariat_lat', '0.5512'),
+            'sekretariat_lng': SystemSetting.get('sekretariat_lng', '123.0611'),
+            'sekretariat_maps_url': SystemSetting.get('sekretariat_maps_url', ''),
+            'arboretum_name': SystemSetting.get('arboretum_name', 'Kantor Operasional & Arboretum KPAB GIMBAL'),
+            'arboretum_address': SystemSetting.get('arboretum_address', 'Kawasan Konservasi & Hutan Arboretum KPAB GIMBAL, Bone Bolango, Provinsi Gorontalo'),
+            'arboretum_desc': SystemSetting.get('arboretum_desc', 'Posko lapangan rimba gunung, balai pembibitan pohon hutan (Arboretum), gudang logistik teknis ekspedisi, titik briefing navigasi, serta pos koordinasi SAR alam bebas.'),
+            'arboretum_lat': SystemSetting.get('arboretum_lat', '0.5892'),
+            'arboretum_lng': SystemSetting.get('arboretum_lng', '123.1485'),
+            'arboretum_maps_url': SystemSetting.get('arboretum_maps_url', ''),
             'app_tagline': SystemSetting.get('app_tagline', 'Generasi Indonesia Menyatu Bersama Alam'),
             'payment_instructions': SystemSetting.get('payment_instructions', 'Silakan transfer tepat sejumlah tarif iuran, lalu simpan dan lampirkan bukti transfer.')
         }
@@ -1003,6 +1035,16 @@ def inject_global_settings():
             'org_phone': '+62 812-3456-7890',
             'org_email': 'sekretariat@gimbal.org',
             'org_address': 'Jl. Pangeran Hidayat No. 45, Kota Gorontalo',
+            'sekretariat_desc': 'Tempat koordinasi pengurus harian, pendaftaran diksar, rapat ekspedisi resmi, arsip dokumen organisasi, dan penerimaan tamu perorangan atau sponsor.',
+            'sekretariat_lat': '0.5512',
+            'sekretariat_lng': '123.0611',
+            'sekretariat_maps_url': '',
+            'arboretum_name': 'Kantor Operasional & Arboretum KPAB GIMBAL',
+            'arboretum_address': 'Kawasan Konservasi & Hutan Arboretum KPAB GIMBAL, Bone Bolango, Provinsi Gorontalo',
+            'arboretum_desc': 'Posko lapangan rimba gunung, balai pembibitan pohon hutan (Arboretum), gudang logistik teknis ekspedisi, titik briefing navigasi, serta pos koordinasi SAR alam bebas.',
+            'arboretum_lat': '0.5892',
+            'arboretum_lng': '123.1485',
+            'arboretum_maps_url': '',
             'app_tagline': 'Generasi Indonesia Menyatu Bersama Alam',
             'payment_instructions': 'Silakan transfer tepat sejumlah tarif iuran, lalu simpan dan lampirkan bukti transfer.'
         }
