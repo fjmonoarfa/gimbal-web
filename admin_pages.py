@@ -1301,7 +1301,7 @@ def admin_documents():
             'name': meta['name'],
             'icon': meta['icon'],
             'color': meta['color'],
-            'items': []
+            'docs': []
         }
 
     for doc in docs:
@@ -1312,9 +1312,9 @@ def admin_documents():
                 'name': cat_key.replace('_', ' ').title(),
                 'icon': 'fa-folder',
                 'color': 'text-amber-500',
-                'items': []
+                'docs': []
             }
-        grouped_docs[cat_key]['items'].append(doc)
+        grouped_docs[cat_key]['docs'].append(doc)
 
     data = {
         'documents': docs,
@@ -3776,6 +3776,25 @@ def admin_academy_lesson_create():
     return redirect('/admin/academy?tab=kurikulum')
 
 
+@admin_bp.route('/admin/academy/lesson/edit-modal/<int:lesson_id>')
+@login_required
+@admin_required
+def admin_academy_lesson_edit_modal(lesson_id):
+    """Buka modal edit bab materi kurikulum pembelajaran"""
+    lesson = db.session.get(AcademyLesson, lesson_id)
+    if not lesson:
+        return "<div class='p-4 text-rose-500 font-bold'>Materi tidak ditemukan.</div>", 404
+    docs = Document.query.order_by(Document.title.asc()).all()
+    maps = MapRepository.query.order_by(MapRepository.title.asc()).all()
+    return render_template(
+        'components/modals.html',
+        modal_type='edit_academy_lesson',
+        lesson=lesson,
+        documents=docs,
+        maps=maps
+    )
+
+
 @admin_bp.route('/admin/academy/lesson/edit/<int:lesson_id>', methods=['POST'])
 @login_required
 @admin_required
@@ -3784,6 +3803,8 @@ def admin_academy_lesson_edit(lesson_id):
     lesson = db.session.get(AcademyLesson, lesson_id)
     if not lesson:
         flash("Materi tidak ditemukan.", "error")
+        if request.headers.get('HX-Request'):
+            return admin_academy()
         return redirect('/admin/academy?tab=kurikulum')
 
     lesson.title = request.form.get('title', lesson.title).strip()
@@ -3804,6 +3825,8 @@ def admin_academy_lesson_edit(lesson_id):
 
     db.session.commit()
     flash(f"Materi '{lesson.title}' berhasil diperbarui.", "success")
+    if request.headers.get('HX-Request'):
+        return admin_academy()
     return redirect('/admin/academy?tab=kurikulum')
 
 

@@ -137,22 +137,61 @@
         </div>
     </div>
 
-    <!-- Safety Net Failsafe for Network / CDN latency -->
+    <!-- Safety Net Failsafe & Error Handler for Network / Server latency -->
     <script>
-        setTimeout(function() {
+        (function() {
             var shell = document.getElementById('app-shell');
-            if (shell && shell.querySelector('.animate-spin')) {
-                var retryUrl = "{{ shell_url or '/app-shell' }}";
-                shell.innerHTML = '<div class="min-h-screen flex items-center justify-center bg-slate-900 text-white p-6 text-center">' +
-                    '<div class="space-y-4 max-w-md bg-slate-800/90 p-8 rounded-xl border border-orange-500/40 shadow-2xl">' +
-                    '<div class="w-12 h-12 rounded-2xl bg-orange-500/20 text-orange-400 flex items-center justify-center mx-auto text-xl"><i class="fas fa-satellite-dish"></i></div>' +
-                    '<h2 class="text-base font-bold font-heading">Koneksi Sedang Menghubungkan</h2>' +
-                    '<p class="text-xs text-slate-300">Jika dashboard tidak terbuka otomatis, silakan klik tombol di bawah untuk memuat portal secara langsung:</p>' +
-                    '<a href="' + retryUrl + '" class="inline-block px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition shadow-lg">' +
-                    '<i class="fas fa-sync-alt mr-1.5"></i> Buka Portal Langsung</a>' +
-                    '</div></div>';
-            }
-        }, 5000);
+            var retryUrl = "{{ shell_url or '/app-shell' }}";
+
+            // Tangani error respons server (misal HTTP 500 / 404)
+            document.body.addEventListener('htmx:responseError', function(evt) {
+                if (shell && evt.detail && evt.detail.target === shell) {
+                    var status = evt.detail.xhr ? evt.detail.xhr.status : 'Error';
+                    shell.innerHTML = '<div class="min-h-screen flex items-center justify-center bg-slate-900 text-white p-6 text-center">' +
+                        '<div class="space-y-4 max-w-md bg-slate-800/90 p-8 rounded-xl border border-rose-500/40 shadow-2xl">' +
+                        '<div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto text-xl"><i class="fas fa-exclamation-triangle"></i></div>' +
+                        '<h2 class="text-base font-bold font-heading">Terjadi Kendala Memuat Halaman</h2>' +
+                        '<p class="text-xs text-slate-300">Server mengembalikan status ' + status + '. Silakan muat ulang atau kembali ke dashboard.</p>' +
+                        '<div class="flex items-center justify-center gap-3 pt-2">' +
+                        '<button onclick="window.location.reload()" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition shadow-lg">' +
+                        '<i class="fas fa-sync-alt mr-1.5"></i> Muat Ulang</button>' +
+                        '<a href="/admin/dashboard" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold transition">' +
+                        '<i class="fas fa-home mr-1.5"></i> Dashboard</a>' +
+                        '</div></div></div>';
+                }
+            });
+
+            // Tangani koneksi jaringan gagal / offline
+            document.body.addEventListener('htmx:sendError', function(evt) {
+                if (shell && evt.detail && evt.detail.target === shell) {
+                    shell.innerHTML = '<div class="min-h-screen flex items-center justify-center bg-slate-900 text-white p-6 text-center">' +
+                        '<div class="space-y-4 max-w-md bg-slate-800/90 p-8 rounded-xl border border-amber-500/40 shadow-2xl">' +
+                        '<div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto text-xl"><i class="fas fa-wifi-slash"></i></div>' +
+                        '<h2 class="text-base font-bold font-heading">Gagal Menghubungkan Jaringan</h2>' +
+                        '<p class="text-xs text-slate-300">Koneksi internet Anda terputus atau server tidak dapat dijangkau.</p>' +
+                        '<button onclick="window.location.reload()" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition shadow-lg">' +
+                        '<i class="fas fa-sync-alt mr-1.5"></i> Coba Lagi</button>' +
+                        '</div></div>';
+                }
+            });
+
+            // Timeout toleran 15 detik untuk jaringan lambat
+            setTimeout(function() {
+                if (shell && shell.querySelector('.animate-spin')) {
+                    shell.innerHTML = '<div class="min-h-screen flex items-center justify-center bg-slate-900 text-white p-6 text-center">' +
+                        '<div class="space-y-4 max-w-md bg-slate-800/90 p-8 rounded-xl border border-orange-500/40 shadow-2xl">' +
+                        '<div class="w-12 h-12 rounded-2xl bg-orange-500/20 text-orange-400 flex items-center justify-center mx-auto text-xl"><i class="fas fa-satellite-dish"></i></div>' +
+                        '<h2 class="text-base font-bold font-heading">Koneksi Membutuhkan Waktu Lebih Lama</h2>' +
+                        '<p class="text-xs text-slate-300">Halaman membutuhkan waktu lebih lama untuk dimuat. Silakan klik tombol di bawah untuk memuat ulang:</p>' +
+                        '<div class="flex items-center justify-center gap-3 pt-2">' +
+                        '<button onclick="window.location.reload()" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold transition shadow-lg">' +
+                        '<i class="fas fa-sync-alt mr-1.5"></i> Muat Ulang</button>' +
+                        '<a href="/admin/dashboard" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold transition">' +
+                        '<i class="fas fa-home mr-1.5"></i> Dashboard</a>' +
+                        '</div></div></div>';
+                }
+            }, 15000);
+        })();
     </script>
 </body>
 </html>
