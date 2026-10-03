@@ -34,12 +34,16 @@ def admin_required(f):
 def check_member_access(user):
     """
     Memastikan hanya anggota aktif yang berhak masuk ke linimasa / dashboard / KTA.
-    Calon anggota pending wajib melengkapi biodata dan menyelesaikan iuran keanggotaan.
+    Calon anggota pending wajib menyetujui kode etik, melengkapi biodata dan menyelesaikan iuran keanggotaan.
     """
     if not user:
         return redirect('/login')
     if user.is_admin:
         return None
+    if not user.consent_agreed and user.status != 'active':
+        if request.headers.get('HX-Request'):
+            return "<script>window.location.href = '/member/onboarding-consent';</script>"
+        return redirect('/member/onboarding-consent')
     if not user.is_profile_complete:
         if request.headers.get('HX-Request'):
             return "<script>window.location.href = '/member/complete-profile';</script>"

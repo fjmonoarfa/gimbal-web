@@ -60,6 +60,10 @@ class User(db.Model):
     is_mandatory_certified = db.Column(db.Boolean, default=False)
     mandatory_tier_id = db.Column(db.Integer, nullable=True)
 
+    # Consent Persetujuan Peraturan Organisasi & Kode Etik Pecinta Alam
+    consent_agreed = db.Column(db.Boolean, default=False)
+    consent_agreed_at = db.Column(db.DateTime, nullable=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

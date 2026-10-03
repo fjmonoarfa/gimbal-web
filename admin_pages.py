@@ -35,6 +35,11 @@ def admin_dashboard():
     pending_payments = DuesPayment.query.filter_by(status='pending').order_by(DuesPayment.id.desc()).all()
     current_year_2digit = int(datetime.now().strftime('%y'))
     
+    # Perpesanan & Pengawalan Masuk dari Landing Page
+    recent_inquiries = Inquiry.query.order_by(Inquiry.id.desc()).limit(6).all()
+    pending_inquiries_count = Inquiry.query.filter_by(status='pending').count()
+    guiding_inquiries_count = Inquiry.query.filter_by(category='guiding').count()
+
     data = {
         'pending_members': pending_members,
         'pending_count': len(pending_members),
@@ -43,7 +48,10 @@ def admin_dashboard():
         'doc_count': doc_count,
         'pending_payments': pending_payments,
         'pending_payments_count': len(pending_payments),
-        'current_year_2digit': current_year_2digit
+        'current_year_2digit': current_year_2digit,
+        'recent_inquiries': recent_inquiries,
+        'pending_inquiries_count': pending_inquiries_count,
+        'guiding_inquiries_count': guiding_inquiries_count
     }
     return render_gimbal_page('admin/admin_pages.html', 'admin_dashboard', data, active_page='admin_dashboard')
 
@@ -1277,8 +1285,42 @@ def admin_delete_position(pos_id):
 @login_required
 @admin_required
 def admin_documents():
+    CATEGORY_METAS = {
+        'ad_art': {'name': 'AD / ART & Dasar Hukum Organisasi', 'icon': 'fa-landmark', 'color': 'text-amber-500'},
+        'sop': {'name': 'SOP Keselamatan & Teknis Lapangan', 'icon': 'fa-shield-alt', 'color': 'text-rose-500'},
+        'materi': {'name': 'Materi & Modul Pelatihan', 'icon': 'fa-graduation-cap', 'color': 'text-blue-500'},
+        'sk_resmi': {'name': 'Surat Keputusan (SK) & Notulensi', 'icon': 'fa-stamp', 'color': 'text-emerald-500'},
+    }
+
     docs = Document.query.order_by(Document.created_at.desc()).all()
-    data = {'documents': docs}
+
+    grouped_docs = {}
+    for k, meta in CATEGORY_METAS.items():
+        grouped_docs[k] = {
+            'key': k,
+            'name': meta['name'],
+            'icon': meta['icon'],
+            'color': meta['color'],
+            'items': []
+        }
+
+    for doc in docs:
+        cat_key = doc.category or 'lainnya'
+        if cat_key not in grouped_docs:
+            grouped_docs[cat_key] = {
+                'key': cat_key,
+                'name': cat_key.replace('_', ' ').title(),
+                'icon': 'fa-folder',
+                'color': 'text-amber-500',
+                'items': []
+            }
+        grouped_docs[cat_key]['items'].append(doc)
+
+    data = {
+        'documents': docs,
+        'grouped_docs': list(grouped_docs.values()),
+        'total_docs': len(docs)
+    }
     return render_gimbal_page('admin/admin_pages.html', 'admin_documents', data, active_page='admin_documents')
 
 
@@ -3746,8 +3788,11 @@ def admin_academy_lesson_edit(lesson_id):
 
     lesson.title = request.form.get('title', lesson.title).strip()
     lesson.content_type = request.form.get('content_type', lesson.content_type)
-    lesson.content_body = request.form.get('content_body', lesson.content_body)
-    lesson.media_url = request.form.get('media_url', '').strip() or None
+    new_content = request.form.get('content_body') or request.form.get('content')
+    if new_content is not None:
+        lesson.content_body = new_content
+    new_video = request.form.get('media_url') or request.form.get('video_url')
+    lesson.media_url = new_video.strip() if new_video else None
 
     raw_doc_id = request.form.get('doc_id', '').strip()
     lesson.doc_id = int(raw_doc_id) if raw_doc_id and raw_doc_id.isdigit() and int(raw_doc_id) > 0 else None

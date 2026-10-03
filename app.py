@@ -1350,6 +1350,8 @@ def login_or_register_google_user(user_info):
         return redirect(target)
     if user.is_admin:
         return redirect('/admin/dashboard')
+    if not user.consent_agreed and user.status != 'active':
+        return redirect('/member/onboarding-consent')
     if not user.is_profile_complete:
         return redirect('/member/complete-profile')
     if user.status != 'active':
@@ -1560,6 +1562,8 @@ def auth_login():
         return redirect(target)
     if user.is_admin:
         return redirect('/admin/dashboard')
+    if not user.consent_agreed and user.status != 'active':
+        return redirect('/member/onboarding-consent')
     if not user.is_profile_complete:
         return redirect('/member/complete-profile')
     if user.status != 'active':

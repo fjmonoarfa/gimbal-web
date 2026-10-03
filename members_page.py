@@ -18,13 +18,45 @@ from helpers import get_current_user, login_required, check_member_access, rende
 
 members_bp = Blueprint('members_page', __name__)
 
-# ========== MEMBER ONBOARDING & PROFILE COMPLETION ===============================
+@members_bp.route('/member/onboarding-consent', methods=['GET', 'POST'])
+@login_required
+def member_onboarding_consent():
+    """Halaman persetujuan AD/ART, Peraturan Organisasi, dan Kode Etik Pecinta Alam Indonesia"""
+    user = get_current_user()
+    if user.consent_agreed:
+        if not user.is_profile_complete:
+            return redirect('/member/complete-profile')
+        if user.status != 'active':
+            return redirect('/member/onboarding-status')
+        return redirect('/member/dashboard')
+
+    if request.method == 'POST':
+        agree_rules = request.form.get('agree_rules')
+        agree_ethics = request.form.get('agree_ethics')
+        if not (agree_rules and agree_ethics):
+            return render_gimbal_modal(
+                'onboarding_consent',
+                context={
+                    'user': user,
+                    'error_msg': 'Mohon centang persetujuan Peraturan Organisasi dan Kode Etik untuk melanjutkan proses pendaftaran.'
+                },
+                active_page='onboarding_consent'
+            )
+        user.consent_agreed = True
+        user.consent_agreed_at = datetime.utcnow()
+        db.session.commit()
+        return redirect('/member/complete-profile')
+
+    return render_gimbal_modal('onboarding_consent', context={'user': user}, active_page='onboarding_consent')
+
 
 @members_bp.route('/member/complete-profile', methods=['GET', 'POST'])
 @login_required
 def member_complete_profile():
     """Formulir pengisian informasi wajib keanggotaan (biodata, medis & kontak darurat)"""
     user = get_current_user()
+    if not user.consent_agreed and user.status != 'active':
+        return redirect('/member/onboarding-consent')
     if user.is_profile_complete and user.status == 'active':
         return redirect('/member/dashboard')
 

@@ -66,56 +66,73 @@
         </div>
     </div>
 
-    <!-- 4 KARTU STATISTIK METRIK -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- 5 KARTU STATISTIK METRIK -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         <!-- Metrik 1: Calon Pending -->
-        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
+        <div class="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-sm relative overflow-hidden">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold text-slate-500">Calon Anggota Baru</span>
+                <span class="text-xs font-semibold text-slate-500">Calon Anggota</span>
                 <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
                     <i class="fas fa-user-clock"></i>
                 </span>
             </div>
             <p class="text-3xl font-black font-mono text-orange-600">{{ data.pending_count }}</p>
             <p class="text-[11px] text-slate-500 mt-1">
-                Menunggu penomoran R-nn-YY
+                Menunggu nomor R-nn-YY
             </p>
         </div>
 
         <!-- Metrik 2: Total Anggota Aktif -->
-        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+        <div class="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold text-slate-500">Anggota Resmi Aktif</span>
+                <span class="text-xs font-semibold text-slate-500">Anggota Aktif</span>
                 <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
                     <i class="fas fa-users"></i>
                 </span>
             </div>
             <p class="text-3xl font-black font-mono text-orange-600">{{ data.active_count }}</p>
-            <p class="text-[11px] text-slate-500 mt-1">Pemegang KTA resmi GIMBAL</p>
+            <p class="text-[11px] text-slate-500 mt-1">Pemegang KTA resmi</p>
         </div>
 
         <!-- Metrik 3: Kas Iuran Terkumpul -->
-        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+        <div class="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-sm">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold text-slate-500">Total Kas Iuran Masuk</span>
+                <span class="text-xs font-semibold text-slate-500">Kas Iuran Masuk</span>
                 <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
                     <i class="fas fa-coins"></i>
                 </span>
             </div>
             <p class="text-2xl font-black font-mono text-slate-900">Rp {{ "{:,.0f}".format(data.total_cash).replace(',', '.') }}</p>
-            <p class="text-[11px] text-orange-600 mt-1">{{ data.pending_payments_count }} transfer menunggu cek</p>
+            <p class="text-[11px] text-orange-600 mt-1">{{ data.pending_payments_count }} transfer dicek</p>
         </div>
 
-        <!-- Metrik 4: Dokumen & SOP -->
-        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-sm">
+        <!-- Metrik 4: Pesan & Pengawalan -->
+        <a href="/admin/inquiries"
+           hx-get="/admin/inquiries" hx-target="#main-content" hx-push-url="true"
+           class="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-sm hover:border-orange-300 transition block group">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold text-slate-500">Dokumen & SOP Aktif</span>
+                <span class="text-xs font-semibold text-slate-500 group-hover:text-orange-600 transition">Pesan &amp; Pengawalan</span>
+                <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
+                    <i class="fas fa-inbox"></i>
+                </span>
+            </div>
+            <p class="text-3xl font-black font-mono text-orange-600">{{ data.pending_inquiries_count }}</p>
+            <p class="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+                <span>{{ data.guiding_inquiries_count }} rute pengawalan</span>
+                <span class="text-orange-600 font-bold group-hover:translate-x-0.5 transition">&rarr;</span>
+            </p>
+        </a>
+
+        <!-- Metrik 5: Dokumen & SOP -->
+        <div class="bg-white p-4 sm:p-5 rounded-lg border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-slate-500">Dokumen &amp; SOP</span>
                 <span class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm">
                     <i class="fas fa-file-contract"></i>
                 </span>
             </div>
             <p class="text-3xl font-black font-mono text-orange-600">{{ data.doc_count }}</p>
-            <p class="text-[11px] text-slate-500 mt-1">AD/ART, SOP & Modul Belajar</p>
+            <p class="text-[11px] text-slate-500 mt-1">AD/ART &amp; Modul</p>
         </div>
     </div>
 
@@ -215,6 +232,112 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- SEKSI PERPESANAN & PERMINTAAN PENGAWALAN MASUK (TERBARU) -->
+    <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center text-sm flex-shrink-0">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-slate-900 font-heading">Pesan &amp; Permintaan Pengawalan Masuk (Landing Page)</h2>
+                    <p class="text-[11px] text-slate-500">Permohonan pemandu jalur pendakian, calon anggota, sponsor, dan pertanyaan publik</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold {% if data.pending_inquiries_count > 0 %}bg-amber-100 text-amber-800 border border-amber-200{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+                    {{ data.pending_inquiries_count }} Belum Direspon
+                </span>
+                <a href="/admin/inquiries" 
+                   hx-get="/admin/inquiries" hx-target="#main-content" hx-push-url="true"
+                   class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                    <span>Buka Kotak Masuk</span>
+                    <i class="fas fa-arrow-right text-[10px]"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+            {% if data.recent_inquiries %}
+                {% for inq in data.recent_inquiries %}
+                <div class="p-4 sm:p-5 hover:bg-slate-50/70 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs">
+                    <div class="space-y-1.5 flex-1 min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="font-bold text-slate-900 text-sm">{{ inq.name }}</span>
+                            
+                            {% if inq.category == 'guiding' %}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200 flex items-center gap-1">
+                                <i class="fas fa-hiking"></i> Pengawalan Pendakian
+                            </span>
+                            {% elif inq.category == 'membership' %}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+                                <i class="fas fa-id-card"></i> Calon Anggota
+                            </span>
+                            {% elif inq.category == 'sponsorship' %}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                                <i class="fas fa-handshake"></i> Sponsorship
+                            </span>
+                            {% else %}
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800 border border-sky-200 flex items-center gap-1">
+                                <i class="fas fa-comments"></i> Umum
+                            </span>
+                            {% endif %}
+
+                            <span class="text-[11px] text-slate-400">&bull; {{ inq.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </div>
+
+                        <!-- Info Detail Permintaan -->
+                        {% if inq.category == 'guiding' and inq.destination %}
+                        <div class="flex flex-wrap items-center gap-3 text-[11px] text-orange-900 bg-orange-50/80 p-2 rounded-md border border-orange-200/60">
+                            <span class="font-bold"><i class="fas fa-mountain text-orange-600 mr-1"></i> {{ inq.destination }}</span>
+                            {% if inq.target_date %}<span><i class="far fa-calendar-alt text-orange-600 mr-1"></i> {{ inq.target_date }}</span>{% endif %}
+                            {% if inq.participants_count %}<span><i class="fas fa-users text-orange-600 mr-1"></i> {{ inq.participants_count }} Peserta</span>{% endif %}
+                            {% if inq.services_needed %}<span><i class="fas fa-concierge-bell text-orange-600 mr-1"></i> {{ inq.services_needed }}</span>{% endif %}
+                        </div>
+                        {% endif %}
+
+                        <p class="text-slate-600 text-xs line-clamp-2 leading-relaxed">
+                            {{ inq.message }}
+                        </p>
+                    </div>
+
+                    <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 flex-shrink-0">
+                        <!-- Status Badge -->
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase
+                            {% if inq.status == 'pending' %}bg-amber-100 text-amber-800 border border-amber-200
+                            {% elif inq.status == 'in_progress' %}bg-blue-100 text-blue-800 border border-blue-200
+                            {% elif inq.status == 'resolved' %}bg-emerald-100 text-emerald-800 border border-emerald-200
+                            {% else %}bg-slate-100 text-slate-600{% endif %}">
+                            {{ inq.status }}
+                        </span>
+
+                        <div class="flex items-center gap-1.5">
+                            {% if inq.phone %}
+                            <a href="https://wa.me/{{ inq.phone|replace(' ', '')|replace('-', '')|replace('+', '')|replace('^0', '62') }}?text=Halo%20{{ inq.name|urlencode }},%20kami%20dari%20Pengurus%20KPAB%20GIMBAL%20menanggapi%20pesan%20Anda."
+                               target="_blank"
+                               class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition flex items-center gap-1 shadow-xs"
+                               title="Balas via WhatsApp">
+                                <i class="fab fa-whatsapp"></i> Chat WA
+                            </a>
+                            {% endif %}
+                            <a href="/admin/inquiries" 
+                               hx-get="/admin/inquiries" hx-target="#main-content" hx-push-url="true"
+                               class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition">
+                                Kelola
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="p-8 text-center text-slate-400 text-xs">
+                    <i class="fas fa-inbox text-3xl text-slate-300 mb-2"></i>
+                    <p>Belum ada pesan masuk dari formulir landing page.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 
 </div>
@@ -792,121 +915,300 @@
 
 <!-- 5. CRUD DOKUMEN ORGANISASI ADMIN -->
 {% macro admin_documents(data) %}
-<div class="space-y-6">
+<div class="space-y-6" 
+     x-data="{ 
+         openFolders: {
+             'ad_art': true,
+             'sop': true,
+             'materi': true,
+             'sk_resmi': true,
+             'lainnya': true
+         },
+         toggleAll(val) {
+             for (let k in this.openFolders) {
+                 this.openFolders[k] = val;
+             }
+         },
+         search: ''
+     }">
 
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <!-- Header & Action Toolbar (Windows Explorer Style) -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-lg border border-slate-200 shadow-xs">
         <div>
-            <h1 class="text-2xl font-black text-slate-900 font-heading">Dokumen & Arsip Organisasi</h1>
-            <p class="text-xs text-slate-500">Kelola berkas resmi (AD/ART, SOP Keselamatan Pendakian, Modul Edukasi)</p>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="w-6 h-6 rounded bg-amber-100 text-amber-700 flex items-center justify-center text-xs">
+                    <i class="fas fa-folder-open"></i>
+                </span>
+                <h1 class="text-xl font-black text-slate-900 font-heading">Dokumen &amp; Arsip Organisasi</h1>
+            </div>
+            <p class="text-xs text-slate-500">
+                Struktur direktori berkas resmi KPAB GIMBAL (AD/ART, SOP Ekspedisi, SK Pengurus, &amp; Modul Lapangan)
+            </p>
         </div>
-        <button class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2"
-                hx-get="/admin/documents/create-modal" hx-target="#modal-container">
-            <i class="fas fa-file-upload"></i>
-            <span>Unggah Dokumen Baru</span>
-        </button>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Search Filter -->
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                <input type="text" x-model="search" placeholder="Cari nama berkas..."
+                       class="pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none w-44 sm:w-56 bg-slate-50 focus:bg-white">
+            </div>
+
+            <!-- Expand / Collapse All -->
+            <button type="button" @click="toggleAll(true)"
+                    class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
+                    title="Buka Seluruh Folder">
+                <i class="fas fa-folder-plus text-amber-500"></i>
+                <span class="hidden sm:inline">Buka Semua</span>
+            </button>
+            <button type="button" @click="toggleAll(false)"
+                    class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition"
+                    title="Tutup Seluruh Folder">
+                <i class="fas fa-folder-minus text-slate-400"></i>
+                <span class="hidden sm:inline">Ciutkan</span>
+            </button>
+
+            <!-- Unggah Dokumen Baru -->
+            <button class="px-3.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-2 cursor-pointer"
+                    hx-get="/admin/documents/create-modal" hx-target="#modal-container">
+                <i class="fas fa-file-upload"></i>
+                <span>Unggah Dokumen</span>
+            </button>
+        </div>
     </div>
 
-    <!-- TABEL CRUD DOKUMEN -->
+    <!-- WINDOWS FILE EXPLORER DIRECTORY PANE -->
     <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        
+        <!-- Explorer Location Breadcrumb Bar -->
+        <div class="bg-slate-50/90 px-5 py-2.5 border-b border-slate-200 flex items-center justify-between text-xs text-slate-600">
+            <div class="flex items-center gap-2 font-mono text-[11px]">
+                <i class="fas fa-desktop text-slate-400"></i>
+                <span>GIMBAL-STORAGE</span>
+                <span class="text-slate-300">/</span>
+                <i class="fas fa-hdd text-amber-500"></i>
+                <span>Arsip Dokumen</span>
+                <span class="text-slate-300">/</span>
+                <span class="text-orange-600 font-bold" x-text="search ? 'Hasil Pencarian: \'' + search + '\'' : 'Semua Folder Kategori'"></span>
+            </div>
+            <div class="text-[11px] font-semibold text-slate-500">
+                Total: <strong class="text-slate-900 font-mono">{{ data.total_docs or data.documents|length }}</strong> Berkas
+            </div>
+        </div>
+
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs text-slate-700">
-                <thead class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-100">
+                <thead class="bg-slate-100/70 text-[11px] font-bold text-slate-500 uppercase border-b border-slate-200">
                     <tr>
-                        <th class="px-6 py-3.5">Judul Dokumen</th>
-                        <th class="px-6 py-3.5">Kategori</th>
-                        <th class="px-6 py-3.5">Ukuran</th>
-                        <th class="px-6 py-3.5">Akses Anggota</th>
-                        <th class="px-6 py-3.5 text-center">Share Linimasa</th>
-                        <th class="px-6 py-3.5">Tanggal Unggah</th>
-                        <th class="px-6 py-3.5 text-right">Aksi</th>
+                        <th class="px-5 py-3 w-5/12">Nama Berkas / Folder Kategori</th>
+                        <th class="px-4 py-3 w-1/12">Ekstensi</th>
+                        <th class="px-4 py-3 w-1/12 font-mono">Ukuran</th>
+                        <th class="px-4 py-3 w-2/12">Hak Akses</th>
+                        <th class="px-4 py-3 text-center w-1/12">Linimasa</th>
+                        <th class="px-4 py-3 w-1/12">Tanggal</th>
+                        <th class="px-5 py-3 text-right w-1/12">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    {% for doc in data.documents %}
-                    <tr class="hover:bg-slate-50/60">
-                        <td class="px-6 py-3.5">
+                    
+                    {% for group in data.grouped_docs %}
+                    <!-- FOLDER HEADER ROW (WINDOWS EXPLORER STYLE) -->
+                    <tr class="bg-slate-50/90 hover:bg-slate-100 transition cursor-pointer select-none border-t border-b border-slate-200/90"
+                        @click="openFolders['{{ group.key }}'] = !openFolders['{{ group.key }}']">
+                        <td class="px-5 py-3" colspan="2">
                             <div class="flex items-center gap-2.5">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase shrink-0
-                                    {% if doc.file_type in ['pdf'] %}bg-rose-100 text-rose-800 border border-rose-200
-                                    {% elif doc.file_type == 'epub' %}bg-purple-100 text-purple-800 border border-purple-200
-                                    {% elif doc.file_type in ['docx', 'doc'] %}bg-blue-100 text-blue-800 border border-blue-200
-                                    {% elif doc.file_type in ['xlsx', 'xls'] %}bg-emerald-100 text-emerald-800 border border-emerald-200
-                                    {% elif doc.file_type in ['zip', 'rar', '7z'] %}bg-purple-100 text-purple-800 border border-purple-200
-                                    {% else %}bg-orange-100 text-orange-800 border border-orange-200{% endif %}">
-                                    .{{ (doc.file_type or 'pdf')|upper }}
+                                <!-- Folder Chevron Expand/Collapse -->
+                                <button type="button" class="w-4 h-4 flex items-center justify-center text-slate-500 hover:text-slate-900">
+                                    <i class="fas text-[10px] transition-transform duration-150"
+                                       :class="openFolders['{{ group.key }}'] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                                </button>
+                                
+                                <!-- Folder Icon (Open vs Closed) -->
+                                <span class="text-base text-amber-500 flex items-center">
+                                    <i class="fas fa-folder-open" x-show="openFolders['{{ group.key }}']"></i>
+                                    <i class="fas fa-folder" x-show="!openFolders['{{ group.key }}']"></i>
                                 </span>
-                                <div>
-                                    <p class="font-bold text-slate-900">{{ doc.title }}</p>
-                                    <p class="text-[11px] text-slate-500 line-clamp-1">{{ doc.description or '-' }}</p>
+
+                                <span class="font-bold text-slate-900 text-xs sm:text-sm font-heading">
+                                    {{ group.name }}
+                                </span>
+
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-slate-600 border border-slate-200 font-mono shadow-2xs">
+                                    {{ group.items|length }} berkas
+                                </span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-slate-400 font-mono text-[10px] uppercase">Folder</td>
+                        <td class="px-4 py-3 text-slate-400 text-[11px]">-</td>
+                        <td class="px-4 py-3 text-center text-slate-400 text-[11px]">-</td>
+                        <td class="px-4 py-3 text-slate-400 text-[11px]">-</td>
+                        <td class="px-5 py-3 text-right">
+                            <span class="text-[10px] font-semibold text-orange-600 hover:underline">
+                                <span x-show="openFolders['{{ group.key }}']">Tutup &uarr;</span>
+                                <span x-show="!openFolders['{{ group.key }}']">Buka &darr;</span>
+                            </span>
+                        </td>
+                    </tr>
+
+                    <!-- CHILD FILES IN THIS FOLDER (INDENTED TREE VIEW) -->
+                    {% for doc in group.items %}
+                    <tr x-show="openFolders['{{ group.key }}'] && (!search || '{{ doc.title|lower }}'.includes(search.toLowerCase()) || '{{ doc.description|lower }}'.includes(search.toLowerCase()))"
+                        x-transition:enter="transition ease-out duration-100"
+                        x-transition:enter-start="opacity-0 -translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        class="hover:bg-orange-50/40 transition">
+                        
+                        <!-- File Title & Path Indicator -->
+                        <td class="px-5 py-3 pl-11">
+                            <div class="flex items-center gap-3">
+                                <!-- Tree Line Connector Indicator -->
+                                <div class="w-4 border-b border-slate-300 -ml-2 mr-0.5"></div>
+                                
+                                <!-- File Type Badge Icon -->
+                                <span class="w-7 h-7 rounded flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs
+                                    {% if doc.file_type in ['pdf'] %}bg-rose-100 text-rose-700 border border-rose-200
+                                    {% elif doc.file_type in ['epub'] %}bg-purple-100 text-purple-700 border border-purple-200
+                                    {% elif doc.file_type in ['docx', 'doc'] %}bg-blue-100 text-blue-700 border border-blue-200
+                                    {% elif doc.file_type in ['xlsx', 'xls'] %}bg-emerald-100 text-emerald-700 border border-emerald-200
+                                    {% elif doc.file_type in ['zip', 'rar', '7z'] %}bg-amber-100 text-amber-700 border border-amber-200
+                                    {% else %}bg-orange-100 text-orange-700 border border-orange-200{% endif %}">
+                                    <i class="fas {% if doc.file_type in ['pdf'] %}fa-file-pdf{% elif doc.file_type in ['docx', 'doc'] %}fa-file-word{% elif doc.file_type in ['xlsx', 'xls'] %}fa-file-excel{% elif doc.file_type in ['zip', 'rar', '7z'] %}fa-file-archive{% else %}fa-file-alt{% endif %}"></i>
+                                </span>
+
+                                <div class="min-w-0">
+                                    <p class="font-bold text-slate-900 truncate hover:text-orange-600 transition">
+                                        <a href="/documents/read/{{ doc.id }}" target="_blank">{{ doc.title }}</a>
+                                    </p>
+                                    <p class="text-[11px] text-slate-500 line-clamp-1">
+                                        {{ doc.description or 'Tidak ada keterangan tambahan.' }}
+                                    </p>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-3.5">
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-orange-100 text-orange-800">
-                                {{ doc.category.replace('_', ' ') }}
+
+                        <!-- File Extension -->
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase
+                                {% if doc.file_type in ['pdf'] %}bg-rose-50 text-rose-800 border border-rose-200
+                                {% elif doc.file_type in ['docx', 'doc'] %}bg-blue-50 text-blue-800 border border-blue-200
+                                {% elif doc.file_type in ['xlsx', 'xls'] %}bg-emerald-50 text-emerald-800 border border-emerald-200
+                                {% else %}bg-slate-100 text-slate-700 border border-slate-200{% endif %}">
+                                .{{ (doc.file_type or 'pdf')|upper }}
                             </span>
                         </td>
-                        <td class="px-6 py-3.5 font-mono text-slate-500">{{ doc.file_size_fmt or '1.5 MB' }}</td>
-                        <td class="px-6 py-3.5">
+
+                        <!-- File Size -->
+                        <td class="px-4 py-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                            {{ doc.file_size_fmt or '1.5 MB' }}
+                        </td>
+
+                        <!-- Access Permission -->
+                        <td class="px-4 py-3 whitespace-nowrap">
                             {% if doc.is_public_to_members %}
-                                <span class="text-orange-600 font-semibold"><i class="fas fa-check-circle mr-1"></i> Semua Anggota</span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                                    <i class="fas fa-users text-[9px]"></i> Semua Anggota
+                                </span>
                             {% else %}
-                                <span class="text-slate-500"><i class="fas fa-lock mr-1"></i> Hanya Pengurus</span>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-bold">
+                                    <i class="fas fa-lock text-[9px]"></i> Hanya Pengurus
+                                </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-3.5 text-center">
+
+                        <!-- Share to Member Timeline Toggle -->
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
                             {% if doc.is_shared_to_timeline %}
                             <button type="button"
                                     hx-post="/admin/documents/toggle-share/{{ doc.id }}"
                                     hx-swap="outerHTML"
-                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-xs cursor-pointer"
+                                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-2xs cursor-pointer"
                                     title="Dokumen aktif di Linimasa Anggota (Klik untuk matikan)">
                                 <i class="fas fa-toggle-on text-emerald-600 text-xs"></i>
-                                <span>Linimasa: ON</span>
+                                <span>ON</span>
                             </button>
                             {% else %}
                             <button type="button"
                                     hx-post="/admin/documents/toggle-share/{{ doc.id }}"
                                     hx-swap="outerHTML"
-                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer"
+                                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer"
                                     title="Dokumen belum dibagikan ke Linimasa (Klik untuk bagikan)">
                                 <i class="fas fa-toggle-off text-slate-400 text-xs"></i>
-                                <span>Linimasa: OFF</span>
+                                <span>OFF</span>
                             </button>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-3.5 text-slate-500">{{ doc.created_at.strftime('%d/%m/%Y') }}</td>
-                        <td class="px-6 py-3.5 text-right space-x-2">
-                            <a href="/documents/read/{{ doc.id }}" target="_blank" class="text-orange-600 hover:text-orange-800 font-bold" title="Buka & Baca Dokumen Fullscreen">
-                                <i class="fas fa-eye"></i> Baca
+
+                        <!-- Upload Date -->
+                        <td class="px-4 py-3 text-slate-500 font-mono text-[11px] whitespace-nowrap">
+                            {{ doc.created_at.strftime('%d/%m/%Y') }}
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-5 py-3 text-right whitespace-nowrap space-x-1.5">
+                            <a href="/documents/read/{{ doc.id }}" target="_blank" 
+                               class="inline-flex items-center gap-1 px-2 py-1 rounded bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-[11px] transition shadow-2xs" 
+                               title="Buka &amp; Baca Dokumen Fullscreen">
+                                <i class="fas fa-eye text-[10px]"></i> Baca
                             </a>
-                            <button class="text-slate-700 hover:text-slate-900 font-bold ml-2"
+                            <button class="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition"
                                     hx-get="/admin/documents/edit-modal/{{ doc.id }}"
                                     hx-target="#modal-container"
                                     title="Edit Dokumen">
-                                <i class="fas fa-edit"></i> Edit
+                                <i class="fas fa-edit text-[10px]"></i> Edit
                             </button>
-                            <a href="{{ doc.file_path }}" download class="text-slate-600 hover:text-slate-900 font-bold ml-2" title="Unduh Berkas">
-                                <i class="fas fa-download"></i> Unduh
+                            <a href="{{ doc.file_path }}" download 
+                               class="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition" 
+                               title="Unduh Berkas">
+                                <i class="fas fa-download text-[10px]"></i> Unduh
                             </a>
-                            <button class="text-rose-600 hover:text-rose-800 font-bold ml-2"
+                            <button class="p-1 rounded text-rose-500 hover:bg-rose-50 text-xs transition"
                                     hx-post="/admin/documents/delete/{{ doc.id }}"
                                     hx-target="#main-content"
-                                    hx-confirm="Yakin ingin menghapus dokumen ini?">
-                                <i class="fas fa-trash-alt"></i> Hapus
+                                    hx-confirm="Yakin ingin menghapus dokumen '{{ doc.title }}'?"
+                                    title="Hapus Dokumen">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-slate-400">
-                            Belum ada dokumen internal. Silakan unggah dokumen baru.
                         </td>
                     </tr>
                     {% endfor %}
+
+                    <!-- Empty folder state row -->
+                    {% if not group.items %}
+                    <tr x-show="openFolders['{{ group.key }}']" class="bg-slate-50/30">
+                        <td colspan="7" class="px-11 py-3 text-xs text-slate-400 italic">
+                            <i class="fas fa-info-circle mr-1 text-slate-300"></i> Folder ini masih kosong. Klik <strong>Unggah Dokumen</strong> untuk menambahkan berkas ke kategori ini.
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    {% endfor %}
+
+                    {% if not data.grouped_docs and not data.documents %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-400">
+                            <i class="fas fa-folder-open text-3xl text-slate-300 mb-2 block"></i>
+                            Belum ada dokumen internal organisasi. Silakan unggah dokumen baru.
+                        </td>
+                    </tr>
+                    {% endif %}
+
                 </tbody>
             </table>
         </div>
+
+        <!-- Explorer Footer Status Bar -->
+        <div class="px-5 py-2.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
+            <div class="flex items-center gap-3">
+                <span><i class="fas fa-folder text-amber-500 mr-1"></i> {{ data.grouped_docs|length }} Folder Kategori</span>
+                <span>&bull;</span>
+                <span><i class="fas fa-file text-slate-400 mr-1"></i> {{ data.total_docs or data.documents|length }} Berkas Terarsip</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-slate-400">
+                <i class="fas fa-info-circle"></i>
+                <span>Klik baris folder untuk membuka / menutup isi direktori seperti Windows Explorer.</span>
+            </div>
+        </div>
+
     </div>
 
 </div>
@@ -3933,14 +4235,19 @@
                                     </div>
                                 </div>
 
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1.5">
                                     <a href="/member/academy/lesson/{{ lesson.id }}" target="_blank"
                                        class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition">
                                         Lihat
                                     </a>
+                                    <button type="button"
+                                            onclick="openEditLessonModal('{{ lesson.id }}', '{{ lesson.title|escape }}', {{ (lesson.content_body or '')|tojson }}, '{{ lesson.doc_id or '' }}', '{{ lesson.map_repo_id or '' }}', '{{ lesson.order_index }}', '{{ (lesson.media_url or '')|escape }}')"
+                                            class="px-2.5 py-1 rounded bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-[11px] transition flex items-center gap-1">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
                                     <form action="/admin/academy/lesson/delete/{{ lesson.id }}" method="POST"
                                           onsubmit="return confirm('Hapus materi ini?')">
-                                        <button type="submit" class="p-1.5 rounded text-rose-500 hover:bg-rose-50 text-xs">
+                                        <button type="submit" class="p-1.5 rounded text-rose-500 hover:bg-rose-50 text-xs" title="Hapus Materi">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
@@ -4585,6 +4892,87 @@
             </form>
         </div>
     </div>
+
+    <!-- Modal Edit Bab Materi / SOP Digital -->
+    <div id="modal-edit-lesson" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
+        <div class="bg-white rounded-lg max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 class="text-sm font-black text-slate-900 font-heading">Edit Bab Materi / SOP Digital</h3>
+                <button type="button" onclick="document.getElementById('modal-edit-lesson').classList.add('hidden')" class="text-slate-400 hover:text-slate-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="form-edit-lesson" action="" method="POST" class="space-y-3 text-xs">
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Judul Bab Pelajaran</label>
+                    <input type="text" id="edit-lesson-title" name="title" required
+                           class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">Konten Materi / Prosedur SOP (HTML / Teks Lengkap)</label>
+                    <textarea id="edit-lesson-content" name="content" rows="6" required
+                              class="w-full px-3 py-2 rounded-lg border border-slate-200 font-sans focus:ring-2 focus:ring-orange-500 focus:outline-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Lampirkan Dokumen SOP (PDF)</label>
+                        <select id="edit-lesson-doc" name="doc_id" class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                            <option value="">-- Tanpa Dokumen PDF --</option>
+                            {% for d in all_docs %}
+                            <option value="{{ d.id }}">{{ d.title }} ({{ d.category }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Lampirkan Peta GPX Jalur</label>
+                        <select id="edit-lesson-map" name="map_repo_id" class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                            <option value="">-- Tanpa Peta GPX --</option>
+                            {% for m in all_maps %}
+                            <option value="{{ m.id }}">{{ m.title }} ({{ m.region }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">Urutan Bab</label>
+                        <input type="number" id="edit-lesson-order" name="order_index" value="1" required
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">URL Video Embed (YouTube)</label>
+                        <input type="url" id="edit-lesson-video" name="video_url" placeholder="https://www.youtube.com/embed/..."
+                               class="w-full px-3 py-2 rounded-lg border border-slate-200 font-mono">
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('modal-edit-lesson').classList.add('hidden')"
+                            class="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    window.openEditLessonModal = function(id, title, content, docId, mapId, order, videoUrl) {
+        var modal = document.getElementById('modal-edit-lesson');
+        var form = document.getElementById('form-edit-lesson');
+        if (!modal || !form) return;
+        form.action = '/admin/academy/lesson/edit/' + id;
+        document.getElementById('edit-lesson-title').value = title || '';
+        document.getElementById('edit-lesson-content').value = content || '';
+        document.getElementById('edit-lesson-doc').value = docId || '';
+        document.getElementById('edit-lesson-map').value = mapId || '';
+        document.getElementById('edit-lesson-order').value = order || 1;
+        document.getElementById('edit-lesson-video').value = videoUrl || '';
+        modal.classList.remove('hidden');
+    };
+    </script>
 
     <!-- Modal Tambah Ujian Sertifikasi -->
     <div id="modal-add-quiz" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs hidden">
